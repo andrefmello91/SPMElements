@@ -3,3 +3,5 @@
 ################################################################################
 
 /.vs/SPMElements/v16
+/packages/MathNet.Numerics.4.12.0
+/SPMElements/obj/Debug

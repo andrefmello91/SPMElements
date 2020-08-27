@@ -1,4 +1,6 @@
-﻿namespace SPMElements
+﻿using Autodesk.AutoCAD.DatabaseServices;
+
+namespace SPMElements
 {
 	/// <summary>
     /// SPM element types.
@@ -19,6 +21,11 @@
         /// Get or set the number of the element.
         /// </summary>
 	    public int Number { get; set; }
+
+        /// <summary>
+        /// Get or set the <see cref="Autodesk.AutoCAD.DatabaseServices.ObjectId"/> of element.
+        /// </summary>
+        public ObjectId ObjectId { get; set; }
 
 		/// <summary>
         /// Get the DoF index of the element.

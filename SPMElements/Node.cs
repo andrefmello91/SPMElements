@@ -1,52 +1,110 @@
 ﻿using System;
+using System.Data;
+using Material.Concrete;
 using MathNet.Numerics.LinearAlgebra;
+using OnPlaneComponents;
+using Autodesk.AutoCAD;
+using Autodesk.AutoCAD.DatabaseServices;
+using Autodesk.AutoCAD.Geometry;
+using UnitsNet.Units;
 
 namespace SPMElements
 {
+	/// <summary>
+	/// Node types.
+	/// </summary>
+	public enum NodeType
+	{
+		/// <summary>
+        /// All nodes (excluding displaced nodes).
+        /// </summary>
+		All,
+		/// <summary>
+        /// External nodes (grips to stringers).
+        /// </summary>
+		External,
+		/// <summary>
+		/// External nodes (mid grip to stringers and grip for panels).
+		/// </summary>
+		Internal,
+		/// <summary>
+		/// Displaced nodes (auxiliary, only for result drawing).
+		/// </summary>
+		Displaced
+    }
+
+	/// <summary>
+    /// Constraint directions.
+    /// </summary>
+	public enum Constraint
+	{
+		/// <summary>
+        /// Displacement free at both directions.
+        /// </summary>
+		Free,
+		/// <summary>
+        /// Displacement restricted at X direction.
+        /// </summary>
+		X,
+		/// <summary>
+		/// Displacement restricted at Y direction.
+		/// </summary>
+		Y,
+		/// <summary>
+		/// Displacement restricted at both directions.
+		/// </summary>
+		XY
+    }
+
     public class Node : SPMElement
     {
-        /// <summary>
-        /// Node types (All excludes displaced)
-        /// </summary>
-        public enum NodeType
-	    {
-		    All,
-		    External,
-		    Internal,
-			Displaced
-	    }
+		// Auxiliary fields
+		private LengthUnit _geometryUnit, _displacementUnit;
 
-        // Properties
         /// <summary>
-        /// The node type (<see cref="NodeType"/>).
+        /// Get the node type (<see cref="NodeType"/>).
         /// </summary>
         public NodeType Type { get; }
 
+		/// <summary>
+        /// Get the position of the node.
+        /// <para>See: <see cref="Point3d"/>.</para>
+        /// </summary>
+		public Point3d Position { get; }
+
+		/// <summary>
+        /// Get applied <see cref="OnPlaneComponents.Force"/>.
+        /// </summary>
+		public Force Force { get; }
+
         /// <summary>
-        /// Constraint condition of the node.
+        /// Get <see cref="SPMElements.Constraint"/> condition.
         /// </summary>
         public Constraint Constraint { get; }
 
 		/// <summary>
-        /// Forces in X and Y directions.
-        /// </summary>
-		public (Force X, Force Y) Forces { get; }
-
-		/// <summary>
-		/// Displacements in X and Y directions.
+		/// Get/set nodal <see cref="OnPlaneComponents.Displacement"/>
 		/// </summary>
-		public (Displacement X, Displacement Y) Displacements { get; set; }
+		public Displacement Displacement { get; set; }
 
         /// <summary>
         /// Node object.
         /// </summary>
+        /// <param name="objectId">The node <see cref="ObjectId"/>.</param>
         /// <param name="number">The node number.</param>
-        /// <param name="type">The node type (<see cref="NodeType"/>).</param>
-        /// <param name="xForce">The force in X direction.</param>
-        /// <param name="yForce">The force in Y direction.</param>
-        /// <param name="constraint">Constraint condition of the node.</param>
-        public Node(int number, NodeType type, Force xForce, Force yForce, Constraint constraint)
+        /// <param name="type">The <see cref="NodeType"/>.</param>
+        /// <param name="appliedForce">The applied <see cref="OnPlaneComponents.Force"/> on the node.</param>
+        /// <param name="constraint"> The <see cref="SPMElements.Constraint"/> condition of the node.</param>
+        /// <param name="geometryUnit">The <see cref="LengthUnit"/> of <paramref name="position"/>.</param>
+        /// <param name="displacementUnit">The <see cref="LengthUnit"/> of <see cref="Displacement"/>.</param>
+        public Node(ObjectId objectId, int number, Point3d position, NodeType type, Force appliedForce, Constraint constraint = Constraint.Free, LengthUnit geometryUnit = LengthUnit.Millimeter, LengthUnit displacementUnit = LengthUnit.Millimeter)
 		{
+			// Get the ObjectId
+			ObjectId = objectId;
+
+			// Get the position
+			Position = position;
+
 			// Get the node number
 			Number = number;
 
@@ -57,36 +115,30 @@ namespace SPMElements
             Constraint = constraint;
 
 			// Get forces
-			Forces = (xForce, yForce);
+			Force = appliedForce;
+
+			// Set units
+			_geometryUnit     = geometryUnit;
+			_displacementUnit = displacementUnit;
+
+			// Initiate displacements
+			Displacement = Displacement.Zero;
 		}
 
 		/// <summary>
-        /// Get constraint conditions.
+        /// Returns true if the node is free.
         /// </summary>
-        public (bool X, bool Y) Constrained => Constraint.Constrained;
+		public bool IsFree => Constraint == Constraint.Free;
 
 		/// <summary>
-        /// Verify if the node is free.
+        /// Returns true if <see cref="Displacement"/> is not zero.
         /// </summary>
-		public bool IsFree => Constrained == (false, false);
-
-		// Verify if displacement is set
-		public bool DisplacementsNotZero => DisplacementValues != (0, 0);
-
-		/// <summary>
-        /// Get force values.
-        /// </summary>
-		public (double X, double Y) ForceValues => (Forces.X.Value, Forces.Y.Value);
-
-		/// <summary>
-		/// Get displacement values.
-		/// </summary>
-		public (double X, double Y) DisplacementValues => (Displacements.X.Value, Displacements.Y.Value);
+		public bool DisplacementsNotZero => !Displacement.AreComponentsZero;
 
         /// <summary>
-        /// Verify if forces are not zero
+        /// Returns true if <see cref="Force"/> is not zero.
         /// </summary>
-        public bool ForcesNotZero => ForceValues != (0, 0);
+        public bool ForcesNotZero => !Force.AreComponentsZero;
 
         /// <inheritdoc/>
         public override int[] DoFIndex => GlobalIndexes(Number);
@@ -110,45 +162,43 @@ namespace SPMElements
 		        ux = u[i],
 		        uy = u[j];
 
-	        // Save to the node
-	        Displacements = (new Displacement(ux, Direction.X), new Displacement (uy, Direction.Y));
+	        // Save to the node, in mm
+	        Displacement = new Displacement(ux, uy);
+
+			// Change unit
+			ChangeDisplacementUnit(_displacementUnit);
+        }
+
+        /// <summary>
+        /// Change the unit of <see cref="Displacement"/>.
+        /// </summary>
+        /// <param name="displacementUnit">The <see cref="LengthUnit"/> to convert.</param>
+        public void ChangeDisplacementUnit(LengthUnit displacementUnit)
+        {
+	        Displacement.ChangeUnit(displacementUnit);
+	        _displacementUnit = displacementUnit;
         }
 
         public override string ToString()
         {
 	        string msgstr =
-		        "Node " + Number;
+		        "Node " + Number + "\n" +
+		        "Position: (" + Position.X + ", " + Position.Y + ")";
 
 	        // Read applied forces
 	        if (ForcesNotZero)
-	        {
 		        msgstr +=
-			        "\n\nApplied forces:";
-
-		        if (!Forces.X.IsZero)
-			        msgstr += "\n" + Forces.X;
-
-		        if (!Forces.Y.IsZero)
-			        msgstr += "\n" + Forces.Y;
-	        }
+			        "\n\nApplied forces: \n" + Force;
 
 	        // Get supports
 	        if (!IsFree)
-		        msgstr += "\n\n" + Constraint;
+		        msgstr +=
+			        "\n\nConstraints: " + Constraint;
 
 	        // Get displacements
 	        if (DisplacementsNotZero)
-	        {
-		        // Convert displacements
-		        string
-			        ux = $"{DisplacementValues.X:0.00}" + " mm",
-			        uy = $"{DisplacementValues.Y:0.00}" + " mm";
-					
 		        msgstr +=
-			        "\n\nDisplacements:\n" +
-			        "ux = " + ux + "\n" +
-			        "uy = " + uy;
-	        }
+			        "\n\nDisplacements: \n" + Displacement;
 
 	        return msgstr;
         }

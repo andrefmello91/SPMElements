@@ -222,21 +222,41 @@ namespace SPMElements
 		{
 		}
 
-		/// <summary>
-		/// Read the stringer.
+        /// <summary>
+        /// Read the stringer based on <see cref="AnalysisType"/>.
+        /// </summary>
+        /// <param name="analysisType">Type of analysis to perform (<see cref="AnalysisType"/>).</param>
+        /// <param name="objectId">The stringer <see cref="ObjectId"/>.</param>
+        /// <param name="number">The stringer number.</param>
+        /// <param name="initialNode">The initial <see cref="Node"/> of the <see cref="Stringer"/>.</param>
+        /// <param name="centerNode">The center <see cref="Node"/> of the <see cref="Stringer"/>.</param>
+        /// <param name="finalNode">The final <see cref="Node"/> of the <see cref="Stringer"/>.</param>
+        /// <param name="width">The stringer width.</param>
+        /// <param name="height">The stringer height.</param>
+        /// <param name="concreteParameters">The concrete parameters <see cref="Parameters"/>.</param>
+        /// <param name="concreteConstitutive">The concrete constitutive <see cref="Constitutive"/>.</param>
+        /// <param name="reinforcement">The <see cref="UniaxialReinforcement"/>.</param>
+        /// <param name="geometryUnit">The <see cref="LengthUnit"/> of <paramref name="width"/> and <paramref name="height"/>.<para>Default: <seealso cref="LengthUnit.Millimeter"/>.</para></param>
+		public static Stringer Read(AnalysisType analysisType, ObjectId objectId, int number, Node initialNode, Node centerNode, Node finalNode, double width, double height, Parameters concreteParameters, Constitutive concreteConstitutive, UniaxialReinforcement reinforcement = null, LengthUnit geometryUnit = LengthUnit.Millimeter)
+			=> Read(analysisType, objectId, number, new StringerGeometry(initialNode, centerNode, finalNode, width, height, geometryUnit), concreteParameters, concreteConstitutive, reinforcement);
+
+        /// <summary>
+        /// Read the stringer based on <see cref="AnalysisType"/>.
 		/// </summary>
-		/// <param name="analysisType">Type of analysis to perform (<see cref="AnalysisType"/>).</param>
-		/// <param name="stringerObjectId">The object ID of the stringer from AutoCAD drawing.</param>
-		/// <param name="units">Units current in use <see cref="SPMTool.Units"/>.</param>
-		/// <param name="concreteParameters">The concrete parameters <see cref="Parameters"/>.</param>
-		/// <param name="concreteConstitutive">The concrete constitutive <see cref="Constitutive"/>.</param>
-		public static Stringer ReadStringer(AnalysisType analysisType, ObjectId stringerObjectId, Units units,
-			Parameters concreteParameters = null, Constitutive concreteConstitutive = null)
+        /// <param name="analysisType">Type of analysis to perform (<see cref="AnalysisType"/>).</param>
+        /// <param name="objectId">The stringer <see cref="ObjectId"/>.</param>
+        /// <param name="number">The stringer number.</param>
+        /// <param name="geometry">The <see cref="StringerGeometry"/> object.</param>
+        /// <param name="concreteParameters">The concrete parameters <see cref="Parameters"/>.</param>
+        /// <param name="concreteConstitutive">The concrete constitutive <see cref="Constitutive"/>.</param>
+        /// <param name="reinforcement">The <see cref="UniaxialReinforcement"/>.</param>
+        /// <param name="geometryUnit">The <see cref="LengthUnit"/> of <paramref name="width"/> and <paramref name="height"/>.<para>Default: <seealso cref="LengthUnit.Millimeter"/>.</para></param>
+        public static Stringer Read(AnalysisType analysisType, ObjectId objectId, int number, StringerGeometry geometry, Parameters concreteParameters, Constitutive concreteConstitutive, UniaxialReinforcement reinforcement = null)
 		{
 			if (analysisType == AnalysisType.Linear)
-				return new LinearStringer(stringerObjectId, units, concreteParameters, concreteConstitutive);
+				return new LinearStringer(objectId, number, geometry, concreteParameters, concreteConstitutive);
 
-			return new NonLinearStringer(stringerObjectId, units, concreteParameters, concreteConstitutive);
+			return new NonLinearStringer(objectId, number, geometry, concreteParameters, concreteConstitutive);
 		}
 
 		/// <summary>

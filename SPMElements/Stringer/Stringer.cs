@@ -1,17 +1,21 @@
 ﻿using System;
+using Autodesk.AutoCAD.DatabaseServices;
+using Autodesk.AutoCAD.Geometry;
+using Autodesk.AutoCAD.GraphicsInterface;
 using MathNet.Numerics.LinearAlgebra;
+using MathNet.Numerics.LinearAlgebra.Double;
 using Material.Concrete;
 using Material.Reinforcement;
-using Concrete           = Material.Concrete.UniaxialConcrete;
-using Reinforcement      = Material.Reinforcement.UniaxialReinforcement;
+using UnitsNet;
+using UnitsNet.Units;
 
 namespace SPMElements
 {
 	/// <summary>
     /// Stringer base class;
     /// </summary>
-	public class Stringer : SPMElement
-	{
+	public partial class Stringer : SPMElement, IEquatable<Stringer>
+    {
 		/// <summary>
         /// Type of forces that stringer can be loaded.
         /// </summary>
@@ -23,136 +27,82 @@ namespace SPMElements
 			Combined
 		}
 
-        // Stringer properties
-		public Units                   Units            { get; }
-		public int[]                   Grips            { get; }
-		public Point3d[]               PointsConnected  { get; }
-		public Length				   DrawingLength    { get; }
-		public double                  Length           { get; }
-		public double                  Angle            { get; }
-		public double                  Width            { get; set; }
-		public double                  Height           { get; set; }
-		public Concrete                Concrete         { get; }
-        public Reinforcement           Reinforcement    { get; set; }
-        public Matrix<double>          TransMatrix      { get; }
-        public virtual Matrix<double>  LocalStiffness   { get; }
-		public virtual Vector<double>  Forces           { get; set; }
-		public Vector<double>          Displacements    { get; set; }
+		// Auxiliary fields
+		private Matrix<double> _transMatrix;
 
         /// <summary>
-        /// Stringer base object.
+        /// Get/set the <see cref="StringerGeometry"/> of this.
         /// </summary>
-        /// <param name="stringerObjectId">The object ID of the stringer from AutoCAD drawing.</param>
-        /// <param name="units">Units current in use <see cref="SPMTool.Units"/>.</param>
-        /// <param name="concreteParameters">The concrete parameters <see cref="Parameters"/>.</param>
-        /// <param name="concreteConstitutive">The concrete constitutive <see cref="Constitutive"/>.</param>
-        public Stringer(ObjectId stringerObjectId, Units units, Parameters concreteParameters = null, Constitutive concreteConstitutive = null)
-		{
-			ObjectId = stringerObjectId;
-			Units    = units;
-
-			// Read the object as a line
-			Line strLine = Geometry.Stringer.ReadStringer(stringerObjectId);
-
-			// Get the length and angles
-			DrawingLength = UnitsNet.Length.From(strLine.Length, Units.Geometry);
-			Length        = DrawingLength.Millimeters;
-			Angle         = strLine.Angle;
-
-			// Calculate midpoint
-			var midPt = GlobalAuxiliary.MidPoint(strLine.StartPoint, strLine.EndPoint);
-
-			// Get the points
-			PointsConnected = new[] { strLine.StartPoint, midPt, strLine.EndPoint };
-
-			// Read the XData and get the necessary data
-			TypedValue[] data = Auxiliary.ReadXData(strLine);
-
-			// Get the Stringer number
-			Number = Convert.ToInt32(data[(int) StringerData.Number].Value);
-
-			// Create the list of grips
-			Grips = new []
-			{
-				Convert.ToInt32(data[(int) StringerData.Grip1].Value),
-				Convert.ToInt32(data[(int) StringerData.Grip2].Value),
-				Convert.ToInt32(data[(int) StringerData.Grip3].Value)
-			};
-
-			// Get geometry
-			Width  = Convert.ToDouble(data[(int) StringerData.Width].Value);
-			Height = Convert.ToDouble(data[(int) StringerData.Height].Value);
-
-			// Get concrete
-			Concrete = new Concrete(concreteParameters, Area, concreteConstitutive);
-
-            // Get reinforcement
-            int numOfBars = Convert.ToInt32 (data[(int) StringerData.NumOfBars].Value);
-			double phi    = Convert.ToDouble(data[(int) StringerData.BarDiam].Value);
-
-			if (numOfBars > 0 && phi > 0)
-			{
-				// Get steel data
-				double
-					fy = Convert.ToDouble(data[(int) StringerData.Steelfy].Value),
-					Es = Convert.ToDouble(data[(int) StringerData.SteelEs].Value);
-
-				// Set steel data
-				var steel = new Steel(fy, Es);
-
-				// Set reinforcement
-				Reinforcement = new Reinforcement(numOfBars, phi, Area, steel);
-			}
-
-			// Calculate transformation matrix
-			TransMatrix = TransformationMatrix();
-		}
+        public StringerGeometry Geometry { get; set; }
 
         /// <summary>
-        /// Read the stringer.
+        /// Get/set the <see cref="UniaxialConcrete"/> of this.
         /// </summary>
-        /// <param name="analysisType">Type of analysis to perform (<see cref="AnalysisType"/>).</param>
-        /// <param name="stringerObjectId">The object ID of the stringer from AutoCAD drawing.</param>
-        /// <param name="units">Units current in use <see cref="SPMTool.Units"/>.</param>
-        /// <param name="concreteParameters">The concrete parameters <see cref="Parameters"/>.</param>
-        /// <param name="concreteConstitutive">The concrete constitutive <see cref="Constitutive"/>.</param>
-        public static Stringer ReadStringer(AnalysisType analysisType, ObjectId stringerObjectId, Units units,
-			Parameters concreteParameters = null, Constitutive concreteConstitutive = null)
-		{
-			if (analysisType == AnalysisType.Linear)
-				return new LinearStringer(stringerObjectId, units, concreteParameters, concreteConstitutive);
+        public UniaxialConcrete Concrete { get; set; }
 
-			return new NonLinearStringer(stringerObjectId, units, concreteParameters, concreteConstitutive);
-		}
+        /// <summary>
+        /// Get/set the <see cref="UniaxialReinforcement"/> of this.
+        /// </summary>
+        public UniaxialReinforcement Reinforcement { get; set; }
 
-		// Get points
-		public Point3d StartPoint => PointsConnected[0];
-		public Point3d MidPoint   => PointsConnected[1];
-		public Point3d EndPoint   => PointsConnected[2];
-
-		// Set global indexes from grips
-		public override int[] DoFIndex => GlobalAuxiliary.GlobalIndexes(Grips);
-
-		// Calculate direction cosines
-		public (double cos, double sin) DirectionCosines => GlobalAuxiliary.DirectionCosines(Angle);
-
-		// Calculate steel area
-		public double SteelArea => Reinforcement?.Area ?? 0;
-
-		// Calculate concrete area
-		public double Area         => Width * Height;
-        public double ConcreteArea => Area - SteelArea;
-
-		// Calculate global stiffness
-		public Matrix<double> GlobalStiffness => TransMatrix.Transpose() * LocalStiffness * TransMatrix;
-
-		// Calculate local displacements
-		public Vector<double> LocalDisplacements => TransMatrix * Displacements;
+        /// <summary>
+        /// Get local stiffness <see cref="Matrix"/>.
+        /// </summary>
+        public virtual Matrix<double> LocalStiffness { get; }
 
 		/// <summary>
-        /// Get normal forces acting in the stringer, in kN.
+        /// Get/set local force <see cref="Vector"/>.
         /// </summary>
-		public (double N1, double N3) NormalForces => (Forces[0], -Forces[2]);
+		public virtual Vector<double> LocalForces { get; set; }
+
+		/// <summary>
+		/// Get/set global displacement <see cref="Vector"/>.
+		/// </summary>
+		public Vector<double> Displacements { get; set; }
+
+        /// <summary>
+        /// Get the grip numbers of this.
+        /// </summary>
+        public int[] Grips => new[] { Geometry.InitialNode.Number, Geometry.CenterNode.Number, Geometry.FinalNode.Number };
+
+        /// <summary>
+        /// Get the transformation <see cref="Matrix"/>.
+        /// </summary>
+        public Matrix<double> TransformationMatrix
+        {
+	        get
+	        {
+		        if (_transMatrix is null)
+			        CalculateTransformationMatrix();
+
+		        return _transMatrix;
+	        }
+        }
+
+        /// <summary>
+        /// Get the DoF index of stringer <see cref="Grips"/>.
+        /// </summary>
+        public override int[] DoFIndex => GlobalIndexes(Grips);
+
+		/// <summary>
+        /// Get concrete area.
+        /// </summary>
+        public double ConcreteArea => Geometry.Area - (Reinforcement?.Area ?? 0);
+
+		/// <summary>
+        /// Get global stiffness <see cref="Matrix"/>.
+        /// </summary>
+		public Matrix<double> GlobalStiffness => TransformationMatrix.Transpose() * LocalStiffness * TransformationMatrix;
+
+		/// <summary>
+		/// Get local displacement <see cref="Vector"/>.
+		/// </summary>
+		public Vector<double> LocalDisplacements => TransformationMatrix * Displacements;
+
+		/// <summary>
+        /// Get normal forces acting in the stringer, in N.
+        /// </summary>
+		public (double N1, double N3) NormalForces => (LocalForces[0], -LocalForces[2]);
 
 		/// <summary>
 		/// Get the state of forces acting on the stringer.
@@ -176,22 +126,63 @@ namespace SPMElements
 			}
 		}
 
-        // Global Stringer forces
-        public Vector<double> GlobalForces => TransMatrix.Transpose() * Forces;
+		/// <summary>
+        /// Get stringer global force <see cref="Vector"/>.
+        /// </summary>
+        public Vector<double> GlobalForces => TransformationMatrix.Transpose() * LocalForces;
 
-        // Maximum Stringer force
-        public double MaxForce => Forces.AbsoluteMaximum();
+        /// <summary>
+        /// Get absolute maximum stringer force.
+        /// </summary>
+        public double MaxForce => LocalForces.AbsoluteMaximum();
+
+        /// <summary>
+        /// Stringer object.
+        /// </summary>
+        /// <param name="objectId">The stringer <see cref="ObjectId"/>.</param>
+        /// <param name="number">The stringer number.</param>
+        /// <param name="initialNode">The initial <see cref="Node"/> of the <see cref="Stringer"/>.</param>
+        /// <param name="centerNode">The center <see cref="Node"/> of the <see cref="Stringer"/>.</param>
+        /// <param name="finalNode">The final <see cref="Node"/> of the <see cref="Stringer"/>.</param>
+        /// <param name="width">The stringer width.</param>
+        /// <param name="height">The stringer height.</param>
+        /// <param name="concreteParameters">The concrete parameters <see cref="Parameters"/>.</param>
+        /// <param name="concreteConstitutive">The concrete constitutive <see cref="Constitutive"/>.</param>
+        /// <param name="reinforcement">The <see cref="UniaxialReinforcement"/>.</param>
+        /// <param name="geometryUnit">The <see cref="LengthUnit"/> of <paramref name="width"/> and <paramref name="height"/>.<para>Default: <seealso cref="LengthUnit.Millimeter"/>.</para></param>
+        public Stringer(ObjectId objectId, int number, Node initialNode, Node centerNode, Node finalNode, double width, double height, Parameters concreteParameters, Constitutive concreteConstitutive, UniaxialReinforcement reinforcement = null, LengthUnit geometryUnit = LengthUnit.Millimeter)
+            : this(objectId, number, new StringerGeometry(initialNode, centerNode, finalNode, width, height, geometryUnit), concreteParameters, concreteConstitutive, reinforcement)
+        {
+
+        }
+
+        /// <summary>
+        /// Stringer object.
+        /// </summary>
+        /// <param name="objectId">The stringer <see cref="ObjectId"/>.</param>
+        /// <param name="number">The stringer number.</param>
+		/// <param name="geometry">The <see cref="StringerGeometry"/> object.</param>
+        /// <param name="concreteParameters">The concrete parameters <see cref="Parameters"/>.</param>
+        /// <param name="concreteConstitutive">The concrete constitutive <see cref="Constitutive"/>.</param>
+        /// <param name="reinforcement">The <see cref="UniaxialReinforcement"/>.</param>
+        /// <param name="geometryUnit">The <see cref="LengthUnit"/> of <paramref name="width"/> and <paramref name="height"/>.<para>Default: <seealso cref="LengthUnit.Millimeter"/>.</para></param>
+        public Stringer(ObjectId objectId, int number, StringerGeometry geometry, Parameters concreteParameters, Constitutive concreteConstitutive, UniaxialReinforcement reinforcement = null) : base(objectId, number)
+        {
+            Geometry = geometry;
+            Reinforcement = reinforcement;
+            Concrete = new UniaxialConcrete(concreteParameters, ConcreteArea, concreteConstitutive);
+        }
 
         /// <summary>
         /// Calculate the transformation matrix.
         /// </summary>
-        private Matrix<double> TransformationMatrix()
+        private void CalculateTransformationMatrix()
         {
 	        // Get the direction cosines
-	        var (l, m) = DirectionCosines;
+	        var (l, m) = Geometry.DirectionCosines;
 
 	        // Obtain the transformation matrix
-	        return Matrix<double>.Build.DenseOfArray(new [,]
+	        _transMatrix = Matrix<double>.Build.DenseOfArray(new [,]
 	        {
 		        {l, m, 0, 0, 0, 0 },
 		        {0, 0, l, m, 0, 0 },
@@ -231,27 +222,63 @@ namespace SPMElements
 		{
 		}
 
+		/// <summary>
+		/// Read the stringer.
+		/// </summary>
+		/// <param name="analysisType">Type of analysis to perform (<see cref="AnalysisType"/>).</param>
+		/// <param name="stringerObjectId">The object ID of the stringer from AutoCAD drawing.</param>
+		/// <param name="units">Units current in use <see cref="SPMTool.Units"/>.</param>
+		/// <param name="concreteParameters">The concrete parameters <see cref="Parameters"/>.</param>
+		/// <param name="concreteConstitutive">The concrete constitutive <see cref="Constitutive"/>.</param>
+		public static Stringer ReadStringer(AnalysisType analysisType, ObjectId stringerObjectId, Units units,
+			Parameters concreteParameters = null, Constitutive concreteConstitutive = null)
+		{
+			if (analysisType == AnalysisType.Linear)
+				return new LinearStringer(stringerObjectId, units, concreteParameters, concreteConstitutive);
+
+			return new NonLinearStringer(stringerObjectId, units, concreteParameters, concreteConstitutive);
+		}
+
+		/// <summary>
+        /// Returns true if <see cref="Geometry"/> of <paramref name="other"/> is equal to this.
+        /// </summary>
+        /// <param name="other"></param>
+		public bool Equals(Stringer other) => other != null && Geometry == other.Geometry;
+
+		/// <summary>
+		/// Returns true if <paramref name="obj"/> is <see cref="Stringer"/> and <see cref="Geometry"/> of <paramref name="obj"/> is equal to this.
+		/// </summary>
+		/// <param name="other"></param>
+		public override bool Equals(object obj) => obj is Stringer other && Equals(other);
+
+		public override int GetHashCode() => Geometry.GetHashCode();
+
 		public override string ToString()
 		{
-			// Convert units
-			Length
-				w = UnitsNet.Length.FromMillimeters(Width).ToUnit(Units.Geometry),
-				h = UnitsNet.Length.FromMillimeters(Height).ToUnit(Units.Geometry);
-
-            string msgstr =
+			string msgstr =
 				"Stringer " + Number + "\n\n" +
 				"Grips: (" + Grips[0] + " - " + Grips[1] + " - " + Grips[2] + ")" + "\n" +
-				"Lenght = " + DrawingLength + "\n" +
-				"Width = "  + w  + "\n" +
-				"Height = " + h;
+				Geometry;
 
 			if (Reinforcement != null)
 			{
-				msgstr += "\n\n" + Reinforcement.ToString(Units.Reinforcement, Units.MaterialStrength);
+				msgstr += "\n\n" + Reinforcement.ToString();
 			}
 
 			return msgstr;
 		}
+
+		/// <summary>
+        /// Returns true if arguments are equal.
+        /// <para>See:<seealso cref="Equals(Stringer)"/>.</para>
+        /// </summary>
+		public static bool operator == (Stringer left, Stringer right) => left != null && left.Equals(right);
+
+		/// <summary>
+		/// Returns true if arguments are different.
+		/// <para>See:<seealso cref="Equals(Stringer)"/>.</para>
+		/// </summary>
+		public static bool operator != (Stringer left, Stringer right) => left != null && !left.Equals(right);
     }
 }
 

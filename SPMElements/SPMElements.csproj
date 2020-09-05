@@ -114,7 +114,6 @@
     <Compile Include="Stringer\Relations\StressStrainRelations.cs" />
     <Compile Include="Stringer\Stringer.cs" />
     <Compile Include="Stringer\StringerGeometry.cs" />
-    <Compile Include="Vertex.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

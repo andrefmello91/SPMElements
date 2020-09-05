@@ -1,4 +1,5 @@
-﻿using Autodesk.AutoCAD.DatabaseServices;
+﻿using System;
+using Autodesk.AutoCAD.DatabaseServices;
 
 namespace SPMElements
 {
@@ -13,6 +14,15 @@ namespace SPMElements
 		Panel,
 		Support,
 		Force
+	}
+
+	/// <summary>
+    /// The analysis types.
+    /// </summary>
+	public enum AnalysisType
+	{
+		Linear,
+		NonLinear
 	}
 
     public abstract class SPMElement
@@ -31,6 +41,12 @@ namespace SPMElements
         /// Get the DoF index of the element.
         /// </summary>
 	    public abstract int[] DoFIndex { get; }
+
+		public SPMElement(ObjectId objectId, int number)
+		{
+			ObjectId = objectId;
+			Number   = number;
+		}
 
         /// <summary>
         /// Get global indexes of a grip.

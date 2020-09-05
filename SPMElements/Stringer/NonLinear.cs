@@ -3,63 +3,50 @@ using Autodesk.AutoCAD.DatabaseServices;
 using Material.Concrete;
 using Material.Reinforcement;
 using MathNet.Numerics.LinearAlgebra;
+using MathNet.Numerics.LinearAlgebra.Double;
+using UnitsNet;
+using UnitsNet.Units;
 
 namespace SPMElements
 {
 	public partial class NonLinearStringer : Stringer
 	{
-		// Public properties
-		public  Matrix<double>         FMatrix     { get; set; }
-		private IntegrationPoint[]     IntPoints   { get; }
-		private StressStrainRelations  Relations   { get; }
-		public (double N1, double N3)  GenStresses { get; set; }
-		public (double e1, double e3)  GenStrains  { get; set; }
+		// Auxiliary fields
+		private Matrix<double> _FMatrix;
+		private (double e1, double e3) _genStrains,  _iterationGenStrains;
+		private (double N1, double N3) _genStresses, _iterationGenStresses;
 
-		// Generalized strains and stresses for each iteration
-		private (double e1, double e3) IterationGenStrains  { get; set; }
-		private (double N1, double N3) IterationGenStresses { get; set; }
+		private readonly Matrix<double> _BMatrix = 
+			Matrix<double>.Build.DenseOfArray(new double[,]
+			{
+				{ -1,  1, 0},
+				{  0, -1, 1}
+			});
+
+        /// <summary>
+        /// Get integration points.
+        /// </summary>
+        private IntegrationPoint[] IntPoints { get; }
+
+        /// <summary>
+        /// Get <see cref="StressStrainRelations"/>.
+        /// </summary>
+        private StressStrainRelations Relations { get; }
 
 		/// <summary>
-        /// Nonlinear stringer object
+        /// Get <see cref="Steel"/> of <see cref="Stringer.Reinforcement"/>.
         /// </summary>
-        /// <inheritdoc/>
-		public NonLinearStringer(ObjectId stringerObjectId, Units units, Parameters concreteParameters, Constitutive concreteConstitutive) : base(stringerObjectId, units, concreteParameters, concreteConstitutive)
-		{
-			// Initiate F matrix
-			FMatrix = InitialFMatrix();
-
-			// Initiate integration points
-			IntPoints = new []
-			{
-				new IntegrationPoint(Concrete.ecr, Steel?.YieldStrain ?? 0),
-				new IntegrationPoint(Concrete.ecr, Steel?.YieldStrain ?? 0),
-				new IntegrationPoint(Concrete.ecr, Steel?.YieldStrain ?? 0),
-				new IntegrationPoint(Concrete.ecr, Steel?.YieldStrain ?? 0)
-			};
-
-			// Get the relations
-			Relations = StressStrainRelations.GetRelations(Concrete, Reinforcement);
-		}
-
-		// Get steel
 		private Steel Steel => Reinforcement?.Steel;
 
-		// Get the B matrix
-		private readonly Matrix<double> BMatrix = Matrix<double>.Build.DenseOfArray(new double[,]
-		{
-			{ -1,  1, 0},
-			{  0, -1, 1}
-		});
+		/// <inheritdoc/>
+		public override Matrix<double> LocalStiffness => _BMatrix.Transpose() * _FMatrix.Inverse() * _BMatrix;
 
-		// Calculate local stiffness
-		public override Matrix<double> LocalStiffness => BMatrix.Transpose() * FMatrix.Inverse() * BMatrix;
-
-		// Forces from gen stresses
-		public override Vector<double> Forces
+		/// <inheritdoc/>
+		public override Vector<double> LocalForces
 		{
 			get
 			{
-				var (N1, N3) = GenStresses;
+				var (N1, N3) = _genStresses;
 
 				return
 					Vector<double>.Build.DenseOfArray(new[]
@@ -69,12 +56,14 @@ namespace SPMElements
 			}
 		}
 
-		// Forces from gen stresses for each iteration
-		public Vector<double> IterationForces
+        /// <summary>
+        /// Get local force <see cref="Vector"/> calculated at each iteration.
+        /// </summary>
+        public Vector<double> IterationLocalForces
 		{
 			get
 			{
-				var (N1, N3) = IterationGenStresses;
+				var (N1, N3) = _iterationGenStresses;
 
 				return
 					Vector<double>.Build.DenseOfArray(new[]
@@ -84,16 +73,20 @@ namespace SPMElements
 			}
 		}
 
-		// Global Stringer forces for each iteration
-		public Vector<double> IterationGlobalForces => TransMatrix.Transpose() * IterationForces;
+        /// <summary>
+        /// Get global force <see cref="Vector"/> calculated at each iteration.
+        /// </summary>
+		public Vector<double> IterationGlobalForces => TransformationMatrix.Transpose() * IterationLocalForces;
 
-		// Calculate the total plastic generalized strain in a Stringer
-		public (double ep1, double ep3) PlasticGenStrains
+        /// <summary>
+        /// Get total plastic generalized strain.
+        /// </summary>
+        public (double ep1, double ep3) PlasticGenStrains
 		{
 			get
 			{
 				// Get generalized strains
-				var (e1, e3) = GenStrains;
+				var (e1, e3) = _genStrains;
 
 				double
 					ep1 = PlasticStrain(e1),
@@ -114,11 +107,11 @@ namespace SPMElements
 					ecu  = Concrete.ecu,
 					ey   = Steel?.YieldStrain ?? ec,
 					esu  = Steel?.UltimateStrain ?? 0.01,
-					eput = 0.3 * esu * Length;
+					eput = 0.3 * esu * Geometry.Length;
 
 				// Calculate the maximum plastic strain for compression
 				double et = Math.Max(ec, -ey);
-				double a = Math.Min(Width, Height);
+				double a = Math.Min(Geometry.Width, Geometry.Height);
 				double epuc = (ecu - et) * a;
 
 				// Return a tuple in order Tension || Compression
@@ -127,9 +120,40 @@ namespace SPMElements
 		}
 
 		/// <summary>
-		/// Calculate the initial flexibility matrix.
+		/// Nonlinear stringer object
 		/// </summary>
-		public Matrix<double> InitialFMatrix()
+		/// <inheritdoc/>
+		public NonLinearStringer(ObjectId objectId, int number, Node initialNode, Node centerNode, Node finalNode, double width, double height, Parameters concreteParameters, Constitutive concreteConstitutive, UniaxialReinforcement reinforcement = null, LengthUnit geometryUnit = LengthUnit.Millimeter)
+			: this(objectId, number, new StringerGeometry(initialNode, centerNode, finalNode, width, height, geometryUnit), concreteParameters, concreteConstitutive, reinforcement)
+		{
+		}
+
+		/// <summary>
+		/// Nonlinear stringer object
+		/// </summary>
+		/// <inheritdoc/>
+		public NonLinearStringer(ObjectId objectId, int number, StringerGeometry geometry, Parameters concreteParameters, Constitutive concreteConstitutive, UniaxialReinforcement reinforcement = null) : base(objectId, number, geometry, concreteParameters, concreteConstitutive, reinforcement)
+		{
+			// Initiate F matrix
+			_FMatrix = InitialFMatrix();
+
+			// Initiate integration points
+			IntPoints = new[]
+			{
+				new IntegrationPoint(Concrete.ecr, Steel?.YieldStrain ?? 0),
+				new IntegrationPoint(Concrete.ecr, Steel?.YieldStrain ?? 0),
+				new IntegrationPoint(Concrete.ecr, Steel?.YieldStrain ?? 0),
+				new IntegrationPoint(Concrete.ecr, Steel?.YieldStrain ?? 0)
+			};
+
+			// Get the relations
+			Relations = StressStrainRelations.GetRelations(Concrete, Reinforcement);
+		}
+
+        /// <summary>
+        /// Calculate the initial flexibility matrix.
+        /// </summary>
+        public Matrix<double> InitialFMatrix()
 		{
 			double
 				t1 = Concrete.Stiffness + (Reinforcement?.Stiffness ?? 0), 
@@ -137,7 +161,7 @@ namespace SPMElements
 
 			// Calculate the flexibility matrix elements
 			double
-				de11 = de * Length / 3,
+				de11 = de * Geometry.Length / 3,
 				de12 = de11 / 2,
 				de22 = de11;
 
@@ -157,10 +181,10 @@ namespace SPMElements
 				SetDisplacements(globalDisplacements);
 
 			// Get the initial forces (from previous load step)
-			var (N1, N3) = GenStresses;
+			var (N1, N3) = _genStresses;
 
 			// Get initial generalized strains (from previous load step)
-			var (e1i, e3i) = GenStrains;
+			var (e1i, e3i) = _genStrains;
 
 			// Get local displacements
 			var ul = LocalDisplacements;
@@ -205,20 +229,19 @@ namespace SPMElements
 			N3 = PlasticForce(N3);
 
 			// Set values
-			FMatrix              = F;
-			IterationGenStresses = (N1, N3); 
-			IterationGenStrains  = (e1, e3);
+			_FMatrix              = F;
+			_iterationGenStresses = (N1, N3); 
+			_iterationGenStrains  = (e1, e3);
 		}
 
 		/// <summary>
 		/// Calculate the plastic force.
 		/// </summary>
 		/// <param name="N">Force to verify, in N.</param>
-		/// <returns></returns>
 		private double PlasticForce(double N)
 		{
 			double
-				Nt  = Relations.Nt,
+				Nt  = Relations.MaxCompressiveForce,
 				Nyr = Reinforcement?.YieldForce ?? 0;
 
 			// Check the value of N
@@ -254,14 +277,14 @@ namespace SPMElements
 
 			// Calculate approximated generalized strains
 			double
-				e1 = Length * (3 * e[0] + 6 * e[1] + 3 * e[2]) / 24,
-				e3 = Length * (3 * e[1] + 6 * e[2] + 3 * e[3]) / 24;
+				e1 = Geometry.Length * (3 * e[0] + 6 * e[1] + 3 * e[2]) / 24,
+				e3 = Geometry.Length * (3 * e[1] + 6 * e[2] + 3 * e[3]) / 24;
 
 			// Calculate the flexibility matrix elements
 			double
-				de11 = Length * (3 * de[0] + 4 * de[1] + de[2]) / 24,
-				de12 = Length * (de[1] + de[2]) / 12,
-				de22 = Length * (de[1] + 4 * de[2] + 3 * de[3]) / 24;
+				de11 = Geometry.Length * (3 * de[0] + 4 * de[1] + de[2]) / 24,
+				de12 = Geometry.Length * (de[1] + de[2]) / 12,
+				de22 = Geometry.Length * (de[1] + 4 * de[2] + 3 * de[3]) / 24;
 
 			// Get the flexibility matrix
 			var F = Matrix<double>.Build.DenseOfArray(new [,]
@@ -278,20 +301,15 @@ namespace SPMElements
 		/// </summary>
 		public void Results()
 		{
-			// Get the values
-			var genStresses = IterationGenStresses;
-			var genStrains = IterationGenStrains;
-
 			// Set the final values
-			GenStresses = genStresses;
-			GenStrains  = genStrains;
+			_genStresses = _iterationGenStresses;
+			_genStrains  = _iterationGenStrains;
 		}
 
 		/// <summary>
 		/// Calculate plastic strains
 		/// </summary>
 		/// <param name="strain">Current strain</param>
-		/// <returns></returns>
 		private double PlasticStrain(double strain)
 		{
 			// Initialize the plastic strain
@@ -302,11 +320,11 @@ namespace SPMElements
 
 			// Case of tension
 			if (strain > ey)
-				ep = Length / 8 * (strain - ey);
+				ep = Geometry.Length / 8 * (strain - ey);
 
 			// Case of compression
 			if (strain < ec)
-				ep = Length / 8 * (strain - ec);
+				ep = Geometry.Length / 8 * (strain - ec);
 
 			return ep;
 		}

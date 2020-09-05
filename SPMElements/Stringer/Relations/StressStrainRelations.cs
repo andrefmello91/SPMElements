@@ -1,8 +1,6 @@
 ﻿using System;
 using Material.Concrete;
 using Material.Reinforcement;
-using Concrete      = Material.Concrete.UniaxialConcrete;
-using Reinforcement = Material.Reinforcement.UniaxialReinforcement;
 
 namespace SPMElements
 {
@@ -13,39 +11,50 @@ namespace SPMElements
 		/// </summary>
 		private abstract class StressStrainRelations
 		{
-			protected Concrete      Concrete      { get; }
-			protected Reinforcement Reinforcement { get; }
-			protected Steel         Steel         => Reinforcement?.Steel;
-
 			/// <summary>
-			/// Base object for stress-strain relations.
-			/// </summary>
-			/// <param name="concrete">Uniaxial concrete object.</param>
-			/// <param name="reinforcement">Uniaxial reinforcement object.</param>
-			public StressStrainRelations(Concrete concrete, Reinforcement reinforcement)
+            /// Get <see cref="UniaxialConcrete"/> object.
+            /// </summary>
+			protected UniaxialConcrete Concrete { get; }
+
+            /// <summary>
+            /// Get <see cref="UniaxialReinforcement"/> object.
+            /// </summary>
+            protected UniaxialReinforcement Reinforcement { get; }
+
+            /// <summary>
+            /// Get <see cref="Steel"/> object of <see cref="Reinforcement"/>.
+            /// </summary>
+            protected Steel Steel => Reinforcement?.Steel;
+
+            /// <summary>
+            /// Base object for stress-strain relations.
+            /// </summary>
+            /// <param name="concrete">The <see cref="UniaxialConcrete"/> object.</param>
+            /// <param name="reinforcement">The <see cref="UniaxialReinforcement"/> object.</param>
+            public StressStrainRelations(UniaxialConcrete concrete, UniaxialReinforcement reinforcement)
 			{
 				Concrete      = concrete;
 				Reinforcement = reinforcement;
 			}
 
-			// Constants
-			protected double EcAc  => Concrete.Stiffness;
-			protected double EsAs  => Reinforcement?.Stiffness ?? 0;
-			protected double xi    => EsAs / EcAc;
-			protected double t1    => EcAc + EsAs;
-
-			// Maximum Stringer forces
-			protected double Nc  => Concrete.MaxForce;
-			protected double Nyr => Reinforcement?.YieldForce ?? 0;
-			public  double Nt
+			/// <summary>
+            /// Get maximum compressive force, in N.
+            /// </summary>
+			public double MaxCompressiveForce
 			{
 				get
 				{
+					var Nc = Concrete.MaxForce;
+
 					if (Steel is null)
 						return Nc;
 
 					double
-						Nt1 = Nc * (1 + xi) * (1 + xi),
+						Nyr = Reinforcement.YieldForce,
+						xi = (Reinforcement?.Stiffness ?? 0) / Concrete.Stiffness;
+
+					double
+                        Nt1 = Nc * (1 + xi) * (1 + xi),
 						Nt2 = Nc - Nyr;
 
 					return
@@ -53,9 +62,21 @@ namespace SPMElements
 				}
 			}
 
-			// Cracking load
-			protected double Ncr => Concrete.ft * Concrete.Area * (1 + xi);
-			protected double Nr  => Ncr / Math.Sqrt(1 + xi);
+			/// <summary>
+            /// Get cracking force, in N.
+            /// </summary>
+			protected double CrackingForce
+			{
+				get
+				{
+					double
+						xi  = Concrete.Stiffness / Reinforcement.Stiffness,
+						Ncr = Concrete.ft * Concrete.Area * (1 + xi);
+
+                    return
+	                    Ncr / Math.Sqrt(1 + xi);
+				}
+			}
 
 			/// <summary>
 			/// Calculate the strain and its derivative in the integration point.
@@ -68,10 +89,9 @@ namespace SPMElements
             /// <summary>
             /// Get stress-strain relations.
             /// </summary>
-            /// <param name="concrete">Uniaxial concrete object(<see cref="UniaxialConcrete"/>).</param>
-            /// <param name="reinforcement">Uniaxial reinforcement object (<see cref="UniaxialReinforcement"/>).</param>
-            /// <returns></returns>
-            public static StressStrainRelations GetRelations(Concrete concrete, Reinforcement reinforcement)
+            /// <param name="concrete">The <see cref="UniaxialConcrete"/> object.</param>
+            /// <param name="reinforcement">The <see cref="UniaxialReinforcement"/> object.</param>
+            public static StressStrainRelations GetRelations(UniaxialConcrete concrete, UniaxialReinforcement reinforcement)
 			{
 				var behavior = Constitutive.ReadConstitutiveModel(concrete.Constitutive);
 

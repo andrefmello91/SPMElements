@@ -1,7 +1,9 @@
 ﻿using System;
 using Autodesk.AutoCAD.DatabaseServices;
 using Material.Concrete;
+using Material.Reinforcement;
 using MathNet.Numerics.LinearAlgebra;
+using UnitsNet.Units;
 using Concrete = Material.Concrete.UniaxialConcrete;
 
 namespace SPMElements
@@ -11,23 +13,13 @@ namespace SPMElements
 	/// </summary>
 	public class LinearStringer : Stringer
 	{
-		/// <summary>
-		/// Linear stringer object.
-		/// </summary>
 		/// <inheritdoc/>
-		public LinearStringer(ObjectId stringerObjectId, Units units, Parameters concreteParameters, Constitutive concreteConstitutive = null) : base(stringerObjectId, units, concreteParameters, concreteConstitutive)
-		{
-		}
-
-		/// <summary>
-		/// Get local stiffness.
-		/// </summary>
 		public override Matrix<double> LocalStiffness
 		{
 			get
 			{
 				// Calculate the constant factor of stiffness
-				double EcA_L = Concrete.Ec * Area / Length;
+				double EcA_L = Concrete.Stiffness / Geometry.Length;
 
 				// Calculate the local stiffness matrix
 				return
@@ -40,10 +32,26 @@ namespace SPMElements
 			}
 		}
 
-		/// <summary>
-		/// Calculate Stringer forces
-		/// </summary>
-		public Vector<double> CalculateForces()
+        /// <summary>
+        /// Linear stringer object.
+        /// </summary>
+        /// <inheritdoc/>
+        public LinearStringer(ObjectId objectId, int number, Node initialNode, Node centerNode, Node finalNode, double width, double height, Parameters concreteParameters, Constitutive concreteConstitutive, UniaxialReinforcement reinforcement = null, LengthUnit geometryUnit = LengthUnit.Millimeter) : base(objectId, number, initialNode, centerNode, finalNode, width, height, concreteParameters, concreteConstitutive, reinforcement, geometryUnit)
+        {
+        }
+
+        /// <summary>
+        /// Linear stringer object.
+        /// </summary>
+        /// <inheritdoc/>
+        public LinearStringer(ObjectId objectId, int number, StringerGeometry geometry, Parameters concreteParameters, Constitutive concreteConstitutive, UniaxialReinforcement reinforcement = null) : base(objectId, number, geometry, concreteParameters, concreteConstitutive, reinforcement)
+        {
+        }
+
+        /// <summary>
+        /// Calculate Stringer forces
+        /// </summary>
+        public Vector<double> CalculateForces()
 		{
 			// Get the parameters
 			var Kl = LocalStiffness;
@@ -65,7 +73,7 @@ namespace SPMElements
 			if (globalDisplacements != null)
 				SetDisplacements(globalDisplacements);
 
-			Forces = CalculateForces();
+			LocalForces = CalculateForces();
 		}
 	}
 }

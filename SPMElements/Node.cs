@@ -1,11 +1,9 @@
 ﻿using System;
-using System.Data;
-using Material.Concrete;
 using MathNet.Numerics.LinearAlgebra;
 using OnPlaneComponents;
-using Autodesk.AutoCAD;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.Geometry;
+using MathNet.Numerics;
 using UnitsNet.Units;
 
 namespace SPMElements
@@ -56,7 +54,7 @@ namespace SPMElements
 		XY
     }
 
-    public class Node : SPMElement
+    public class Node : SPMElement, IEquatable<Node>
     {
 		// Auxiliary fields
 		private LengthUnit _geometryUnit, _displacementUnit;
@@ -97,16 +95,10 @@ namespace SPMElements
         /// <param name="constraint"> The <see cref="SPMElements.Constraint"/> condition of the node.</param>
         /// <param name="geometryUnit">The <see cref="LengthUnit"/> of <paramref name="position"/>.</param>
         /// <param name="displacementUnit">The <see cref="LengthUnit"/> of <see cref="Displacement"/>.</param>
-        public Node(ObjectId objectId, int number, Point3d position, NodeType type, Force appliedForce, Constraint constraint = Constraint.Free, LengthUnit geometryUnit = LengthUnit.Millimeter, LengthUnit displacementUnit = LengthUnit.Millimeter)
+        public Node(ObjectId objectId, int number, Point3d position, NodeType type, Force appliedForce, Constraint constraint = Constraint.Free, LengthUnit geometryUnit = LengthUnit.Millimeter, LengthUnit displacementUnit = LengthUnit.Millimeter) : base(objectId, number)
 		{
-			// Get the ObjectId
-			ObjectId = objectId;
-
 			// Get the position
 			Position = position;
-
-			// Get the node number
-			Number = number;
 
 			// Get type
 			Type = type;
@@ -144,6 +136,30 @@ namespace SPMElements
         public override int[] DoFIndex => GlobalIndexes(Number);
 
         /// <summary>
+        /// Return the distance to another <see cref="Node"/>.
+        /// <para>See: <seealso cref="Point3d.DistanceTo"/></para>
+        /// </summary>
+        /// <param name="otherNode">The other <see cref="Node"/> object.</param>
+        public double GetDistance(Node otherNode) => otherNode != null ? Position.DistanceTo(otherNode.Position) : 0;
+
+        /// <summary>
+        /// Return the angle, related to horizontal axis, of a line that connects this to <paramref name="otherNode"/> (in radians).
+        /// </summary>
+        /// <param name="otherNode">The other <see cref="Node"/> object.</param>
+        public double GetAngle(Node otherNode)
+        {
+	        if (otherNode is null)
+		        return 0;
+
+	        double
+		        x = otherNode.Position.X - Position.X,
+		        y = otherNode.Position.Y - Position.Y;
+
+	        return
+		        Trig.Atan(y / x).CoerceZero(1E-6);
+        }
+
+		/// <summary>
         /// Set nodal displacements.
         /// </summary>
         /// <param name="displacementVector">The global displacement vector, with values in mm.</param>
@@ -202,5 +218,29 @@ namespace SPMElements
 
 	        return msgstr;
         }
+
+		/// <summary>
+        /// Returns true if both nodes positions are equal.
+        /// </summary>
+        /// <param name="other">The other <see cref="Node"/> object.</param>
+        public bool Equals(Node other) => other != null && Position == other.Position;
+
+		/// <summary>
+		/// Returns true if <paramref name="other"/> is a <see cref="Node"/> and both positions are equal.
+		/// </summary>
+		/// <param name="other">The other <see cref="Node"/> object.</param>
+		public override bool Equals(object other) => other is Node otherNode && Equals(otherNode);
+
+		public override int GetHashCode() => Position.GetHashCode();
+
+		/// <summary>
+        /// Returns true if both nodes positions are equal.
+        /// </summary>
+        public static bool operator == (Node left, Node right) => left != null && left.Equals(right);
+
+        /// <summary>
+        /// Returns true if both nodes positions are different.
+        /// </summary>
+        public static bool operator != (Node left, Node right) => left != null && !left.Equals(right);
     }
 }

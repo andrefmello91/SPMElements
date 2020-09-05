@@ -8,13 +8,14 @@ using Material.Concrete;
 using Material.Reinforcement;
 using UnitsNet;
 using UnitsNet.Units;
+using SPMElements.StringerProperties;
 
 namespace SPMElements
 {
 	/// <summary>
     /// Stringer base class;
     /// </summary>
-	public partial class Stringer : SPMElement, IEquatable<Stringer>
+	public class Stringer : SPMElement, IEquatable<Stringer>
     {
 		/// <summary>
         /// Type of forces that stringer can be loaded.
@@ -30,8 +31,23 @@ namespace SPMElements
 		// Auxiliary fields
 		private Matrix<double> _transMatrix;
 
+		/// <summary>
+        /// Get the initial <see cref="Node"/> of this.
+        /// </summary>
+		public Node InitialNode { get; }
+
+		/// <summary>
+		/// Get the center <see cref="Node"/> of this.
+		/// </summary>
+		public Node CenterNode { get; }
+
+		/// <summary>
+		/// Get the end <see cref="Node"/> of this.
+		/// </summary>
+		public Node EndNode { get; }
+
         /// <summary>
-        /// Get/set the <see cref="StringerGeometry"/> of this.
+        /// Get/set the <see cref="Geometry"/> of this.
         /// </summary>
         public StringerGeometry Geometry { get; set; }
 
@@ -63,7 +79,7 @@ namespace SPMElements
         /// <summary>
         /// Get the grip numbers of this.
         /// </summary>
-        public int[] Grips => new[] { Geometry.InitialNode.Number, Geometry.CenterNode.Number, Geometry.FinalNode.Number };
+        public int[] Grips => new[] { InitialNode.Number, CenterNode.Number, EndNode.Number };
 
         /// <summary>
         /// Get the transformation <see cref="Matrix"/>.
@@ -143,34 +159,21 @@ namespace SPMElements
         /// <param name="number">The stringer number.</param>
         /// <param name="initialNode">The initial <see cref="Node"/> of the <see cref="Stringer"/>.</param>
         /// <param name="centerNode">The center <see cref="Node"/> of the <see cref="Stringer"/>.</param>
-        /// <param name="finalNode">The final <see cref="Node"/> of the <see cref="Stringer"/>.</param>
+        /// <param name="endNode">The final <see cref="Node"/> of the <see cref="Stringer"/>.</param>
         /// <param name="width">The stringer width.</param>
         /// <param name="height">The stringer height.</param>
         /// <param name="concreteParameters">The concrete parameters <see cref="Parameters"/>.</param>
         /// <param name="concreteConstitutive">The concrete constitutive <see cref="Constitutive"/>.</param>
         /// <param name="reinforcement">The <see cref="UniaxialReinforcement"/>.</param>
         /// <param name="geometryUnit">The <see cref="LengthUnit"/> of <paramref name="width"/> and <paramref name="height"/>.<para>Default: <seealso cref="LengthUnit.Millimeter"/>.</para></param>
-        public Stringer(ObjectId objectId, int number, Node initialNode, Node centerNode, Node finalNode, double width, double height, Parameters concreteParameters, Constitutive concreteConstitutive, UniaxialReinforcement reinforcement = null, LengthUnit geometryUnit = LengthUnit.Millimeter)
-            : this(objectId, number, new StringerGeometry(initialNode, centerNode, finalNode, width, height, geometryUnit), concreteParameters, concreteConstitutive, reinforcement)
+        public Stringer(ObjectId objectId, int number, Node initialNode, Node centerNode, Node endNode, double width, double height, Parameters concreteParameters, Constitutive concreteConstitutive, UniaxialReinforcement reinforcement = null, LengthUnit geometryUnit = LengthUnit.Millimeter) : base(objectId, number)
         {
-
-        }
-
-        /// <summary>
-        /// Stringer object.
-        /// </summary>
-        /// <param name="objectId">The stringer <see cref="ObjectId"/>.</param>
-        /// <param name="number">The stringer number.</param>
-		/// <param name="geometry">The <see cref="StringerGeometry"/> object.</param>
-        /// <param name="concreteParameters">The concrete parameters <see cref="Parameters"/>.</param>
-        /// <param name="concreteConstitutive">The concrete constitutive <see cref="Constitutive"/>.</param>
-        /// <param name="reinforcement">The <see cref="UniaxialReinforcement"/>.</param>
-        /// <param name="geometryUnit">The <see cref="LengthUnit"/> of <paramref name="width"/> and <paramref name="height"/>.<para>Default: <seealso cref="LengthUnit.Millimeter"/>.</para></param>
-        public Stringer(ObjectId objectId, int number, StringerGeometry geometry, Parameters concreteParameters, Constitutive concreteConstitutive, UniaxialReinforcement reinforcement = null) : base(objectId, number)
-        {
-            Geometry = geometry;
-            Reinforcement = reinforcement;
-            Concrete = new UniaxialConcrete(concreteParameters, ConcreteArea, concreteConstitutive);
+	        InitialNode   = initialNode;
+	        CenterNode    = centerNode;
+	        EndNode       = endNode;
+	        Geometry      = new StringerGeometry(initialNode.Position, endNode.Position, width, height, geometryUnit);
+	        Reinforcement = reinforcement;
+	        Concrete      = new UniaxialConcrete(concreteParameters, ConcreteArea, concreteConstitutive);
         }
 
         /// <summary>
@@ -238,26 +241,12 @@ namespace SPMElements
         /// <param name="reinforcement">The <see cref="UniaxialReinforcement"/>.</param>
         /// <param name="geometryUnit">The <see cref="LengthUnit"/> of <paramref name="width"/> and <paramref name="height"/>.<para>Default: <seealso cref="LengthUnit.Millimeter"/>.</para></param>
 		public static Stringer Read(AnalysisType analysisType, ObjectId objectId, int number, Node initialNode, Node centerNode, Node finalNode, double width, double height, Parameters concreteParameters, Constitutive concreteConstitutive, UniaxialReinforcement reinforcement = null, LengthUnit geometryUnit = LengthUnit.Millimeter)
-			=> Read(analysisType, objectId, number, new StringerGeometry(initialNode, centerNode, finalNode, width, height, geometryUnit), concreteParameters, concreteConstitutive, reinforcement);
+        {
+	        if (analysisType == AnalysisType.Linear)
+		        return new LinearStringer(objectId, number, initialNode, centerNode, finalNode, width, height, concreteParameters, concreteConstitutive, reinforcement, geometryUnit);
 
-        /// <summary>
-        /// Read the stringer based on <see cref="AnalysisType"/>.
-		/// </summary>
-        /// <param name="analysisType">Type of analysis to perform (<see cref="AnalysisType"/>).</param>
-        /// <param name="objectId">The stringer <see cref="ObjectId"/>.</param>
-        /// <param name="number">The stringer number.</param>
-        /// <param name="geometry">The <see cref="StringerGeometry"/> object.</param>
-        /// <param name="concreteParameters">The concrete parameters <see cref="Parameters"/>.</param>
-        /// <param name="concreteConstitutive">The concrete constitutive <see cref="Constitutive"/>.</param>
-        /// <param name="reinforcement">The <see cref="UniaxialReinforcement"/>.</param>
-        /// <param name="geometryUnit">The <see cref="LengthUnit"/> of <paramref name="width"/> and <paramref name="height"/>.<para>Default: <seealso cref="LengthUnit.Millimeter"/>.</para></param>
-        public static Stringer Read(AnalysisType analysisType, ObjectId objectId, int number, StringerGeometry geometry, Parameters concreteParameters, Constitutive concreteConstitutive, UniaxialReinforcement reinforcement = null)
-		{
-			if (analysisType == AnalysisType.Linear)
-				return new LinearStringer(objectId, number, geometry, concreteParameters, concreteConstitutive);
-
-			return new NonLinearStringer(objectId, number, geometry, concreteParameters, concreteConstitutive);
-		}
+	        return new NonLinearStringer(objectId, number, initialNode, centerNode, finalNode, width, height, concreteParameters, concreteConstitutive, reinforcement, geometryUnit);
+        }
 
 		/// <summary>
         /// Returns true if <see cref="Geometry"/> of <paramref name="other"/> is equal to this.

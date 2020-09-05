@@ -123,16 +123,8 @@ namespace SPMElements
 		/// Nonlinear stringer object
 		/// </summary>
 		/// <inheritdoc/>
-		public NonLinearStringer(ObjectId objectId, int number, Node initialNode, Node centerNode, Node finalNode, double width, double height, Parameters concreteParameters, Constitutive concreteConstitutive, UniaxialReinforcement reinforcement = null, LengthUnit geometryUnit = LengthUnit.Millimeter)
-			: this(objectId, number, new StringerGeometry(initialNode, centerNode, finalNode, width, height, geometryUnit), concreteParameters, concreteConstitutive, reinforcement)
-		{
-		}
-
-		/// <summary>
-		/// Nonlinear stringer object
-		/// </summary>
-		/// <inheritdoc/>
-		public NonLinearStringer(ObjectId objectId, int number, StringerGeometry geometry, Parameters concreteParameters, Constitutive concreteConstitutive, UniaxialReinforcement reinforcement = null) : base(objectId, number, geometry, concreteParameters, concreteConstitutive, reinforcement)
+		public NonLinearStringer(ObjectId objectId, int number, Node initialNode, Node centerNode, Node endNode, double width, double height, Parameters concreteParameters, Constitutive concreteConstitutive, UniaxialReinforcement reinforcement = null, LengthUnit geometryUnit = LengthUnit.Millimeter)
+			: base(objectId, number, initialNode, centerNode, endNode, width, height, concreteParameters, concreteConstitutive, reinforcement, geometryUnit)
 		{
 			// Initiate F matrix
 			_FMatrix = InitialFMatrix();

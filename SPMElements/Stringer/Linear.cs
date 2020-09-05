@@ -36,15 +36,7 @@ namespace SPMElements
         /// Linear stringer object.
         /// </summary>
         /// <inheritdoc/>
-        public LinearStringer(ObjectId objectId, int number, Node initialNode, Node centerNode, Node finalNode, double width, double height, Parameters concreteParameters, Constitutive concreteConstitutive, UniaxialReinforcement reinforcement = null, LengthUnit geometryUnit = LengthUnit.Millimeter) : base(objectId, number, initialNode, centerNode, finalNode, width, height, concreteParameters, concreteConstitutive, reinforcement, geometryUnit)
-        {
-        }
-
-        /// <summary>
-        /// Linear stringer object.
-        /// </summary>
-        /// <inheritdoc/>
-        public LinearStringer(ObjectId objectId, int number, StringerGeometry geometry, Parameters concreteParameters, Constitutive concreteConstitutive, UniaxialReinforcement reinforcement = null) : base(objectId, number, geometry, concreteParameters, concreteConstitutive, reinforcement)
+        public LinearStringer(ObjectId objectId, int number, Node initialNode, Node centerNode, Node endNode, double width, double height, Parameters concreteParameters, Constitutive concreteConstitutive, UniaxialReinforcement reinforcement = null, LengthUnit geometryUnit = LengthUnit.Millimeter) : base(objectId, number, initialNode, centerNode, endNode, width, height, concreteParameters, concreteConstitutive, reinforcement, geometryUnit)
         {
         }
 

@@ -1,10 +1,11 @@
 ﻿using System;
 using Autodesk.AutoCAD.Geometry;
+using Extensions;
 using MathNet.Numerics;
 using UnitsNet;
 using UnitsNet.Units;
 
-namespace SPMElements
+namespace SPMElements.StringerProperties
 {
 	/// <summary>
 	/// Stringer geometry struct.
@@ -19,20 +20,20 @@ namespace SPMElements
 		/// </summary>
 		public LengthUnit Unit => _length.Unit;
 
-		/// <summary>
-		/// Get the initial <see cref="Node"/> of <see cref="Stringer"/>.
-		/// </summary>
-		public Node InitialNode { get; }
+        /// <summary>
+        /// Get the initial <see cref="Point3d"/> of <see cref="Stringer"/>.
+        /// </summary>
+        public Point3d InitialPoint { get; }
 
-		/// <summary>
-		/// Get the center <see cref="Node"/> of <see cref="Stringer"/>.
-		/// </summary>
-		public Node CenterNode { get; }
+        /// <summary>
+        /// Get the center <see cref="Point3d"/> of <see cref="Stringer"/>.
+        /// </summary>
+        public Point3d CenterPoint { get; }
 
-		/// <summary>
-		/// Get the final <see cref="Node"/> of <see cref="Stringer"/>.
-		/// </summary>
-		public Node FinalNode { get; }
+        /// <summary>
+        /// Get the final <see cref="Point3d"/> of <see cref="Stringer"/>.
+        /// </summary>
+        public Point3d EndPoint { get; }
 
 		/// <summary>
 		/// The stringer length, in mm.
@@ -68,26 +69,25 @@ namespace SPMElements
 		/// <summary>
 		/// Get the connected <see cref="Point3d"/> of this.
 		/// </summary>
-		public Point3d[] ConnectedPoints => new [] {InitialNode.Position, CenterNode.Position, FinalNode.Position};
+		public Point3d[] ConnectedPoints => new [] {InitialPoint, CenterPoint, EndPoint};
 
-		/// <summary>
-		/// Stringer geometry object.
-		/// </summary>
-		/// <param name="initialNode">The initial <see cref="Node"/> of the <see cref="Stringer"/>.</param>
-		/// <param name="centerNode">The center <see cref="Node"/> of the <see cref="Stringer"/>.</param>
-		/// <param name="finalNode">The final <see cref="Node"/> of the <see cref="Stringer"/>.</param>
-		/// <param name="width">The stringer width.</param>
-		/// <param name="height">The stringer height.</param>
-		/// <param name="geometryUnit">The <see cref="LengthUnit"/> of <paramref name="width"/>, <paramref name="height"/> and nodes' coordinates.<para>Default: <seealso cref="LengthUnit.Millimeter"/>.</para></param>
-		public StringerGeometry(Node initialNode, Node centerNode, Node finalNode, double width, double height, LengthUnit geometryUnit = LengthUnit.Millimeter)
+        /// <summary>
+        /// Stringer geometry object.
+        /// </summary>
+        /// <param name="initialPoint">The initial <see cref="Point3d"/> of the <see cref="Stringer"/>.</param>
+        /// <param name="endPoint">The final <see cref="Point3d"/> of the <see cref="Stringer"/>.</param>
+        /// <param name="width">The stringer width.</param>
+        /// <param name="height">The stringer height.</param>
+        /// <param name="geometryUnit">The <see cref="LengthUnit"/> of <paramref name="width"/>, <paramref name="height"/> and nodes' coordinates.<para>Default: <seealso cref="LengthUnit.Millimeter"/>.</para></param>
+        public StringerGeometry(Point3d initialPoint, Point3d endPoint, double width, double height, LengthUnit geometryUnit = LengthUnit.Millimeter)
 		{
-			InitialNode = initialNode;
-			CenterNode  = centerNode;
-			FinalNode   = finalNode;
+			InitialPoint = initialPoint;
+			EndPoint     = endPoint;
+			CenterPoint  = initialPoint.MidPoint(endPoint);
 
 			// Calculate length and angle
-			_length = UnitsNet.Length.From(initialNode.GetDistance(finalNode), geometryUnit);
-			Angle   = initialNode.GetAngle(finalNode);
+			_length = UnitsNet.Length.From(initialPoint.DistanceTo(endPoint), geometryUnit);
+			Angle   = initialPoint.AngleTo(endPoint);
 
 			// Set values
 			_width  = UnitsNet.Length.From(width, geometryUnit);
@@ -114,11 +114,10 @@ namespace SPMElements
 		}
 
         /// <summary>
-        /// Returns true if <see cref="InitialNode"/> and <seealso cref="FinalNode"/> of <paramref name="other"/> coincide.
+        /// Returns true if <see cref="InitialPoint"/> and <seealso cref="EndPoint"/> of <paramref name="other"/> coincide.
         /// </summary>
         /// <param name="other">The <see cref="StringerGeometry"/> to compare.</param>
-        public bool Equals(StringerGeometry other) =>
-			other != null && InitialNode == other.InitialNode && FinalNode == other.FinalNode;
+        public bool Equals(StringerGeometry other) => InitialPoint == other.InitialPoint && EndPoint == other.EndPoint;
 
 		public override bool Equals(object obj) => obj is StringerGeometry other && Equals(other);
 

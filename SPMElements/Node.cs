@@ -195,6 +195,40 @@ namespace SPMElements
 	        _displacementUnit = displacementUnit;
         }
 
+		/// <summary>
+        /// Return the <see cref="Node"/> of an array, in given <paramref name="position"/>.
+        /// </summary>
+        /// <param name="nodes">The array of nodes.</param>
+        /// <param name="position">The position wanted.</param>
+        /// <returns></returns>
+        public static Node GetByPosition(Node[] nodes, Point3d position)
+        {
+	        foreach (var node in nodes)
+	        {
+		        if (position == node.Position)
+			        return node;
+	        }
+
+	        return null;
+        }
+
+		/// <summary>
+        /// Return the <see cref="Node"/> of an array, in given <paramref name="number"/>.
+        /// </summary>
+        /// <param name="nodes">The array of nodes.</param>
+        /// <param name="number">The number of the node wanted.</param>
+        /// <returns></returns>
+        public static Node GetByNumber(Node[] nodes, int number)
+        {
+	        foreach (var node in nodes)
+	        {
+		        if (number == node.Number)
+			        return node;
+	        }
+
+	        return null;
+        }
+
         public override string ToString()
         {
 	        string msgstr =

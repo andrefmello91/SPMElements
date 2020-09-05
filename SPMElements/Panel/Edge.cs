@@ -4,11 +4,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Autodesk.AutoCAD.Geometry;
+using Extensions;
 using MathNet.Numerics;
 using UnitsNet;
 using UnitsNet.Units;
 
-namespace SPMElements.PanelGeometry
+namespace SPMElements.PanelProperties
 {
 	/// <summary>
     /// Panel edge struct.
@@ -17,7 +18,6 @@ namespace SPMElements.PanelGeometry
     {
 		// Auxiliary fields
 		private Length _lenght;
-		private double? _angle;
 
 		/// <summary>
         /// Get the initial vertex of this <see cref="Edge"/>.
@@ -32,16 +32,7 @@ namespace SPMElements.PanelGeometry
 		/// <summary>
 		/// Get angle related to horizontal axis, in radians.
 		/// </summary>
-		public double Angle
-		{
-			get
-			{
-				if (!_angle.HasValue)
-					CalculateAngle();
-
-				return _angle.Value;
-			}
-		}
+		public double Angle { get; }
 
 		/// <summary>
         /// Get length, in mm.
@@ -59,19 +50,7 @@ namespace SPMElements.PanelGeometry
 			InitialVertex = initialVertex;
 			FinalVertex   = finalVertex;
 			_lenght       = UnitsNet.Length.From(initialVertex.DistanceTo(finalVertex), geometryUnit);
-			_angle        = null;
-		}
-
-		/// <summary>
-        /// Calculate edge angle.
-        /// </summary>
-		private void CalculateAngle()
-		{
-			double
-				x = FinalVertex.X - InitialVertex.X,
-				y = FinalVertex.Y - InitialVertex.Y;
-
-			_angle = Trig.Atan(y / x).CoerceZero(1E-6);
+			Angle         = initialVertex.AngleTo(finalVertex);
 		}
 
 		/// <summary>

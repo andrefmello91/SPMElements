@@ -1,7 +1,7 @@
 ﻿using System;
 using Autodesk.AutoCAD.Geometry;
 
-namespace SPMElements.PanelGeometry
+namespace SPMElements.PanelProperties
 {
     /// <summary>
     /// Panel vertices struct.

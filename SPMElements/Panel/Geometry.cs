@@ -3,12 +3,12 @@ using Autodesk.AutoCAD.Geometry;
 using UnitsNet;
 using UnitsNet.Units;
 
-namespace SPMElements.PanelGeometry
+namespace SPMElements.PanelProperties
 {
 	/// <summary>
     /// Panel geometry struct.
     /// </summary>
-    public struct Geometry : IEquatable<Geometry>
+    public struct PanelGeometry : IEquatable<PanelGeometry>
     {
 		// Auxiliary fields
 		private Length _width;
@@ -52,7 +52,7 @@ namespace SPMElements.PanelGeometry
         /// <param name="vertex4">The upper left vertex.</param>
         /// <param name="width">Panel width, in <paramref name="geometryUnit"/>.</param>
         /// <param name="geometryUnit">The <see cref="LengthUnit"/> of <paramref name="width"/>.</param>
-        public Geometry(Point3d vertex1, Point3d vertex2, Point3d vertex3, Point3d vertex4, double width, LengthUnit geometryUnit = LengthUnit.Millimeter) 
+        public PanelGeometry(Point3d vertex1, Point3d vertex2, Point3d vertex3, Point3d vertex4, double width, LengthUnit geometryUnit = LengthUnit.Millimeter) 
 			: this (new Vertices(vertex1, vertex2, vertex3, vertex4), width, geometryUnit)
 		{
 		}
@@ -63,7 +63,7 @@ namespace SPMElements.PanelGeometry
         /// <param name="vertices">Panel <see cref="Vertices"/> object.</param>
         /// <param name="width">Panel width, in <paramref name="geometryUnit"/>.</param>
         /// <param name="geometryUnit">The <see cref="LengthUnit"/> of <paramref name="width"/>.</param>
-		public Geometry(Vertices vertices, double width, LengthUnit geometryUnit = LengthUnit.Millimeter)
+		public PanelGeometry(Vertices vertices, double width, LengthUnit geometryUnit = LengthUnit.Millimeter)
 		{
 			Vertices = vertices;
 			_width   = Length.From(width, geometryUnit);
@@ -78,10 +78,10 @@ namespace SPMElements.PanelGeometry
         /// <summary>
         /// Returns true if all <see cref="Vertices"/> are equal.
         /// </summary>
-        /// <param name="other">The other <see cref="Geometry"/> to compare.</param>
-        public bool Equals(Geometry other) => Vertices == other.Vertices;
+        /// <param name="other">The other <see cref="PanelGeometry"/> to compare.</param>
+        public bool Equals(PanelGeometry other) => Vertices == other.Vertices;
 
-        public override bool Equals(object obj) => obj is Geometry other && Equals(other);
+        public override bool Equals(object obj) => obj is PanelGeometry other && Equals(other);
 
         public override int GetHashCode() => Vertices.GetHashCode();
 
@@ -95,12 +95,12 @@ namespace SPMElements.PanelGeometry
         /// <summary>
         /// Returns true if arguments are equal.
         /// </summary>
-        public static bool operator == (Geometry left, Geometry right) => left.Equals(right);
+        public static bool operator == (PanelGeometry left, PanelGeometry right) => left.Equals(right);
 
         /// <summary>
         /// Returns true if arguments are different.
         /// </summary>
-        public static bool operator != (Geometry left, Geometry right) => !left.Equals(right);
+        public static bool operator != (PanelGeometry left, PanelGeometry right) => !left.Equals(right);
 
     }
 }

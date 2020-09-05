@@ -102,9 +102,12 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Node.cs" />
+    <Compile Include="Panel\Edge.cs" />
+    <Compile Include="Panel\Geometry.cs" />
     <Compile Include="Panel\Linear.cs" />
     <Compile Include="Panel\NonLinear.cs" />
     <Compile Include="Panel\Panel.cs" />
+    <Compile Include="Panel\Vertices.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SPMElement.cs" />
     <Compile Include="Stringer\IntegrationPoint.cs" />
@@ -119,6 +122,10 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\Extensions\Extensions\Extensions.csproj">
+      <Project>{70944e9c-5603-4721-870f-1d24db5cdb3c}</Project>
+      <Name>Extensions</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\Material\Material\Material.csproj">
       <Project>{5e103ad6-45a8-4b2d-816c-5ccec09380e6}</Project>
       <Name>Material</Name>

@@ -5,6 +5,7 @@ using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.Geometry;
 using MathNet.Numerics;
 using UnitsNet.Units;
+using Extensions;
 
 namespace SPMElements
 {
@@ -146,18 +147,7 @@ namespace SPMElements
         /// Return the angle, related to horizontal axis, of a line that connects this to <paramref name="otherNode"/> (in radians).
         /// </summary>
         /// <param name="otherNode">The other <see cref="Node"/> object.</param>
-        public double GetAngle(Node otherNode)
-        {
-	        if (otherNode is null)
-		        return 0;
-
-	        double
-		        x = otherNode.Position.X - Position.X,
-		        y = otherNode.Position.Y - Position.Y;
-
-	        return
-		        Trig.Atan(y / x).CoerceZero(1E-6);
-        }
+        public double GetAngle(Node otherNode) => otherNode != null ? Position.AngleTo(otherNode.Position) : 0;
 
 		/// <summary>
         /// Set nodal displacements.

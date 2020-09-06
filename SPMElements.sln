@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OnPlaneComponents", "..\On-
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Extensions", "..\Extensions\Extensions\Extensions.csproj", "{70944E9C-5603-4721-870F-1D24DB5CDB3C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RCMembrane", "..\Reinforced-Concrete-Membrane\Membrane\RCMembrane.csproj", "{004BF0A6-E383-4123-9542-53EF87DE205C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,6 +35,10 @@ Global
 		{70944E9C-5603-4721-870F-1D24DB5CDB3C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{70944E9C-5603-4721-870F-1D24DB5CDB3C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{70944E9C-5603-4721-870F-1D24DB5CDB3C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{004BF0A6-E383-4123-9542-53EF87DE205C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{004BF0A6-E383-4123-9542-53EF87DE205C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{004BF0A6-E383-4123-9542-53EF87DE205C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{004BF0A6-E383-4123-9542-53EF87DE205C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

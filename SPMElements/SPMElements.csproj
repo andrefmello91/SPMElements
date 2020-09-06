@@ -135,6 +135,10 @@
       <Project>{5ea278f4-5f43-4cd7-9627-9f46411a871e}</Project>
       <Name>OnPlaneComponents</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\Reinforced-Concrete-Membrane\Membrane\RCMembrane.csproj">
+      <Project>{004bf0a6-e383-4123-9542-53ef87de205c}</Project>
+      <Name>RCMembrane</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

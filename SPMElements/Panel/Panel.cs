@@ -55,7 +55,7 @@ namespace SPMElements
 		/// <summary>
         /// Get/set local stiffness <see cref="Matrix"/>.
         /// </summary>
-		public Matrix<double> LocalStiffness { get; set; }
+		public virtual Matrix<double> LocalStiffness { get; set; }
 
 		/// <summary>
 		/// Get global stiffness <see cref="Matrix"/>.
@@ -78,9 +78,14 @@ namespace SPMElements
 		public virtual StressState AverageStresses { get; }
 
 		/// <summary>
+		/// Get average concrete <see cref="PrincipalStressState"/>.
+		/// </summary>
+		public virtual PrincipalStressState ConcretePrincipalStresses { get; }
+
+		/// <summary>
 		/// Get average <see cref="PrincipalStressState"/>.
 		/// </summary>
-		public virtual PrincipalStressState PrincipalStresses { get; }
+		public PrincipalStressState AveragePrincipalStresses => PrincipalStressState.FromStress(AverageStresses);
 
         /// <summary>
         /// Get the grip numbers of this.

@@ -1,65 +1,68 @@
 ﻿using System;
 using Autodesk.AutoCAD.DatabaseServices;
+using Autodesk.AutoCAD.Geometry;
+using Extensions.Number;
 using Material.Concrete;
 using MathNet.Numerics;
 using MathNet.Numerics.LinearAlgebra;
+using MathNet.Numerics.LinearAlgebra.Double;
+using OnPlaneComponents;
+using SPMElements.PanelProperties;
+using UnitsNet.Units;
 using Reinforcement      = Material.Reinforcement.BiaxialReinforcement;
 
 namespace SPMElements
 {
     public class LinearPanel : Panel
     {
-	    // Private properties
-	    private Matrix<double> TransMatrix { get; }
-	        
-	    public LinearPanel(ObjectId panelObject, Units units, Parameters concreteParameters = null, Constitutive concreteConstitutive = null) : base(panelObject, units, concreteParameters, concreteConstitutive)
-	    {
-		    // Get transformation matrix
-		    TransMatrix = TransformationMatrix();
+		// Auxiliary fields
+		private Matrix<double> _transMatrix, _localStiffness;
 
-		    // Calculate panel stiffness
-		    LocalStiffness = Stiffness();
-	    }
+		/// <summary>
+		/// Get transformation <see cref="Matrix"/>.
+		/// </summary>
+		private Matrix<double> TransformationMatrix => _transMatrix ?? CalculateTransformationMatrix();
 
-	    // Calculate global stiffness
-	    public override Matrix<double> GlobalStiffness => TransMatrix.Transpose() * LocalStiffness * TransMatrix;
+		/// <inheritdoc/>
+		public override Matrix<double> LocalStiffness => _localStiffness ?? CalculateStiffness();
 
-	    // Calculate panel stresses
-	    public override Vector<double> AverageStresses
+		/// <inheritdoc/>
+	    public override Matrix<double> GlobalStiffness => TransformationMatrix.Transpose() * LocalStiffness * TransformationMatrix;
+
+	    /// <inheritdoc/>
+	    public override StressState AverageStresses
 	    {
 		    get
 		    {
 			    // Get the dimensions as a vector
-			    var lsV = Vector<double>.Build.DenseOfArray(Edges.Length);
+			    var lsV = Vector<double>.Build.DenseOfArray(Geometry.EdgeLengths);
 
 			    // Calculate the shear stresses
-			    var tau = Forces / (lsV * Width);
+			    var tau = Forces / (lsV * Geometry.Width);
 
 			    // Calculate the average stress
 			    double tauAvg = (-tau[0] + tau[1] - tau[2] + tau[3]) / 4;
 
-			    return
-				    Vector<double>.Build.DenseOfArray(new[] { 0, 0, tauAvg });
+			    return new StressState(0, 0, tauAvg);
 		    }
 	    }
 
-	    // Calculate principal stresses by Equilibrium Plasticity Truss Model
-	    // Theta is the angle of sigma 2
-	    public override (Vector<double> sigma, double theta) PrincipalStresses
+	    /// <inheritdoc/>
+	    public override PrincipalStressState ConcretePrincipalStresses
 	    {
 		    get
 		    {
 			    double sig2;
 
 			    // Get shear stress
-			    double tau = AverageStresses[2];
+			    double tau = AverageStresses.TauXY;
 
 			    // Get steel strengths
 			    double
-				    fyx = Reinforcement.Steel.X.YieldStress,
-				    fyy = Reinforcement.Steel.Y.YieldStress;
+				    fyx = Reinforcement?.DirectionX?.Steel.YieldStress ?? 0,
+				    fyy = Reinforcement?.DirectionY?.Steel.YieldStress ?? 0;
 
-			    if (fyx == fyy)
+				if (fyx == fyy)
 				    sig2 = -2 * Math.Abs(tau);
 
 			    else
@@ -69,64 +72,80 @@ namespace SPMElements
 				    sig2 = -Math.Abs(tau) * (rLambda + 1 / rLambda);
 			    }
 
-			    var sigma = Vector<double>.Build.DenseOfArray(new[] { 0, sig2, 0 });
-
 			    // Calculate theta
-			    double theta;
+			    double theta1;
 
-			    if (tau <= 0)
-				    theta = Constants.PiOver4;
+			    if (tau >= 0)
+				    theta1 = Constants.PiOver4;
 
 			    else
-				    theta = -Constants.PiOver4;
+				    theta1 = -Constants.PiOver4;
 
-			    return
-				    (sigma, theta);
+			    return new PrincipalStressState(0, sig2, theta1);
 		    }
 	    }
 
-	    // Calculate transformation matrix
-	    private Matrix<double> TransformationMatrix()
+	    /// <inheritdoc/>
+	    public LinearPanel(ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, Node grip4, PanelGeometry geometry, Parameters concreteParameters, Constitutive concreteConstitutive, Reinforcement reinforcement = null) : base(objectId, number, grip1, grip2, grip3, grip4, geometry, concreteParameters, concreteConstitutive, reinforcement)
+	    {
+	    }
+
+	    /// <inheritdoc/>
+	    public LinearPanel(ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, Node grip4, Vertices vertices, double width, Parameters concreteParameters, Constitutive concreteConstitutive, Reinforcement reinforcement = null, LengthUnit geometryUnit = LengthUnit.Millimeter) : base(objectId, number, grip1, grip2, grip3, grip4, vertices, width, concreteParameters, concreteConstitutive, reinforcement, geometryUnit)
+	    {
+	    }
+
+	    /// <inheritdoc/>
+	    public LinearPanel(ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, Node grip4, Point3d[] vertices, double width, Parameters concreteParameters, Constitutive concreteConstitutive, Reinforcement reinforcement = null, LengthUnit geometryUnit = LengthUnit.Millimeter) : base(objectId, number, grip1, grip2, grip3, grip4, vertices, width, concreteParameters, concreteConstitutive, reinforcement, geometryUnit)
+	    {
+	    }
+
+        /// <summary>
+        /// Calculate transformation matrix
+        /// </summary>
+        private Matrix<double> CalculateTransformationMatrix()
 	    {
 		    // Get the transformation matrix
 		    // Direction cosines
-		    var dirCos = DirectionCosines;
-		    var (m1, n1) = dirCos[0];
-		    var (m2, n2) = dirCos[1];
-		    var (m3, n3) = dirCos[2];
-		    var (m4, n4) = dirCos[3];
+		    var (m1, n1) = Geometry.Edge1.Angle.DirectionCosines();
+		    var (m2, n2) = Geometry.Edge2.Angle.DirectionCosines();
+            var (m3, n3) = Geometry.Edge3.Angle.DirectionCosines();
+            var (m4, n4) = Geometry.Edge4.Angle.DirectionCosines();
 
-		    // T matrix
-		    return Matrix<double>.Build.DenseOfArray(new double[,]
+            // T matrix
+            _transMatrix =  Matrix<double>.Build.DenseOfArray(new [,]
 		    {
 			    {m1, n1,  0,  0,  0,  0,  0,  0},
 			    { 0,  0, m2, n2,  0,  0,  0,  0},
 			    { 0,  0,  0,  0, m3, n3,  0,  0},
 			    { 0,  0,  0,  0,  0,  0, m4, n4}
 		    });
+
+            return _transMatrix;
 	    }
 
-	    // Calculate panel stiffness
-	    private Matrix<double> Stiffness()
-	    {
-		    // If the panel is rectangular
-		    if (Rectangular)
-			    return
-				    RectangularPanelStiffness();
+        /// <summary>
+        /// Calculate panel stiffness
+        /// </summary>
+        private Matrix<double> CalculateStiffness()
+        {
+	        // If the panel is rectangular
+	        _localStiffness = Geometry.Rectangular ? RectangularPanelStiffness() : NonRectangularPanelStiffness();
 
-		    // If the panel is not rectangular
-		    return
-			    NonRectangularPanelStiffness();
-	    }
+	        return _localStiffness;
+        }
 
-	    // Calculate local stiffness of a rectangular panel
+        /// <summary>
+        /// Calculate panel stiffness if panel is rectangular.
+        /// <para>See: <seealso cref="PanelGeometry.Rectangular"/></para>
+        /// </summary>
 	    private Matrix<double> RectangularPanelStiffness()
 	    {
 		    // Get the dimensions
 		    double
-			    w = Width,
-			    a = Edges.Length[0],
-			    b = Edges.Length[1];
+			    w = Geometry.Width,
+			    a = Geometry.Dimensions.a,
+			    b = Geometry.Dimensions.b;
 
 		    // Calculate the parameters of the stiffness matrix
 		    double
@@ -147,18 +166,24 @@ namespace SPMElements
 			    });
 	    }
 
-	    // Calculate local stiffness of a nonrectangular panel
+        /// <summary>
+        /// Calculate panel stiffness if panel is not rectangular.
+        /// <para>See: <seealso cref="PanelGeometry.Rectangular"/></para>
+        /// </summary>
 	    private Matrix<double> NonRectangularPanelStiffness()
 	    {
 		    // Get the dimensions
-		    var (x, y) = VertexCoordinates;
-		    var (a, b, c, d) = Dimensions;
+		    double[]
+			    x = Geometry.Vertices.XCoordinates,
+			    y = Geometry.Vertices.YCoordinates;
+
+		    var (a, b, c, d) = Geometry.Dimensions;
 		    double
-			    w = Width,
-			    l1 = Edges.Length[0],
-			    l2 = Edges.Length[1],
-			    l3 = Edges.Length[2],
-			    l4 = Edges.Length[3];
+			    w  = Geometry.Width,
+			    l1 = Geometry.Edge1.Length,
+			    l2 = Geometry.Edge2.Length,
+			    l3 = Geometry.Edge3.Length,
+			    l4 = Geometry.Edge4.Length;
 
 		    // Calculate Gc
 		    double Gc = Concrete.Ec / 2.4;
@@ -186,28 +211,28 @@ namespace SPMElements
 			    t4 = -a * s4 - d * c4;
 
 		    // Matrices to calculate the determinants
-		    var km1 = Matrix<double>.Build.DenseOfArray(new double[,]
+		    var km1 = Matrix<double>.Build.DenseOfArray(new [,]
 		    {
 			    {c2, c3, c4},
 			    {s2, s3, s4},
 			    {r2, r3, r4},
 		    });
 
-		    var km2 = Matrix<double>.Build.DenseOfArray(new double[,]
+		    var km2 = Matrix<double>.Build.DenseOfArray(new [,]
 		    {
 			    {c1, c3, c4}, 
 			    {s1, s3, s4},
 			    {r1, r3, r4},
 		    });
 
-		    var km3 = Matrix<double>.Build.DenseOfArray(new double[,]
+		    var km3 = Matrix<double>.Build.DenseOfArray(new [,]
 		    {
 			    {c1, c2, c4},
 			    {s1, s2, s4},
 			    {r1, r2, r4},
 		    });
 
-		    var km4 = Matrix<double>.Build.DenseOfArray(new double[,]
+		    var km4 = Matrix<double>.Build.DenseOfArray(new [,]
 		    {
 			    {c1, c2, c3},
 			    {s1, s2, s3},
@@ -230,7 +255,7 @@ namespace SPMElements
 		    double D = 16 * Gc * w / (kf * ku);
 
 		    // Get the vector B
-		    var B = Vector<double>.Build.DenseOfArray(new double[]
+		    var B = Vector<double>.Build.DenseOfArray(new []
 		    {
 			    -k1 * l1, k2 * l2, -k3 * l3, k4 * l4
 		    });
@@ -245,7 +270,7 @@ namespace SPMElements
 	    {
 		    // Get the parameters
 		    var up = Displacements;
-		    var T  = TransMatrix;
+		    var T  = TransformationMatrix;
 		    var Kl = LocalStiffness;
 
 		    // Get the displacements in the direction of the edges

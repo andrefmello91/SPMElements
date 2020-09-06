@@ -14,7 +14,8 @@ namespace SPMElements.PanelProperties
 		// Auxiliary
 		private Point3d _vertex1, _vertex2, _vertex3, _vertex4;
 		private Point3d? _centerPoint;
-		private  LengthUnit _unit;
+		private LengthUnit _unit;
+		private double[] _xCoordinates, _yCoordinates;
 
 		/// <summary>
 		/// Get the <see cref="LengthUnit"/> of vertices' coordinates.
@@ -41,53 +42,20 @@ namespace SPMElements.PanelProperties
 		/// </summary>
 		public Point3d Vertex4 => _vertex4;
 
-        /// <summary>
-        /// Get <see cref="Vertices"/> approximated center point.
-        /// </summary>
-        public Point3d CenterPoint
-        {
-	        get
-	        {
-				if (!_centerPoint.HasValue)
-					CalculateCenterPoint();
-
-				return _centerPoint.Value;
-	        }
-        }
+		/// <summary>
+		/// Get <see cref="Vertices"/> approximated center point.
+		/// </summary>
+		public Point3d CenterPoint => _centerPoint ?? CalculateCenterPoint();
 
 		/// <summary>
-        /// Get X coordinates (in mm) of vertices as an array.
-        /// </summary>
-        public double[] XCoordinates
-        {
-	        get
-	        {
-		        var vertices = AsArray();
-		        var x = new double[4];
+		/// Get X coordinates (in mm) of vertices as an array.
+		/// </summary>
+		public double[] XCoordinates => _xCoordinates ?? VertexCoordinates().x;
 
-		        for (int i = 0; i < 4; i++)
-			        x[i] = vertices[i].Convert(Unit).X;
-
-		        return x;
-	        }
-        }
-
-        /// <summary>
-        /// Get Y coordinates (in mm) of vertices as an array.
-        /// </summary>
-        public double[] YCoordinates
-        {
-	        get
-	        {
-		        var vertices = AsArray();
-		        var y = new double[4];
-
-		        for (int i = 0; i < 4; i++)
-			        y[i] = vertices[i].Convert(Unit).Y;
-
-		        return y;
-	        }
-        }
+		/// <summary>
+		/// Get Y coordinates (in mm) of vertices as an array.
+		/// </summary>
+		public double[] YCoordinates => _yCoordinates ?? VertexCoordinates().y;
 
         /// <summary>
         /// Panel vertices object.
@@ -107,6 +75,7 @@ namespace SPMElements.PanelProperties
 	        _vertex4 = vertex4;
 
 	        _centerPoint = null;
+	        _xCoordinates = _yCoordinates = null;
         }
 
         /// <summary>
@@ -131,6 +100,7 @@ namespace SPMElements.PanelProperties
             _vertex4 = vertices[2];
 
             _centerPoint = null;
+            _xCoordinates = _yCoordinates = null;
         }
 
         /// <summary>
@@ -151,18 +121,45 @@ namespace SPMElements.PanelProperties
 	        _vertex2 = _vertex2.Convert(Unit, unit);
 	        _vertex3 = _vertex3.Convert(Unit, unit);
 	        _vertex4 = _vertex4.Convert(Unit, unit);
+
+	        _unit = unit;
         }
 
         /// <summary>
         /// Calculate <see cref="Vertices"/> approximated center point.
         /// </summary>
-        private void CalculateCenterPoint()
+        private Point3d CalculateCenterPoint()
         {
 	        // Calculate the approximated center point
 	        var Pt1 = Vertex1.MidPoint(Vertex3);
 	        var Pt2 = Vertex2.MidPoint(Vertex4);
 
 	        _centerPoint = Pt1.MidPoint(Pt2);
+
+	        return _centerPoint.Value;
+        }
+
+		/// <summary>
+        /// Get X and Y vertices coordinates;
+        /// </summary>
+        /// <returns></returns>
+        private (double[] x, double[] y) VertexCoordinates()
+        {
+	        var vertices = AsArray();
+	        double[] 
+		        x = new double[4],
+		        y = new double[4];
+
+	        for (int i = 0; i < 4; i++)
+	        {
+		        x[i] = vertices[i].Convert(Unit).X;
+		        y[i] = vertices[i].Convert(Unit).Y;
+	        }
+
+	        _xCoordinates = x;
+	        _yCoordinates = y;
+
+	        return (x, y);
         }
 
         /// <summary>

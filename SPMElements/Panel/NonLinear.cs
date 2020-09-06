@@ -2,6 +2,8 @@
 using Autodesk.AutoCAD.DatabaseServices;
 using Material.Concrete;
 using MathNet.Numerics.LinearAlgebra;
+using OnPlaneComponents;
+using SPMElements.PanelProperties;
 using RCMembrane;
 using Reinforcement      = Material.Reinforcement.BiaxialReinforcement;
 
@@ -9,24 +11,22 @@ namespace SPMElements
 {
     public class NonLinearPanel : Panel
     {
-	    // Public Properties
-	    public  Membrane[]                                     IntegrationPoints  { get; set; }
-	    public  double[]                                       StringerDimensions { get; }
-	    private Matrix<double>                                 BAMatrix           { get; }
-	    private Matrix<double>                                 QMatrix            { get; }
-	    private (Matrix<double> Pc,     Matrix<double> Ps)     PMatrix            { get; }
+		// Auxiliary fields
+		private Matrix<double> _BA, _Q, _Pc, _Ps, _Dc, _Ds;
+
+		/// <summary>
+        /// Get <see cref="Membrane"/> integration points.
+        /// </summary>
+	    public  Membrane[] IntegrationPoints  { get; }
+
+
 	    public  (Matrix<double> Dc,     Matrix<double> Ds)     MaterialStiffness  { get; set; }
 	    public  (Vector<double> sigmaC, Vector<double> sigmaS) MaterialStresses   { get; set; }
 
 	    public NonLinearPanel(ObjectId panelObject, Units units, Parameters concreteParameters, Constitutive concreteConstitutive, Stringer[] stringers) : base(panelObject, units, concreteParameters, concreteConstitutive)
 	    {
-		    // Get Stringer dimensions and effective ratio
-		    StringerDimensions = StringersDimensions(stringers);
-
-		    // Calculate initial matrices
-		    BAMatrix = CalculateBA();
-		    QMatrix  = CalculateQ();
-		    PMatrix  = CalculateP();
+		    // Set Stringer dimensions
+		    SetEdgeStringersDimensions(stringers);
 
 		    // Initiate integration points
 		    IntegrationPoints = IntPoints(concreteParameters, concreteConstitutive);
@@ -36,80 +36,54 @@ namespace SPMElements
 	    }
 
 	    // Calculate panel strain vector
-	    public Vector<double> StrainVector => BAMatrix * Displacements;
+	    public Vector<double> StrainVector => (_BA ?? CalculateBA()) * Displacements;
 
 	    // Calculate stresses
 	    public Vector<double> Stresses => MaterialStresses.sigmaC + MaterialStresses.sigmaS;
 
-	    // Calculate stiffness
+	    /// <inheritdoc/>
 	    public override Matrix<double> GlobalStiffness
 	    {
 		    get
 		    {
-			    var (Pc, Ps) = PMatrix;
+			    Matrix<double>
+				    BA = _BA ?? CalculateBA(),
+				    Pc = _Pc ?? CalculateP().Pc,
+				    Ps = _Ps ?? CalculateP().Ps,
+				    Q  = _Q  ?? CalculateQ();
+
 			    var (Dc, Ds) = MaterialStiffness;
-			    var QPs = QMatrix * Ps;
-			    var QPc = QMatrix * Pc;
 
-			    var kc = QPc * Dc * BAMatrix;
-			    var ks = QPs * Ds * BAMatrix;
+			    var QPs = Q * Ps;
+			    var QPc = Q * Pc;
 
-			    return
-				    kc + ks;
+			    var kc = QPc * Dc * BA;
+			    var ks = QPs * Ds * BA;
+
+			    return kc + ks;
 		    }
 	    }
 
-	    // Get principal strains in concrete
-	    public Vector<double> ConcretePrincipalStrains
+	    /// <inheritdoc/>
+	    public PrincipalStressState ConcretePrincipalStresses
 	    {
 		    get
 		    {
-			    var epsilon = Vector<double>.Build.Dense(8);
+			    var sigma = StressState.Zero;
 
 			    for (int i = 0; i < 4; i++)
-			    {
-				    var (ec1, ec2) = IntegrationPoints[i].Concrete.PrincipalStrains;
-				    epsilon[2 * i] = ec1;
-				    epsilon[2 * i + 1] = ec2;
-			    }
+				    sigma += IntegrationPoints[i].Concrete.Stresses;
 
-			    return epsilon;
+				// Calculate average
+				sigma = 0.25 * sigma;
+
+				// Return principal
+			    return PrincipalStressState.FromStress(sigma);
 		    }
 	    }
 
-	    public Vector<double> StrainAngles
-	    {
-		    get
-		    {
-			    var theta = Vector<double>.Build.Dense(4);
-
-			    for (int i = 0; i < 4; i++)
-				    theta[i] = IntegrationPoints[i].Concrete.PrincipalAngles.theta2;
-
-			    return theta;
-		    }
-	    }
-
-	    // Get principal stresses in concrete
-	    public Vector<double> ConcretePrincipalStresses
-	    {
-		    get
-		    {
-			    var sigma = Vector<double>.Build.Dense(8);
-
-			    for (int i = 0; i < 4; i++)
-			    {
-				    var (fc1, fc2) = IntegrationPoints[i].Concrete.PrincipalStresses;
-				    sigma[2 * i] = fc1;
-				    sigma[2 * i + 1] = fc2;
-			    }
-
-			    return sigma;
-		    }
-	    }
-
-	    // Calculate panel stresses
-	    public override Vector<double> AverageStresses
+	    /// <inheritdoc/>
+	    public override StressState AverageStresses
 	    {
 		    get
 		    {
@@ -122,32 +96,7 @@ namespace SPMElements
 				    sigym = (sigma[1] + sigma[4] + sigma[7] + sigma[10]) / 4,
 				    sigxym = (sigma[2] + sigma[5] + sigma[8] + sigma[11]) / 4;
 
-			    return
-				    Vector<double>.Build.DenseOfArray(new[] { sigxm, sigym, sigxym });
-		    }
-	    }
-
-	    // Calculate principal stresses
-	    // Theta is the angle of sigma 2
-	    public override (Vector<double> sigma, double theta) PrincipalStresses
-	    {
-		    get
-		    {
-			    // Get average stresses
-			    var sigm = AverageStresses;
-
-			    // Calculate principal stresses by Mohr's Circle
-			    double
-				    rad = 0.5 * (sigm[0] + sigm[1]),
-				    cen = Math.Sqrt(0.25 * (sigm[0] - sigm[1]) * (sigm[0] - sigm[1]) + sigm[2] * sigm[2]),
-				    sig1 = cen + rad,
-				    sig2 = cen - rad,
-				    theta = Math.Atan((sig1 - sigm[1]) / sigm[2]) - Constants.PiOver2;
-
-			    var sigma = Vector<double>.Build.DenseOfArray(new[] { sig1, sig2, 0 });
-
-			    return
-				    (sigma, theta);
+			    return new StressState(sigxm, sigym, sigxym);
 		    }
 	    }
 
@@ -165,9 +114,16 @@ namespace SPMElements
 		    return intPts;
 	    }
 
-	    // Get the dimensions of surrounding stringers
-	    public double[] StringersDimensions(Stringer[] stringers)
+        /// <summary>
+        /// Set stringer dimensions on edges.
+        /// <para>See: <see cref="Edge.SetStringerDimension"/></para>
+		/// </summary>
+        /// <param name="stringers">The array containing all of the stringers.</param>
+        private void SetEdgeStringersDimensions(Stringer[] stringers)
 	    {
+			if (stringers is null)
+				return;
+
 		    // Initiate the Stringer dimensions
 		    double[] hs = new double[4];
 
@@ -182,20 +138,23 @@ namespace SPMElements
 				    if (grip == stringer.Grips[1])
 				    {
 					    // The dimension is the half of Stringer height
-					    hs[i] = 0.5 * stringer.Height;
+					    hs[i] = 0.5 * stringer.Geometry.Height;
 					    break;
 				    }
 			    }
 		    }
 
-		    // Save to panel
-		    return hs;
+			// Set on edges
+			Geometry.Edge1.SetStringerDimension(hs[0]);
+			Geometry.Edge2.SetStringerDimension(hs[1]);
+			Geometry.Edge3.SetStringerDimension(hs[2]);
+			Geometry.Edge4.SetStringerDimension(hs[3]);
 	    }
 
 	    // Calculate BA matrix
 	    private Matrix<double> CalculateBA()
 	    {
-		    var (a, b, c, d) = Dimensions;
+		    var (a, b, c, d) = Geometry.Dimensions;
 
 		    // Calculate t1, t2 and t3
 		    double
@@ -268,15 +227,16 @@ namespace SPMElements
 		    // {0, 0, 2,    0,    0 }
 		    //});
 
-		    return
-			    B * A;
+		    _BA = B * A;
+
+		    return _BA;
 	    }
 
 	    // Calculate Q matrixS
 	    private Matrix<double> CalculateQ()
 	    {
 		    // Get dimensions
-		    var (a, b, c, d) = Dimensions;
+		    var (a, b, c, d) = Geometry.Dimensions;
 
 		    // Calculate t4
 		    double t4 = a * a + b * b;
@@ -295,8 +255,7 @@ namespace SPMElements
 			    MacMt4 = -a * c - t4;
 
 		    // Create Q matrix
-		    return
-			    1 / Tt4 * Matrix<double>.Build.DenseOfArray(new[,]
+		    _Q = 1 / Tt4 * Matrix<double>.Build.DenseOfArray(new[,]
 			    {
 				    {  a2,     bc,  bdMt4, -ab, -a2,    -bc, MbdMt4,  ab },
 				    {   0,    Tt4,      0,   0,   0,      0,      0,   0 },
@@ -307,15 +266,21 @@ namespace SPMElements
 				    {   0,      0,      0,   0,   0,      0,    Tt4,   0 },
 				    {  ab, MacMt4,    -ad, -b2, -ab,  acMt4,     ad,  b2 }
 			    });
+
+		    return _Q;
 	    }
 
 	    // Calculate P matrices for concrete and steel
 	    private (Matrix<double> Pc, Matrix<double> Ps) CalculateP()
 	    {
 		    // Get dimensions
-		    var (x, y) = VertexCoordinates;
-		    double t = Width;
-		    var c = StringerDimensions;
+
+		    double[]
+			    x = Geometry.Vertices.XCoordinates,
+			    y = Geometry.Vertices.YCoordinates;
+
+		    double t = Geometry.Width;
+		    var c = Geometry.StringerDimensions;
 
 		    // Create P matrices
 		    var Pc = Matrix<double>.Build.Dense(8, 12);
@@ -350,6 +315,10 @@ namespace SPMElements
 
 		    Ps[6, 9] = t * (y[0] - y[3]);
 		    Ps[7, 10] = Pc[7, 10];
+
+			// Set values
+			_Pc = Pc;
+			_Ps = Ps;
 
 		    return
 			    (Pc, Ps);
@@ -605,8 +574,8 @@ namespace SPMElements
 		    for (int i = 0; i < 4; i++)
 		    {
 			    // Get the stiffness
-			    var Dci = IntegrationPoints[i].Concrete.InitialStiffness();
-			    var Dsi = IntegrationPoints[i].Concrete.InitialStiffness();
+			    var Dci = IntegrationPoints[i].Concrete.InitialStiffness;
+			    var Dsi = IntegrationPoints[i].Concrete.InitialStiffness;
 
 			    // Set to stiffness
 			    Dc.SetSubMatrix(3 * i, 3 * i, Dci);
@@ -620,7 +589,7 @@ namespace SPMElements
 	    // Initial stiffness
 	    public Matrix<double> InitialStiffness()
 	    {
-		    var (a, b, _, _) = Dimensions;
+		    var (a, b, _, _) = Geometry.Dimensions;
 
 		    // Calculate constants
 		    double
@@ -630,7 +599,7 @@ namespace SPMElements
 			    a_b = a / b,
 			    b_a = b / a,
 			    nu  = Concrete.nu,
-			    t0  = Concrete.Ec * Width / (1 - nu * nu),
+			    t0  = Concrete.Ec * Geometry.Width / (1 - nu * nu),
 			    t1  = 2 * ab / (a2 + 2 * b2),
 			    t2  = 2 * ab / (2 * a2 + b2),
 			    t3  =  b_a * (3 * a2 + 2 * b2) / (a2 + 2 * b2),

@@ -18,7 +18,7 @@ namespace SPMElements.PanelProperties
     public struct Edge : IEquatable<Edge>
     {
 		// Auxiliary fields
-		private Length _length;
+		private Length _length, _stringerDimension;
 
 		/// <summary>
 		/// Get the <see cref="LengthUnit"/> that this was constructed with.
@@ -46,6 +46,11 @@ namespace SPMElements.PanelProperties
 		public double Length => _length.Millimeters;
 
 		/// <summary>
+		/// Get the stringer dimension of this edge, in mm.
+		/// </summary>
+		public double StringerDimension => _stringerDimension.Millimeters;
+
+		/// <summary>
         /// Panel edge constructor.
         /// </summary>
         /// <param name="initialVertex">The initial vertex.</param>
@@ -53,10 +58,11 @@ namespace SPMElements.PanelProperties
         /// <param name="geometryUnit">The <see cref="LengthUnit"/> of vertices coordinates.</param>
 		public Edge(Point3d initialVertex, Point3d finalVertex, LengthUnit geometryUnit = LengthUnit.Millimeter)
 		{
-			InitialVertex = initialVertex;
-			FinalVertex   = finalVertex;
-			_length       = UnitsNet.Length.From(initialVertex.DistanceTo(finalVertex), geometryUnit);
-			Angle         = initialVertex.AngleTo(finalVertex);
+			InitialVertex      = initialVertex;
+			FinalVertex        = finalVertex;
+			_length            = UnitsNet.Length.From(initialVertex.DistanceTo(finalVertex), geometryUnit);
+			Angle              = initialVertex.AngleTo(finalVertex);
+			_stringerDimension = UnitsNet.Length.Zero;
 		}
 
 		/// <summary>
@@ -71,8 +77,14 @@ namespace SPMElements.PanelProperties
 			_length = _length.ToUnit(unit);
 		}
 
+		/// <summary>
+        /// Set stringer dimension in this edge.
+        /// </summary>
+        /// <param name="height">The height of the <seealso cref="Stringer"/>, in <paramref name="unit"/> considered.</param>
+        /// <param name="unit">The <see cref="LengthUnit"/> of <paramref name="height"/>.</param>
+		public void SetStringerDimension(double height, LengthUnit unit = LengthUnit.Millimeter) => _stringerDimension = UnitsNet.Length.From(height, unit);
 
-        /// <summary>
+		/// <summary>
         /// Returns true if vertices are equal.
         /// </summary>
         /// <param name="other">The other <see cref="Edge"/> object.</param>

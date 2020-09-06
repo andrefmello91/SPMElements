@@ -14,7 +14,7 @@ namespace SPMElements.PanelProperties
     {
 		// Auxiliary fields
 		private Length _width;
-		private double? _a, _b, _c, _d;
+		private (double a, double b, double c, double d)? _dimensions;
 
 		/// <summary>
         /// Get the <see cref="LengthUnit"/> that this was constructed with.
@@ -72,17 +72,18 @@ namespace SPMElements.PanelProperties
 		/// <summary>
 		/// Get panel dimensions (a, b, c, d), in mm.
 		/// </summary>
-		public (double a, double b, double c, double d) Dimensions
-		{
-			get
-			{
-				if (!_a.HasValue)
-					CalculateDimensions();
+		public (double a, double b, double c, double d) Dimensions => _dimensions ?? CalculateDimensions();
 
-				return
-					(_a.Value, _b.Value, _c.Value, _d.Value);
-			}
-		}
+		/// <summary>
+        /// Get edges' lengths as an array.
+        /// </summary>
+		public double[] EdgeLengths => new [] {Edge1.Length, Edge2.Length, Edge3.Length, Edge4.Length};
+
+		/// <summary>
+        /// Get edges' stringer dimensions as an array.
+        /// <para>See: <see cref="Edge.SetStringerDimension"/></para>
+        /// </summary>
+		public double[] StringerDimensions => new [] {Edge1.StringerDimension, Edge2.StringerDimension, Edge3.StringerDimension, Edge4.StringerDimension};
 
         /// <summary>
         /// Panel geometry constructor.
@@ -126,7 +127,7 @@ namespace SPMElements.PanelProperties
 			Edge3 = new Edge(vertices.Vertex3, vertices.Vertex4, geometryUnit);
 			Edge4 = new Edge(vertices.Vertex4, vertices.Vertex1, geometryUnit);
 
-			_a = _b = _c = _d = null;
+			_dimensions = null;
 		}
 
 		/// <summary>
@@ -136,22 +137,27 @@ namespace SPMElements.PanelProperties
 		public void ChangeUnit(LengthUnit unit)
 		{
 			if (Unit != unit)
-				_width.ToUnit(unit);
+				_width = _width.ToUnit(unit);
 		}
 
 		/// <summary>
         /// Calculate panel dimensions (a, b, c, d).
         /// </summary>
-		private void CalculateDimensions()
+		private (double a, double b, double c, double d) CalculateDimensions()
 		{
 			var x = Vertices.XCoordinates;
 			var y = Vertices.YCoordinates;
 
 			// Calculate the necessary dimensions of the panel
-			_a = 0.5 * (x[1] + x[2] - x[0] - x[3]);
-			_b = 0.5 * (y[2] + y[3] - y[0] - y[1]);
-			_c = 0.5 * (x[2] + x[3] - x[0] - x[1]);
-			_d = 0.5 * (y[1] + y[2] - y[0] - y[3]);
+			double
+				a = 0.5 * (x[1] + x[2] - x[0] - x[3]),
+				b = 0.5 * (y[2] + y[3] - y[0] - y[1]),
+				c = 0.5 * (x[2] + x[3] - x[0] - x[1]),
+				d = 0.5 * (y[1] + y[2] - y[0] - y[3]);
+
+			_dimensions = (a, b, c, d);
+
+			return _dimensions.Value;
 		}
 
         /// <summary>

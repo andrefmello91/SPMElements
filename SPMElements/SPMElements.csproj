@@ -101,13 +101,14 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Extensions.cs" />
     <Compile Include="Node.cs" />
-    <Compile Include="Panel\Edge.cs" />
-    <Compile Include="Panel\Geometry.cs" />
+    <Compile Include="Panel\Properties\Edge.cs" />
+    <Compile Include="Panel\Properties\Geometry.cs" />
     <Compile Include="Panel\Linear.cs" />
     <Compile Include="Panel\NonLinear.cs" />
     <Compile Include="Panel\Panel.cs" />
-    <Compile Include="Panel\Vertices.cs" />
+    <Compile Include="Panel\Properties\Vertices.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SPMElement.cs" />
     <Compile Include="Stringer\IntegrationPoint.cs" />
@@ -116,7 +117,7 @@
     <Compile Include="Stringer\Relations\MCFTRelations.cs" />
     <Compile Include="Stringer\Relations\StressStrainRelations.cs" />
     <Compile Include="Stringer\Stringer.cs" />
-    <Compile Include="Stringer\StringerGeometry.cs" />
+    <Compile Include="Stringer\Properties\StringerGeometry.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
@@ -135,5 +136,6 @@
       <Name>OnPlaneComponents</Name>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

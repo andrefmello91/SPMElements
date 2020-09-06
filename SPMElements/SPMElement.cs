@@ -25,6 +25,9 @@ namespace SPMElements
 		NonLinear
 	}
 
+	/// <summary>
+    /// Base class of SPM elements.
+    /// </summary>
     public abstract class SPMElement
     {
 		/// <summary>
@@ -42,6 +45,9 @@ namespace SPMElements
         /// </summary>
 	    public abstract int[] DoFIndex { get; }
 
+		/// <summary>
+		/// Base object of SPM elements.
+		/// </summary>
 		public SPMElement(ObjectId objectId, int number)
 		{
 			ObjectId = objectId;

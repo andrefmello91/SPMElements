@@ -6,6 +6,7 @@ using Autodesk.AutoCAD.Geometry;
 using MathNet.Numerics;
 using UnitsNet.Units;
 using Extensions;
+using Extensions.AutoCAD;
 
 namespace SPMElements
 {
@@ -86,17 +87,18 @@ namespace SPMElements
 		/// </summary>
 		public Displacement Displacement { get; set; }
 
-        /// <summary>
-        /// Node object.
-        /// </summary>
-        /// <param name="objectId">The node <see cref="ObjectId"/>.</param>
-        /// <param name="number">The node number.</param>
-        /// <param name="type">The <see cref="NodeType"/>.</param>
-        /// <param name="appliedForce">The applied <see cref="OnPlaneComponents.Force"/> on the node.</param>
-        /// <param name="constraint"> The <see cref="SPMElements.Constraint"/> condition of the node.</param>
-        /// <param name="geometryUnit">The <see cref="LengthUnit"/> of <paramref name="position"/>.</param>
-        /// <param name="displacementUnit">The <see cref="LengthUnit"/> of <see cref="Displacement"/>.</param>
-        public Node(ObjectId objectId, int number, Point3d position, NodeType type, Force appliedForce, Constraint constraint = Constraint.Free, LengthUnit geometryUnit = LengthUnit.Millimeter, LengthUnit displacementUnit = LengthUnit.Millimeter) : base(objectId, number)
+		/// <summary>
+		/// Node object.
+		/// </summary>
+		/// <param name="objectId">The node <see cref="ObjectId"/>.</param>
+		/// <param name="number">The node number.</param>
+		/// <param name="position">The <seealso cref="Point3d"/> position.</param>
+		/// <param name="type">The <see cref="NodeType"/>.</param>
+		/// <param name="appliedForce">The applied <see cref="OnPlaneComponents.Force"/> on the node.</param>
+		/// <param name="constraint"> The <see cref="SPMElements.Constraint"/> condition of the node.</param>
+		/// <param name="geometryUnit">The <see cref="LengthUnit"/> of <paramref name="position"/>.</param>
+		/// <param name="displacementUnit">The <see cref="LengthUnit"/> of <see cref="Displacement"/>.</param>
+		public Node(ObjectId objectId, int number, Point3d position, NodeType type, Force appliedForce, Constraint constraint = Constraint.Free, LengthUnit geometryUnit = LengthUnit.Millimeter, LengthUnit displacementUnit = LengthUnit.Millimeter) : base(objectId, number)
 		{
 			// Get the position
 			Position = position;
@@ -185,39 +187,6 @@ namespace SPMElements
 	        _displacementUnit = displacementUnit;
         }
 
-		/// <summary>
-        /// Return the <see cref="Node"/> of an array, in given <paramref name="position"/>.
-        /// </summary>
-        /// <param name="nodes">The array of nodes.</param>
-        /// <param name="position">The position wanted.</param>
-        /// <returns></returns>
-        public static Node GetByPosition(Node[] nodes, Point3d position)
-        {
-	        foreach (var node in nodes)
-	        {
-		        if (position == node.Position)
-			        return node;
-	        }
-
-	        return null;
-        }
-
-		/// <summary>
-        /// Return the <see cref="Node"/> of an array, in given <paramref name="number"/>.
-        /// </summary>
-        /// <param name="nodes">The array of nodes.</param>
-        /// <param name="number">The number of the node wanted.</param>
-        /// <returns></returns>
-        public static Node GetByNumber(Node[] nodes, int number)
-        {
-	        foreach (var node in nodes)
-	        {
-		        if (number == node.Number)
-			        return node;
-	        }
-
-	        return null;
-        }
 
         public override string ToString()
         {

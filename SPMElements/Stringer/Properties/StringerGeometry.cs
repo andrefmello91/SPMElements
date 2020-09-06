@@ -1,6 +1,7 @@
 ﻿using System;
 using Autodesk.AutoCAD.Geometry;
 using Extensions;
+using Extensions.AutoCAD;
 using MathNet.Numerics;
 using UnitsNet;
 using UnitsNet.Units;
@@ -61,12 +62,6 @@ namespace SPMElements.StringerProperties
 		public double Area => Width * Height;
 
 		/// <summary>
-		/// Get direction cosines of <see cref="Angle"/>.
-		/// </summary>
-		public (double cos, double sin) DirectionCosines =>
-			(Trig.Cos(Angle).CoerceZero(1E-6), Trig.Sin(Angle).CoerceZero(1E-6));
-
-		/// <summary>
 		/// Get the connected <see cref="Point3d"/> of this.
 		/// </summary>
 		public Point3d[] ConnectedPoints => new [] {InitialPoint, CenterPoint, EndPoint};
@@ -100,9 +95,12 @@ namespace SPMElements.StringerProperties
 		/// <param name="unit">The <see cref="LengthUnit"/> to convert.</param>
 		public void ChangeUnit(LengthUnit unit)
 		{
-			_length.ToUnit(unit);
-			_width.ToUnit(unit);
-			_height.ToUnit(unit);
+			if (Unit == unit)
+				return;
+
+			_length = _length.ToUnit(unit);
+			_width  = _width.ToUnit(unit);
+			_height = _height.ToUnit(unit);
 		}
 
 		public override string ToString()

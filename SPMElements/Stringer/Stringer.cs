@@ -2,6 +2,7 @@
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.Geometry;
 using Autodesk.AutoCAD.GraphicsInterface;
+using Extensions.Number;
 using MathNet.Numerics.LinearAlgebra;
 using MathNet.Numerics.LinearAlgebra.Double;
 using Material.Concrete;
@@ -34,17 +35,17 @@ namespace SPMElements
 		/// <summary>
         /// Get the initial <see cref="Node"/> of this.
         /// </summary>
-		public Node InitialNode { get; }
+		public Node Grip1 { get; }
 
 		/// <summary>
 		/// Get the center <see cref="Node"/> of this.
 		/// </summary>
-		public Node CenterNode { get; }
+		public Node Grip2 { get; }
 
 		/// <summary>
 		/// Get the end <see cref="Node"/> of this.
 		/// </summary>
-		public Node EndNode { get; }
+		public Node Grip3 { get; }
 
         /// <summary>
         /// Get/set the <see cref="Geometry"/> of this.
@@ -79,7 +80,7 @@ namespace SPMElements
         /// <summary>
         /// Get the grip numbers of this.
         /// </summary>
-        public int[] Grips => new[] { InitialNode.Number, CenterNode.Number, EndNode.Number };
+        public int[] Grips => new[] { Grip1.Number, Grip2.Number, Grip3.Number };
 
         /// <summary>
         /// Get the transformation <see cref="Matrix"/>.
@@ -157,21 +158,21 @@ namespace SPMElements
         /// </summary>
         /// <param name="objectId">The stringer <see cref="ObjectId"/>.</param>
         /// <param name="number">The stringer number.</param>
-        /// <param name="initialNode">The initial <see cref="Node"/> of the <see cref="Stringer"/>.</param>
-        /// <param name="centerNode">The center <see cref="Node"/> of the <see cref="Stringer"/>.</param>
-        /// <param name="endNode">The final <see cref="Node"/> of the <see cref="Stringer"/>.</param>
+        /// <param name="grip1">The initial <see cref="Node"/> of the <see cref="Stringer"/>.</param>
+        /// <param name="grip2">The center <see cref="Node"/> of the <see cref="Stringer"/>.</param>
+        /// <param name="grip3">The final <see cref="Node"/> of the <see cref="Stringer"/>.</param>
         /// <param name="width">The stringer width.</param>
         /// <param name="height">The stringer height.</param>
         /// <param name="concreteParameters">The concrete parameters <see cref="Parameters"/>.</param>
         /// <param name="concreteConstitutive">The concrete constitutive <see cref="Constitutive"/>.</param>
         /// <param name="reinforcement">The <see cref="UniaxialReinforcement"/>.</param>
         /// <param name="geometryUnit">The <see cref="LengthUnit"/> of <paramref name="width"/> and <paramref name="height"/>.<para>Default: <seealso cref="LengthUnit.Millimeter"/>.</para></param>
-        public Stringer(ObjectId objectId, int number, Node initialNode, Node centerNode, Node endNode, double width, double height, Parameters concreteParameters, Constitutive concreteConstitutive, UniaxialReinforcement reinforcement = null, LengthUnit geometryUnit = LengthUnit.Millimeter) : base(objectId, number)
+        public Stringer(ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, double width, double height, Parameters concreteParameters, Constitutive concreteConstitutive, UniaxialReinforcement reinforcement = null, LengthUnit geometryUnit = LengthUnit.Millimeter) : base(objectId, number)
         {
-	        InitialNode   = initialNode;
-	        CenterNode    = centerNode;
-	        EndNode       = endNode;
-	        Geometry      = new StringerGeometry(initialNode.Position, endNode.Position, width, height, geometryUnit);
+	        Grip1   = grip1;
+	        Grip2    = grip2;
+	        Grip3       = grip3;
+	        Geometry      = new StringerGeometry(grip1.Position, grip3.Position, width, height, geometryUnit);
 	        Reinforcement = reinforcement;
 	        Concrete      = new UniaxialConcrete(concreteParameters, ConcreteArea, concreteConstitutive);
         }
@@ -182,7 +183,7 @@ namespace SPMElements
         private void CalculateTransformationMatrix()
         {
 	        // Get the direction cosines
-	        var (l, m) = Geometry.DirectionCosines;
+	        var (l, m) = Geometry.Angle.DirectionCosines();
 
 	        // Obtain the transformation matrix
 	        _transMatrix = Matrix<double>.Build.DenseOfArray(new [,]

@@ -73,7 +73,8 @@ namespace SPMElements.StringerProperties
         /// <param name="endPoint">The final <see cref="Point3d"/> of the <see cref="Stringer"/>.</param>
         /// <param name="width">The stringer width.</param>
         /// <param name="height">The stringer height.</param>
-        /// <param name="geometryUnit">The <see cref="LengthUnit"/> of <paramref name="width"/>, <paramref name="height"/> and nodes' coordinates.<para>Default: <seealso cref="LengthUnit.Millimeter"/>.</para></param>
+        /// <param name="geometryUnit">The <see cref="LengthUnit"/> of <paramref name="width"/>, <paramref name="height"/> and nodes' coordinates.
+        /// <para>Default: <seealso cref="LengthUnit.Millimeter"/>.</para></param>
         public StringerGeometry(Point3d initialPoint, Point3d endPoint, double width, double height, LengthUnit geometryUnit = LengthUnit.Millimeter)
 		{
 			InitialPoint = initialPoint;

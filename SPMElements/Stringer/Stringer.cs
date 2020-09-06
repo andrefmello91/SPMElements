@@ -85,16 +85,7 @@ namespace SPMElements
         /// <summary>
         /// Get the transformation <see cref="Matrix"/>.
         /// </summary>
-        public Matrix<double> TransformationMatrix
-        {
-	        get
-	        {
-		        if (_transMatrix is null)
-			        CalculateTransformationMatrix();
-
-		        return _transMatrix;
-	        }
-        }
+        public Matrix<double> TransformationMatrix => _transMatrix ?? CalculateTransformationMatrix();
 
         /// <summary>
         /// Get the DoF index of stringer <see cref="Grips"/>.
@@ -169,9 +160,9 @@ namespace SPMElements
         /// <param name="geometryUnit">The <see cref="LengthUnit"/> of <paramref name="width"/> and <paramref name="height"/>.<para>Default: <seealso cref="LengthUnit.Millimeter"/>.</para></param>
         public Stringer(ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, double width, double height, Parameters concreteParameters, Constitutive concreteConstitutive, UniaxialReinforcement reinforcement = null, LengthUnit geometryUnit = LengthUnit.Millimeter) : base(objectId, number)
         {
-	        Grip1   = grip1;
-	        Grip2    = grip2;
-	        Grip3       = grip3;
+	        Grip1         = grip1;
+	        Grip2         = grip2;
+	        Grip3         = grip3;
 	        Geometry      = new StringerGeometry(grip1.Position, grip3.Position, width, height, geometryUnit);
 	        Reinforcement = reinforcement;
 	        Concrete      = new UniaxialConcrete(concreteParameters, ConcreteArea, concreteConstitutive);
@@ -180,7 +171,7 @@ namespace SPMElements
         /// <summary>
         /// Calculate the transformation matrix.
         /// </summary>
-        private void CalculateTransformationMatrix()
+        private Matrix<double> CalculateTransformationMatrix()
         {
 	        // Get the direction cosines
 	        var (l, m) = Geometry.Angle.DirectionCosines();
@@ -192,6 +183,8 @@ namespace SPMElements
 		        {0, 0, l, m, 0, 0 },
 		        {0, 0, 0, 0, l, m }
 	        });
+
+	        return _transMatrix;
         }
 
         /// <summary>

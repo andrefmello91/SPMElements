@@ -1,6 +1,7 @@
 ﻿using System;
 using Autodesk.AutoCAD.DatabaseServices;
 using Material.Concrete;
+using MathNet.Numerics;
 using MathNet.Numerics.LinearAlgebra;
 using Reinforcement      = Material.Reinforcement.BiaxialReinforcement;
 

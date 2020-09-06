@@ -2,96 +2,167 @@
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.Geometry;
 using MathNet.Numerics.LinearAlgebra;
-using SPMTool.AutoCAD;
+using MathNet.Numerics.LinearAlgebra.Double;
 using Material.Concrete;
 using Material.Reinforcement;
-using SPMTool.Analysis;
+using OnPlaneComponents;
 using UnitsNet;
 using UnitsNet.Units;
-using Concrete           = Material.Concrete.BiaxialConcrete;
-using Reinforcement      = Material.Reinforcement.BiaxialReinforcement;
-using PanelData          = SPMTool.XData.Panel;
+using SPMElements.PanelProperties;
 
 namespace SPMElements
 {
-	public class Panel : SPMElement
+	/// <summary>
+    /// Base panel class.
+    /// </summary>
+	public class Panel : SPMElement, IEquatable<Panel>
 	{
-		// Panel parameters
-		public Units										 Units             { get; }
-		public int[]                                         Grips             { get; }
-		public Point3d[]                                     Vertices          { get; }
-		public (double[] x, double[] y)                      VertexCoordinates { get; }
-		public (double a, double b, double c, double d)      Dimensions        { get; }
-		public (double[] Length, double[] Angle)             Edges             { get; }
-		public double                                        Width             { get; }
-		public Concrete                                      Concrete          { get; }
-		public Reinforcement                                 Reinforcement     { get; }
-		public Matrix<double>                                LocalStiffness    { get; set; }
-		public virtual Matrix<double>                        GlobalStiffness   { get; }
-		public Vector<double>                                Displacements     { get; set; }
-		public Vector<double>                                Forces            { get; set; }
-		public virtual Vector<double>                        AverageStresses   { get; }
-		public virtual (Vector<double> sigma, double theta)  PrincipalStresses { get; }
+		/// <summary>
+        /// Get <see cref="PanelGeometry"/> of this.
+        /// </summary>
+		public PanelGeometry Geometry { get; }
 
-		// Constructor
-		public Panel(ObjectId panelObject, Units units, Parameters concreteParameters = null, Constitutive concreteConstitutive = null)
-		{
-			ObjectId = panelObject;
-			Units    = units;
+		/// <summary>
+		/// Get <see cref="BiaxialConcrete"/> of this.
+		/// </summary>
+		public BiaxialConcrete Concrete { get; }
 
-			// Get concrete
-			Concrete = new Concrete(concreteParameters, concreteConstitutive);
+        /// <summary>
+        /// Get <see cref="BiaxialReinforcement"/> of this.
+        /// </summary>
+        public BiaxialReinforcement Reinforcement { get; }
 
-			// Read as a solid
-			var pnl = Geometry.Panel.ReadPanel(panelObject);
+        /// <summary>
+        /// Get the center <see cref="Node"/> of bottom edge.
+        /// </summary>
+        public Node Grip1 { get; }
 
-			// Read the XData and get the necessary data
-			var pnlData = Auxiliary.ReadXData(pnl);
+        /// <summary>
+        /// Get the center <see cref="Node"/> of right edge.
+        /// </summary>
+        public Node Grip2 { get; }
 
-			// Get the panel parameters
-			Number = Convert.ToInt32 (pnlData[(int) PanelData.Number].Value);
-			Width  = Convert.ToDouble(pnlData[(int) PanelData.Width] .Value);
+        /// <summary>
+        /// Get the center <see cref="Node"/> of top edge.
+        /// </summary>
+        public Node Grip3 { get; }
 
-			// Create the list of grips
-			Grips = new[]
-			{
-				Convert.ToInt32(pnlData[(int) PanelData.Grip1].Value),
-				Convert.ToInt32(pnlData[(int) PanelData.Grip2].Value),
-				Convert.ToInt32(pnlData[(int) PanelData.Grip3].Value),
-				Convert.ToInt32(pnlData[(int) PanelData.Grip4].Value)
-			};
+        /// <summary>
+        /// Get the center <see cref="Node"/> of left edge.
+        /// </summary>
+        public Node Grip4 { get; }
 
-			// Create the list of vertices
-			Vertices = Geometry.Panel.PanelVertices(pnl);
+		/// <summary>
+        /// Get/set local stiffness <see cref="Matrix"/>.
+        /// </summary>
+		public Matrix<double> LocalStiffness { get; set; }
 
-			// Calculate vertex coordinates and dimensions
-			VertexCoordinates = Vertex_Coordinates();
-			Dimensions        = CalculateDimensions();
-			Edges             = EdgesLengthAndAngles();
+		/// <summary>
+		/// Get global stiffness <see cref="Matrix"/>.
+		/// </summary>
+		public virtual Matrix<double> GlobalStiffness { get; }
 
-			// Get reinforcement
-			double
-				phiX = Convert.ToDouble(pnlData[(int) PanelData.XDiam].Value),
-				phiY = Convert.ToDouble(pnlData[(int) PanelData.YDiam].Value),
-				sx   = Convert.ToDouble(pnlData[(int) PanelData.Sx].Value),
-				sy   = Convert.ToDouble(pnlData[(int) PanelData.Sy].Value);
+		/// <summary>
+		/// Get/set global displacement <see cref="Vector"/>.
+		/// </summary>
+		public Vector<double> Displacements { get; set; }
 
-			// Get steel data
-			double
-				fyx = Convert.ToDouble(pnlData[(int) PanelData.fyx].Value),
-				Esx = Convert.ToDouble(pnlData[(int) PanelData.Esx].Value),
-				fyy = Convert.ToDouble(pnlData[(int) PanelData.fyy].Value),
-				Esy = Convert.ToDouble(pnlData[(int) PanelData.Esy].Value);
+		/// <summary>
+		/// Get/set global force <see cref="Vector"/>.
+		/// </summary>
+		public Vector<double> Forces { get; set; }
 
-			var steel =
-			(
-				new Steel(fyx, Esx),
-				new Steel(fyy, Esy)
-			);
+		/// <summary>
+		/// Get average <see cref="StressState"/>.
+		/// </summary>
+		public virtual StressState AverageStresses { get; }
 
-			// Set reinforcement
-			Reinforcement = new Reinforcement((phiX, phiY), (sx, sy), steel, Width);
-		}
+		/// <summary>
+		/// Get average <see cref="PrincipalStressState"/>.
+		/// </summary>
+		public virtual PrincipalStressState PrincipalStresses { get; }
+
+        /// <summary>
+        /// Get the grip numbers of this.
+        /// </summary>
+        public int[] Grips => new[] { Grip1.Number, Grip2.Number, Grip3.Number, Grip4.Number };
+
+        /// <summary>
+        /// Get the DoF index of panel <see cref="Grips"/>.
+        /// </summary>
+        public override int[] DoFIndex => GlobalIndexes(Grips);
+
+		/// <summary>
+        /// Get absolute maximum panel force.
+        /// </summary>
+        public double MaxForce => Forces.AbsoluteMaximum();
+
+        /// <summary>
+        /// Base panel object.
+        /// </summary>
+        /// <param name="objectId">The panel <see cref="ObjectId"/>.</param>
+        /// <param name="number">The panel number.</param>
+        /// <param name="grip1">The center <see cref="Node"/> of bottom edge</param>
+        /// <param name="grip2">The center <see cref="Node"/> of right edge</param>
+        /// <param name="grip3">The center <see cref="Node"/> of top edge</param>
+        /// <param name="grip4">The center <see cref="Node"/> of left edge</param>
+        /// <param name="geometry">The <see cref="PanelGeometry"/>.</param>
+        /// <param name="concreteParameters">The concrete parameters <see cref="Parameters"/>.</param>
+        /// <param name="concreteConstitutive">The concrete constitutive <see cref="Constitutive"/>.</param>
+        /// <param name="reinforcement">The <see cref="BiaxialReinforcement"/>.</param>
+        public Panel(ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, Node grip4, PanelGeometry geometry, Parameters concreteParameters, Constitutive concreteConstitutive, BiaxialReinforcement reinforcement = null) : base(objectId, number)
+        {
+	        Grip1 = grip1;
+	        Grip2 = grip2;
+	        Grip3 = grip3;
+	        Grip4 = grip4;
+
+	        Geometry = geometry;
+
+			Concrete = new BiaxialConcrete(concreteParameters, concreteConstitutive);
+
+			Reinforcement = reinforcement;
+        }
+
+        /// <summary>
+        /// Base panel object.
+        /// </summary>
+        /// <param name="objectId">The panel <see cref="ObjectId"/>.</param>
+        /// <param name="number">The panel number.</param>
+        /// <param name="grip1">The center <see cref="Node"/> of bottom edge</param>
+        /// <param name="grip2">The center <see cref="Node"/> of right edge</param>
+        /// <param name="grip3">The center <see cref="Node"/> of top edge</param>
+        /// <param name="grip4">The center <see cref="Node"/> of left edge</param>
+        /// <param name="vertices">Panel <see cref="Vertices"/> object.</param>
+        /// <param name="width">Panel width, in <paramref name="geometryUnit"/>.</param>
+        /// <param name="concreteParameters">The concrete parameters <see cref="Parameters"/>.</param>
+        /// <param name="concreteConstitutive">The concrete constitutive <see cref="Constitutive"/>.</param>
+        /// <param name="reinforcement">The <see cref="BiaxialReinforcement"/>.</param>
+        /// <param name="geometryUnit">The <see cref="LengthUnit"/> of <paramref name="width"/> and <paramref name="vertices"/>' coordinates.</param>
+        public Panel(ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, Node grip4, Vertices vertices, double width, Parameters concreteParameters, Constitutive concreteConstitutive, BiaxialReinforcement reinforcement = null, LengthUnit geometryUnit = LengthUnit.Millimeter) 
+	        : this(objectId, number, grip1, grip2, grip3, grip4, new PanelGeometry(vertices, width, geometryUnit), concreteParameters, concreteConstitutive, reinforcement)
+        {
+        }
+
+        /// <summary>
+        /// Base panel object.
+        /// </summary>
+        /// <param name="objectId">The panel <see cref="ObjectId"/>.</param>
+        /// <param name="number">The panel number.</param>
+        /// <param name="grip1">The center <see cref="Node"/> of bottom edge</param>
+        /// <param name="grip2">The center <see cref="Node"/> of right edge</param>
+        /// <param name="grip3">The center <see cref="Node"/> of top edge</param>
+        /// <param name="grip4">The center <see cref="Node"/> of left edge</param>
+        /// <param name="vertices">The array of <see cref="Point3d"/> panel vertices.</param>
+        /// <param name="width">Panel width, in <paramref name="geometryUnit"/>.</param>
+        /// <param name="concreteParameters">The concrete parameters <see cref="Parameters"/>.</param>
+        /// <param name="concreteConstitutive">The concrete constitutive <see cref="Constitutive"/>.</param>
+        /// <param name="reinforcement">The <see cref="BiaxialReinforcement"/>.</param>
+        /// <param name="geometryUnit">The <see cref="LengthUnit"/> of <paramref name="width"/> and <paramref name="vertices"/>' coordinates.</param>
+        public Panel(ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, Node grip4, Point3d[] vertices, double width, Parameters concreteParameters, Constitutive concreteConstitutive, BiaxialReinforcement reinforcement = null, LengthUnit geometryUnit = LengthUnit.Millimeter) 
+	        : this(objectId, number, grip1, grip2, grip3, grip4, new PanelGeometry(vertices, width, geometryUnit), concreteParameters, concreteConstitutive, reinforcement)
+        {
+        }
 
 		public static Panel ReadPanel(AnalysisType analysisType, ObjectId panelObject, Units units,
 			Parameters concreteParameters = null, Constitutive concreteConstitutive = null, Stringer[] stringers = null)
@@ -102,119 +173,10 @@ namespace SPMElements
 			return new NonLinearPanel(panelObject, units, concreteParameters, concreteConstitutive, stringers);
 		}
 
-		// Set global indexes from grips
-		public override int[] DoFIndex => GlobalAuxiliary.GlobalIndexes(Grips);
 
-		// Get the center point
-		public Point3d CenterPoint
-		{
-			get
-			{
-				// Calculate the approximated center point
-				var Pt1 = GlobalAuxiliary.MidPoint(Vertices[0], Vertices[2]);
-				var Pt2 = GlobalAuxiliary.MidPoint(Vertices[1], Vertices[3]);
-
-				return
-					GlobalAuxiliary.MidPoint(Pt1, Pt2);
-			}
-		}
-
-		// Calculate direction cosines of each edge
-		public (double cos, double sin)[] DirectionCosines
-		{
-			get
-			{
-				var directionCosines = new (double cos, double sin)[4];
-
-				var angles = Edges.Angle;
-
-				for (var i = 0; i < 4; i++)
-					directionCosines[i] = GlobalAuxiliary.DirectionCosines(angles[i]);
-
-				return
-					directionCosines;
-			}
-		}
-
-		// Maximum panel force
-		public double MaxForce => Forces.AbsoluteMaximum();
-
-		// Function to verify if a panel is rectangular
-		public bool Rectangular
-		{
-			get
-			{
-				// Calculate the angles between the edges
-				var ang2 = Edges.Angle[1] - Edges.Angle[0];
-				var ang4 = Edges.Angle[3] - Edges.Angle[2];
-
-				if (ang2 == Constants.PiOver2 && ang4 == Constants.PiOver2)
-					return true;
-
-				return false;
-			}
-		}
-
-        // Get X and Y coordinates of a panel vertices
-        public (double[] x, double[] y) Vertex_Coordinates()
-		{
-			double[]
-				x = new double[4],
-				y = new double[4];
-
-			// Get X and Y coordinates of the vertices
-			for (var i = 0; i < 4; i++)
-			{
-				x[i] = Units.ConvertToMillimeter(Vertices[i].X, Units.Geometry);
-				y[i] = Units.ConvertToMillimeter(Vertices[i].Y, Units.Geometry);
-			}
-
-			return (x, y);
-		}
-
-		// Panel dimensions
-		public (double a, double b, double c, double d) CalculateDimensions()
-		{
-			var (x, y) = VertexCoordinates;
-
-			// Calculate the necessary dimensions of the panel
-			double
-				a = 0.5 * (x[1] + x[2] - x[0] - x[3]),
-				b = 0.5 * (y[2] + y[3] - y[0] - y[1]),
-				c = 0.5 * (x[2] + x[3] - x[0] - x[1]),
-				d = 0.5 * (y[1] + y[2] - y[0] - y[3]);
-
-			return
-				(a, b, c, d);
-		}
-
-		// Get edge lengths and angles
-		public (double[] Length, double[] Angle) EdgesLengthAndAngles()
-		{
-			double[]
-				l = new double[4],
-				a = new double[4];
-
-			// Create lines to measure the angles between the edges and dimensions
-			Line[] ln =
-			{
-				new Line(Vertices[0], Vertices[1]),
-				new Line(Vertices[1], Vertices[2]),
-				new Line(Vertices[2], Vertices[3]),
-				new Line(Vertices[3], Vertices[0])
-			};
-
-			// Create the list of dimensions
-			for (var i = 0; i < 4; i++)
-			{
-				l[i] = Units.ConvertToMillimeter(ln[i].Length, Units.Geometry);
-				a[i] = ln[i].Angle;
-			}
-
-			return (l, a);
-		}
-
-		// Get panel displacements from global displacement vector
+		/// <summary>
+		/// Set panel displacements from global displacement vector.
+		/// </summary>
 		public void SetDisplacements(Vector<double> globalDisplacementVector)
 		{
 			var u = globalDisplacementVector;
@@ -235,25 +197,52 @@ namespace SPMElements
 			Displacements = up;
 		}
 
+		/// <summary>
+		/// Do analysis of panel.
+		/// </summary>
+		/// <param name="globalDisplacements">The global displacement vector.</param>
 		public virtual void Analysis(Vector<double> globalDisplacements = null)
 		{
 		}
 
+		/// <summary>
+        /// Returns true if <paramref name="other"/>'s <see cref="Geometry"/> is equal.
+        /// </summary>
+        /// <param name="other">The other <see cref="Panel"/> object to compare.</param>
+		public bool Equals(Panel other) => other != null && Geometry == other.Geometry;
+
+		/// <summary>
+		/// Returns true if <paramref name="obj"/> is <see cref="Panel"/> and <see cref="Geometry"/> is equal.
+		/// </summary>
+		/// <param name="obj">The other <see cref="object"/> to compare.</param>
+		public override bool Equals(object obj) => obj is Panel other && Equals(other);
+
+		public override int GetHashCode() => Geometry.GetHashCode();
+
 		public override string ToString()
 		{
-			// Convert width
-			var w = Length.From(Width, LengthUnit.Millimeter).ToUnit(Units.Geometry);
-
 			var msgstr =
-				"Panel " + Number + "\n\n" +
-				"Grips: (" + Grips[0] + " - " + Grips[1] + " - " + Grips[2] + " - " + Grips[3] +
-				")" + "\n" +
-				"Width = " + w;
+				$"Panel {Number} + \n\n" +
+				$"Grips: ({Grips[0]} - {Grips[1]} - {Grips[2]} - {Grips[3]})\n" +
+				Geometry;
 
-			if (Reinforcement.IsSet)
-				msgstr += "\n\n" + Reinforcement.ToString(Units.Reinforcement, Units.Geometry, Units.MaterialStrength);
+			if (!(Reinforcement is null))
+				msgstr += "\n\n" + Reinforcement;
 
 			return msgstr;
 		}
-	}
+
+		/// <summary>
+		/// Returns true if arguments are equal.
+		/// <para>See:<seealso cref="Equals(Panel)"/>.</para>
+		/// </summary>
+		public static bool operator == (Panel left, Panel right) => left != null && left.Equals(right);
+
+        /// <summary>
+        /// Returns true if arguments are different.
+        /// <para>See:<seealso cref="Equals(Panel)"/>.</para>
+        /// </summary>
+        public static bool operator != (Panel left, Panel right) => left != null && !left.Equals(right);
+
+    }
 }

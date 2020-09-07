@@ -29,22 +29,32 @@ namespace SPMElements
 		    return null;
 	    }
 
-	    /// <summary>
-	    /// Return the <see cref="Node"/> of an array, in given <paramref name="number"/>.
-	    /// </summary>
-	    /// <param name="nodes">The array of nodes.</param>
-	    /// <param name="number">The number of the node wanted.</param>
-	    /// <returns></returns>
-	    public static Node GetByNumber(this Node[] nodes, int number)
+        /// <summary>
+        /// Return the <see cref="SPMElement"/> of an <see cref="Array"/>, in given <paramref name="number"/>.
+        /// </summary>
+        /// <param name="elements">The <see cref="Array"/> of <see cref="SPMElement"/>.</param>
+        /// <param name="number">The number of the node wanted.</param>
+        /// <returns></returns>
+        public static SPMElement GetByNumber(this SPMElement[] elements, int number)
 	    {
-		    foreach (var node in nodes)
+		    foreach (var element in elements)
 		    {
-			    if (number == node.Number)
-				    return node;
+			    if (number == element.Number)
+				    return element;
 		    }
 
 		    return null;
 	    }
 
+        /// <summary>
+        /// Set stringer dimensions on edges of each panel.
+        /// <para>See: <see cref="Edge.SetStringerDimension"/></para>
+        /// </summary>
+        /// <param name="stringers">The array containing all of the stringers.</param>
+        public static void SetStringerDimensions(this NonLinearPanel[] panels, Stringer[] stringers)
+        {
+	        foreach (var panel in panels)
+		        panel.SetEdgeStringersDimensions(stringers);
+        }
     }
 }

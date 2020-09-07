@@ -136,7 +136,7 @@ namespace SPMElements
         public bool ForcesNotZero => !Force.AreComponentsZero;
 
         /// <inheritdoc/>
-        public override int[] DoFIndex => GlobalIndexes(Number);
+        public override int[] DoFIndex => _globalIndexes ?? GlobalIndexes(Number);
 
         /// <summary>
         /// Return the distance to another <see cref="Node"/>.

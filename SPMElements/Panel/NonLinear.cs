@@ -1,11 +1,14 @@
 ﻿using System;
 using Autodesk.AutoCAD.DatabaseServices;
+using Autodesk.AutoCAD.Geometry;
 using Material.Concrete;
+using Material.Reinforcement;
 using MathNet.Numerics.LinearAlgebra;
+using MathNet.Numerics.LinearAlgebra.Double;
 using OnPlaneComponents;
 using SPMElements.PanelProperties;
 using RCMembrane;
-using Reinforcement      = Material.Reinforcement.BiaxialReinforcement;
+using UnitsNet.Units;
 
 namespace SPMElements
 {
@@ -13,59 +16,59 @@ namespace SPMElements
     {
 		// Auxiliary fields
 		private Matrix<double> _BA, _Q, _Pc, _Ps, _Dc, _Ds;
+		private Vector<double> _sigmaC, _sigmaS;
 
 		/// <summary>
         /// Get <see cref="Membrane"/> integration points.
         /// </summary>
 	    public  Membrane[] IntegrationPoints  { get; }
 
+        /// <summary>
+        /// Get panel strain <see cref="Vector"/>.
+        /// </summary>
+        public Vector<double> StrainVector => (_BA ?? CalculateBA()) * Displacements;
 
-	    public  (Matrix<double> Dc,     Matrix<double> Ds)     MaterialStiffness  { get; set; }
-	    public  (Vector<double> sigmaC, Vector<double> sigmaS) MaterialStresses   { get; set; }
+        /// <summary>
+        /// Get panel concrete stress <see cref="Vector"/>.
+        /// </summary>
+	    public Vector<double> ConcreteStresses => _sigmaC;
 
-	    public NonLinearPanel(ObjectId panelObject, Units units, Parameters concreteParameters, Constitutive concreteConstitutive, Stringer[] stringers) : base(panelObject, units, concreteParameters, concreteConstitutive)
-	    {
-		    // Set Stringer dimensions
-		    SetEdgeStringersDimensions(stringers);
+        /// <summary>
+        /// Get panel reinforcement stress <see cref="Vector"/>.
+        /// </summary>
+	    public Vector<double> ReinforcementStresses => _sigmaS;
 
-		    // Initiate integration points
-		    IntegrationPoints = IntPoints(concreteParameters, concreteConstitutive);
-
-		    // Initiate stiffness
-		    MaterialStiffness = InitialMaterialStiffness();
-	    }
-
-	    // Calculate panel strain vector
-	    public Vector<double> StrainVector => (_BA ?? CalculateBA()) * Displacements;
-
-	    // Calculate stresses
-	    public Vector<double> Stresses => MaterialStresses.sigmaC + MaterialStresses.sigmaS;
+        /// <summary>
+        /// Get panel stress <see cref="Vector"/>.
+        /// </summary>
+	    public Vector<double> Stresses => ConcreteStresses + ReinforcementStresses;
 
 	    /// <inheritdoc/>
 	    public override Matrix<double> GlobalStiffness
 	    {
 		    get
 		    {
-			    Matrix<double>
+				if (_Dc is null || _Ds is null)
+					(_Dc, _Ds) = InitialMaterialStiffness();
+
+                Matrix<double>
 				    BA = _BA ?? CalculateBA(),
 				    Pc = _Pc ?? CalculateP().Pc,
 				    Ps = _Ps ?? CalculateP().Ps,
 				    Q  = _Q  ?? CalculateQ();
 
-			    var (Dc, Ds) = MaterialStiffness;
-
 			    var QPs = Q * Ps;
 			    var QPc = Q * Pc;
 
-			    var kc = QPc * Dc * BA;
-			    var ks = QPs * Ds * BA;
+			    var kc = QPc * _Dc * BA;
+			    var ks = QPs * _Ds * BA;
 
 			    return kc + ks;
 		    }
 	    }
 
 	    /// <inheritdoc/>
-	    public PrincipalStressState ConcretePrincipalStresses
+	    public override PrincipalStressState ConcretePrincipalStresses
 	    {
 		    get
 		    {
@@ -100,16 +103,46 @@ namespace SPMElements
 		    }
 	    }
 
-	    // Get integration points
-	    private Membrane[] IntPoints(Parameters parameters, Constitutive constitutive)
+	    /// <summary>
+	    /// Nonlinear panel object.
+	    /// </summary>
+	    /// <inheritdoc/>
+	    public NonLinearPanel(ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, Node grip4, PanelGeometry geometry, Parameters concreteParameters, Constitutive concreteConstitutive, BiaxialReinforcement reinforcement = null) : base(objectId, number, grip1, grip2, grip3, grip4, geometry, concreteParameters, concreteConstitutive, reinforcement)
+	    {
+		    IntegrationPoints = IntPoints(concreteParameters, concreteConstitutive);
+	    }
+
+	    /// <summary>
+	    /// Nonlinear panel object.
+	    /// </summary>
+	    /// <inheritdoc/>
+	    public NonLinearPanel(ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, Node grip4, Vertices vertices, double width, Parameters concreteParameters, Constitutive concreteConstitutive, BiaxialReinforcement reinforcement = null, LengthUnit geometryUnit = LengthUnit.Millimeter) : base(objectId, number, grip1, grip2, grip3, grip4, vertices, width, concreteParameters, concreteConstitutive, reinforcement, geometryUnit)
+	    {
+		    IntegrationPoints = IntPoints(concreteParameters, concreteConstitutive);
+	    }
+
+	    /// <summary>
+	    /// Nonlinear panel object.
+	    /// </summary>
+	    /// <inheritdoc/>
+        public NonLinearPanel(ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, Node grip4, Point3d[] vertices, double width, Parameters concreteParameters, Constitutive concreteConstitutive, BiaxialReinforcement reinforcement = null, LengthUnit geometryUnit = LengthUnit.Millimeter) : base(objectId, number, grip1, grip2, grip3, grip4, vertices, width, concreteParameters, concreteConstitutive, reinforcement, geometryUnit)
+	    {
+		    IntegrationPoints = IntPoints(concreteParameters, concreteConstitutive);
+	    }
+
+        /// <summary>
+        /// Initiate <see cref="Membrane"/> integration points.
+        /// </summary>
+        /// <param name="concreteParameters">Concrete <see cref="Parameters"/> object.</param>
+        /// <param name="concreteConstitutive">Concrete <see cref="Constitutive"/> object.</param>
+        /// <returns></returns>
+        private Membrane[] IntPoints(Parameters concreteParameters, Constitutive concreteConstitutive)
 	    {
 		    // Initiate integration points
 		    var intPts = new Membrane[4];
 
-		    var model = Enum.Parse(typeof(ConstitutiveModel), constitutive.ToString());
-
 		    for (int i = 0; i < 4; i++)
-			    intPts[i] = Membrane.ReadMembrane(parameters, constitutive, Reinforcement, Width);
+			    intPts[i] = Membrane.ReadMembrane(concreteParameters, concreteConstitutive, Reinforcement, Geometry.Width);
 
 		    return intPts;
 	    }
@@ -119,7 +152,7 @@ namespace SPMElements
         /// <para>See: <see cref="Edge.SetStringerDimension"/></para>
 		/// </summary>
         /// <param name="stringers">The array containing all of the stringers.</param>
-        private void SetEdgeStringersDimensions(Stringer[] stringers)
+        public void SetEdgeStringersDimensions(Stringer[] stringers)
 	    {
 			if (stringers is null)
 				return;
@@ -151,8 +184,39 @@ namespace SPMElements
 			Geometry.Edge4.SetStringerDimension(hs[3]);
 	    }
 
-	    // Calculate BA matrix
-	    private Matrix<double> CalculateBA()
+        /// <summary>
+        /// Set displacements and calculate forces.
+        /// </summary>
+        /// <param name="globalDisplacements">The global displacement <see cref="Vector"/>.</param>
+        public override void Analysis(Vector<double> globalDisplacements = null)
+        {
+	        // Set displacements
+	        if (globalDisplacements != null)
+		        SetDisplacements(globalDisplacements);
+
+	        // Get the vector strains and stresses
+	        var ev = StrainVector;
+
+	        // Calculate the material matrix of each int. point by MCFT
+	        for (int i = 0; i < 4; i++)
+	        {
+		        // Get the strains and stresses
+		        var e = StrainState.FromVector(ev.SubVector(3 * i, 3));
+
+		        // Calculate stresses by MCFT
+		        IntegrationPoints[i].Calculate(e);
+	        }
+
+	        // Calculate stresses, forces and update stiffness
+	        CalculateStresses();
+	        CalculateForces();
+	        UpdateStiffness();
+        }
+
+        /// <summary>
+        /// Calculate BA matrix.
+        /// </summary>
+        private Matrix<double> CalculateBA()
 	    {
 		    var (a, b, c, d) = Geometry.Dimensions;
 
@@ -232,7 +296,9 @@ namespace SPMElements
 		    return _BA;
 	    }
 
-	    // Calculate Q matrixS
+        /// <summary>
+        /// Calculate Q matrix.
+        /// </summary>
 	    private Matrix<double> CalculateQ()
 	    {
 		    // Get dimensions
@@ -270,11 +336,12 @@ namespace SPMElements
 		    return _Q;
 	    }
 
-	    // Calculate P matrices for concrete and steel
-	    private (Matrix<double> Pc, Matrix<double> Ps) CalculateP()
+        /// <summary>
+        /// Calculate P matrices for concrete and steel
+        /// </summary>
+        private (Matrix<double> Pc, Matrix<double> Ps) CalculateP()
 	    {
 		    // Get dimensions
-
 		    double[]
 			    x = Geometry.Vertices.XCoordinates,
 			    y = Geometry.Vertices.YCoordinates;
@@ -324,180 +391,49 @@ namespace SPMElements
 			    (Pc, Ps);
 	    }
 
-	    // Calculate strains
-	    private Vector<double> CalculateStrains()
+		/// <summary>
+        /// Calculate and set stress vectors.
+        /// <para>See: <see cref="_sigmaC"/>, <see cref="_sigmaS"/>.</para>
+        /// </summary>
+	    private void CalculateStresses()
 	    {
-		    // Get dimensions and displacements
-		    var (a, b, c, d) = Dimensions;
-		    var u = Displacements;
-
-		    // Calculate constants
-		    double
-			    t1 = a * b - c * d,
-			    t2 = a * a - c * c,
-			    t3 = b * b - d * d,
-			    t4 = 0.5 * t2 + t3,
-			    t5 = 0.5 * t3 + t2;
-
-		    // Calculate generalized strains
-		    double
-			    e1 = ( d * u[0] + b * u[2] - d * u[4] - b * u[6]) / t1,
-			    e2 = (-a * u[1] - c * u[3] + a * u[5] + c * u[7]) / t1,
-			    e3 = (-a * u[0] + d * u[1] - c * u[2] + b * u[3] +
-			          a * u[4] - d * u[5] + c * u[6] - b * u[7]) * 0.5 / t1,
-			    e4 = (-u[0] + u[2] - u[4] + u[6]) * a / t4,
-			    e5 = ( u[1] - u[3] + u[5] - u[7]) * b / t5;
-
-		    return
-			    Vector<double>.Build.DenseOfArray(new []
-			    {
-				    e1 - c / a * e4,
-				    e2 - e5,
-				    2 * (e3 + b / a * e4 + c / b * e5),
-				    e1 + e4,
-				    e2 + d / b * e5,
-				    2 * (e3 - d / a * e4 - a / b * e5),
-				    e1 + c / a * e4,
-				    e2 + e5,
-				    2 * (e3 - b / a * e4 - c / b * e5),
-				    e1 - e4,
-				    e2 - d / b * e5,
-				    2 * (e3 + d / a * e4 * a / b * e5)
-			    });
-	    }
-
-	    // Calculate D matrix and stress vector by MCFT
-	    public override void Analysis(Vector<double> globalDisplacements = null)
-	    {
-		    // Set displacements
-		    if (globalDisplacements != null)
-			    SetDisplacements(globalDisplacements);
-
-		    // Get the vector strains and stresses
-		    var ev = StrainVector;
-
-		    // Calculate the material matrix of each int. point by MCFT
-		    for (int i = 0; i < 4; i++)
-		    {
-			    // Get the strains and stresses
-			    var e = ev.SubVector(3 * i, 3);
-
-			    // Calculate stresses by MCFT
-			    IntegrationPoints[i].Calculate(e);
-		    }
-
-		    // Calculate stresses and forces
-		    MaterialStresses = CalculateStresses();
-		    Forces           = CalculateForces();
-	    }
-
-	    // Set results to panel integration points
-	    public void UpdateStiffness()
-	    {
-		    MaterialStiffness = CalculateMaterialStiffness();
-	    }
-
-	    // Calculate DMatrix
-	    public (Matrix<double> Dc, Matrix<double> Ds) CalculateMaterialStiffness()
-	    {
-		    var Dc = Matrix<double>.Build.Dense(12, 12);
-		    var Ds = Matrix<double>.Build.Dense(12, 12);
-
-		    for (int i = 0; i < 4; i++)
-		    {
-			    // Get the stiffness
-			    var Dci = IntegrationPoints[i].Concrete.Stiffness;
-			    var Dsi = IntegrationPoints[i].Reinforcement.Stiffness;
-
-			    // Set to stiffness
-			    Dc.SetSubMatrix(3 * i, 3 * i, Dci);
-			    Ds.SetSubMatrix(3 * i, 3 * i, Dsi);
-		    }
-
-		    return
-			    (Dc, Ds);
-	    }
-
-	    // Calculate tangent stiffness
-	    public Matrix<double> TangentStiffness()
-	    {
-		    // Get displacements
-		    var u = Displacements;
-
-		    // Set step size
-		    double d = 2E-10;
-
-		    // Calculate elements of matrix
-		    var K = Matrix<double>.Build.Dense(8, 8);
-		    for (int i = 0; i < 8; i++)
-		    {
-			    // Get row update vector
-			    var ud = CreateVector.Dense<double>(8);
-			    ud[i] = d;
-
-			    // Set displacements and do analysis
-			    SetDisplacements(u + ud);
-			    Analysis();
-
-			    // Get updated panel forces
-			    var fd1 = Forces;
-
-			    // Set displacements and do analysis
-			    SetDisplacements(u - ud);
-			    Analysis();
-
-			    // Get updated panel forces
-			    var fd2 = Forces;
-
-			    // Calculate ith column
-			    var km = 0.5 / d * (fd1 - fd2);
-
-			    // Set column
-			    K.SetColumn(i, km);
-		    }
-
-		    // Set displacements again
-		    SetDisplacements(u);
-
-		    return K;
-	    }
-
-	    // Get stress vector
-	    public (Vector<double> sigmaC, Vector<double> sigmaS) CalculateStresses()
-	    {
-		    var sigma = Vector<double>.Build.Dense(12);
-		    var sigmaC = Vector<double>.Build.Dense(12);
-		    var sigmaS = Vector<double>.Build.Dense(12);
+		    _sigmaC = Vector<double>.Build.Dense(12);
+		    _sigmaS = Vector<double>.Build.Dense(12);
 
 		    for (int i = 0; i < 4; i++)
 		    {
 			    // Get the stiffness
 			    var sigC = IntegrationPoints[i].Concrete.Stresses;
-			    var sigS = IntegrationPoints[i].Reinforcement.Stresses;
+			    var sigS = IntegrationPoints[i].Reinforcement?.Stresses ?? StressState.Zero;
 
 			    // Set to stiffness
-			    sigmaC.SetSubVector(3 * i, 3, sigC);
-			    sigmaS.SetSubVector(3 * i, 3, sigS);
+			    _sigmaC.SetSubVector(3 * i, 3, sigC.AsVector());
+			    _sigmaS.SetSubVector(3 * i, 3, sigS.AsVector());
 		    }
-
-		    return
-			    (sigmaC, sigmaS);
 	    }
 
-	    // Calculate panel forces
-	    public Vector<double> CalculateForces()
+		/// <summary>
+		/// Calculate and set global force vector.
+		/// <para>See: <see cref="Panel._globalForces"/>, <see cref="Panel.Forces"/>.</para>
+		/// </summary>
+	    private void CalculateForces()
 	    {
 		    double t0, t1, t2, t3, t4;
 
-		    // Get dimensions
-		    var (x, y)       = VertexCoordinates;
-		    var (a, b, c, d) = Dimensions;
-		    var s            = StringerDimensions;
-		    var t            = Width;
+            // Get dimensions
+            double[]
+	            x = Geometry.Vertices.XCoordinates,
+	            y = Geometry.Vertices.YCoordinates;
+
+		    var (a, b, c, d) = Geometry.Dimensions;
+		    var s            = Geometry.StringerDimensions;
+		    var t            = Geometry.Width;
 
 		    // Get stresses
-		    var sig          = Stresses;
-		    var (sigC, sigS) = MaterialStresses;
+			Vector<double>
+				sigC = ConcreteStresses,
+				sigS = ReinforcementStresses,
+				sig  = Stresses;
 
 		    var (sig1, sigC1, sigS1) = (sig.SubVector(0, 3), sigC.SubVector(0, 3), sigS.SubVector(0, 3));
 		    var (sig2, sigC2, sigS2) = (sig.SubVector(3, 3), sigC.SubVector(3, 3), sigS.SubVector(3, 3));
@@ -549,24 +485,40 @@ namespace SPMElements
 		    f5 = -a * t1 - b * t2 - t3;
 		    f8 = b * t1 - a * t2 - t4;
 
-		    return
+		    _globalForces =
 			    Vector<double>.Build.DenseOfArray(new []
 			    {
 				    f1, f2, f3, f4, f5, f6, f7, f8
 			    });
 
 		    // Check value of t3
-		    double CheckT3(double value)
-		    {
-			    if (value < 0)
-				    return 0;
-
-			    return value;
-		    }
+		    double CheckT3(double value) => value < 0 ? 0 : value;
 	    }
 
-	    // Initial material stiffness
-	    public (Matrix<double> Dc, Matrix<double> Ds) InitialMaterialStiffness()
+		/// <summary>
+		/// Update stiffness.
+		/// </summary>
+		public void UpdateStiffness()
+		{
+			_Dc = Matrix<double>.Build.Dense(12, 12);
+			_Ds = Matrix<double>.Build.Dense(12, 12);
+
+			for (int i = 0; i < 4; i++)
+			{
+				// Get the stiffness
+				var Dci = IntegrationPoints[i].Concrete.Stiffness;
+				var Dsi = IntegrationPoints[i].Reinforcement.Stiffness;
+
+				// Set to stiffness
+				_Dc.SetSubMatrix(3 * i, 3 * i, Dci);
+				_Ds.SetSubMatrix(3 * i, 3 * i, Dsi);
+			}
+		}
+
+        /// <summary>
+        /// Calculate initial material stiffness matrices.
+        /// </summary>
+        public (Matrix<double> Dc, Matrix<double> Ds) InitialMaterialStiffness()
 	    {
 		    var Dc = Matrix<double>.Build.Dense(12, 12);
 		    var Ds = Matrix<double>.Build.Dense(12, 12);
@@ -586,8 +538,100 @@ namespace SPMElements
 			    (Dc, Ds);
 	    }
 
-	    // Initial stiffness
-	    public Matrix<double> InitialStiffness()
+        /// <summary>
+        /// Calculate the vector of strains (alternate method).
+        /// </summary>
+        private Vector<double> CalculateStrains()
+        {
+	        // Get dimensions and displacements
+	        var (a, b, c, d) = Geometry.Dimensions;
+	        var u = Displacements;
+
+	        // Calculate constants
+	        double
+		        t1 = a * b - c * d,
+		        t2 = a * a - c * c,
+		        t3 = b * b - d * d,
+		        t4 = 0.5 * t2 + t3,
+		        t5 = 0.5 * t3 + t2;
+
+	        // Calculate generalized strains
+	        double
+		        e1 = (d * u[0] + b * u[2] - d * u[4] - b * u[6]) / t1,
+		        e2 = (-a * u[1] - c * u[3] + a * u[5] + c * u[7]) / t1,
+		        e3 = (-a * u[0] + d * u[1] - c * u[2] + b * u[3] +
+		              a * u[4] - d * u[5] + c * u[6] - b * u[7]) * 0.5 / t1,
+		        e4 = (-u[0] + u[2] - u[4] + u[6]) * a / t4,
+		        e5 = (u[1] - u[3] + u[5] - u[7]) * b / t5;
+
+	        return
+		        Vector<double>.Build.DenseOfArray(new[]
+		        {
+			        e1 - c / a * e4,
+			        e2 - e5,
+			        2 * (e3 + b / a * e4 + c / b * e5),
+			        e1 + e4,
+			        e2 + d / b * e5,
+			        2 * (e3 - d / a * e4 - a / b * e5),
+			        e1 + c / a * e4,
+			        e2 + e5,
+			        2 * (e3 - b / a * e4 - c / b * e5),
+			        e1 - e4,
+			        e2 - d / b * e5,
+			        2 * (e3 + d / a * e4 * a / b * e5)
+		        });
+        }
+
+        /// <summary>
+        /// Calculate tangent stiffness.
+        /// </summary>
+        private Matrix<double> TangentStiffness()
+		{
+			// Get displacements
+			var u = Displacements;
+
+			// Set step size
+			double d = 2E-10;
+
+			// Calculate elements of matrix
+			var K = Matrix<double>.Build.Dense(8, 8);
+			for (int i = 0; i < 8; i++)
+			{
+				// Get row update vector
+				var ud = CreateVector.Dense<double>(8);
+				ud[i] = d;
+
+				// Set displacements and do analysis
+				SetDisplacements(u + ud);
+				Analysis();
+
+				// Get updated panel forces
+				var fd1 = Forces;
+
+				// Set displacements and do analysis
+				SetDisplacements(u - ud);
+				Analysis();
+
+				// Get updated panel forces
+				var fd2 = Forces;
+
+				// Calculate ith column
+				var km = 0.5 / d * (fd1 - fd2);
+
+				// Set column
+				K.SetColumn(i, km);
+			}
+
+			// Set displacements again
+			SetDisplacements(u);
+
+			return K;
+		}
+
+        /// <summary>
+        /// Calculate initial stiffness matrix (alternate).
+        /// </summary>
+        private Matrix<double> InitialStiffness()
 	    {
 		    var (a, b, _, _) = Geometry.Dimensions;
 

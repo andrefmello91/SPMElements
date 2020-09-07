@@ -16,7 +16,7 @@ namespace SPMElements
     public class LinearPanel : Panel
     {
 		// Auxiliary fields
-		private Matrix<double> _transMatrix, _localStiffness;
+		private Matrix<double> _transMatrix;
 
 		/// <summary>
 		/// Get transformation <see cref="Matrix"/>.
@@ -29,8 +29,11 @@ namespace SPMElements
 		/// <inheritdoc/>
 	    public override Matrix<double> GlobalStiffness => TransformationMatrix.Transpose() * LocalStiffness * TransformationMatrix;
 
-	    /// <inheritdoc/>
-	    public override StressState AverageStresses
+		/// <inheritdoc/>
+		public override Vector<double> Forces => TransformationMatrix.Transpose() * _localForces;
+		
+        /// <inheritdoc/>
+        public override StressState AverageStresses
 	    {
 		    get
 		    {
@@ -85,18 +88,28 @@ namespace SPMElements
 		    }
 	    }
 
+		/// <summary>
+		/// Linear panel object.
+		/// </summary>
 	    /// <inheritdoc/>
 	    public LinearPanel(ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, Node grip4, PanelGeometry geometry, Parameters concreteParameters, Constitutive concreteConstitutive, Reinforcement reinforcement = null) : base(objectId, number, grip1, grip2, grip3, grip4, geometry, concreteParameters, concreteConstitutive, reinforcement)
 	    {
 	    }
 
-	    /// <inheritdoc/>
-	    public LinearPanel(ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, Node grip4, Vertices vertices, double width, Parameters concreteParameters, Constitutive concreteConstitutive, Reinforcement reinforcement = null, LengthUnit geometryUnit = LengthUnit.Millimeter) : base(objectId, number, grip1, grip2, grip3, grip4, vertices, width, concreteParameters, concreteConstitutive, reinforcement, geometryUnit)
+
+		/// <summary>
+		/// Linear panel object.
+		/// </summary>
+		/// <inheritdoc/>
+        public LinearPanel(ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, Node grip4, Vertices vertices, double width, Parameters concreteParameters, Constitutive concreteConstitutive, Reinforcement reinforcement = null, LengthUnit geometryUnit = LengthUnit.Millimeter) : base(objectId, number, grip1, grip2, grip3, grip4, vertices, width, concreteParameters, concreteConstitutive, reinforcement, geometryUnit)
 	    {
 	    }
 
+		/// <summary>
+		/// Linear panel object.
+		/// </summary>
 	    /// <inheritdoc/>
-	    public LinearPanel(ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, Node grip4, Point3d[] vertices, double width, Parameters concreteParameters, Constitutive concreteConstitutive, Reinforcement reinforcement = null, LengthUnit geometryUnit = LengthUnit.Millimeter) : base(objectId, number, grip1, grip2, grip3, grip4, vertices, width, concreteParameters, concreteConstitutive, reinforcement, geometryUnit)
+        public LinearPanel(ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, Node grip4, Point3d[] vertices, double width, Parameters concreteParameters, Constitutive concreteConstitutive, Reinforcement reinforcement = null, LengthUnit geometryUnit = LengthUnit.Millimeter) : base(objectId, number, grip1, grip2, grip3, grip4, vertices, width, concreteParameters, concreteConstitutive, reinforcement, geometryUnit)
 	    {
 	    }
 
@@ -265,8 +278,10 @@ namespace SPMElements
 			    B.ToColumnMatrix() * D * B.ToRowMatrix();
 	    }
 
-	    // Calculate panel forces
-	    public Vector<double> CalculateForces()
+		/// <summary>
+        /// Calculate panel local forces.
+        /// </summary>
+	    private Vector<double> CalculateForces()
 	    {
 		    // Get the parameters
 		    var up = Displacements;
@@ -285,14 +300,18 @@ namespace SPMElements
 		    return fl;
 	    }
 
-	    // Calculate forces
-	    public override void Analysis(Vector<double> globalDisplacements = null)
+		/// <summary>
+        /// Set displacements and calculate forces.
+        /// </summary>
+        /// <param name="globalDisplacements">The global displacement <see cref="Vector"/>.</param>
+		public override void Analysis(Vector<double> globalDisplacements = null)
 	    {
 		    // Set displacements
 		    if (globalDisplacements != null)
 			    SetDisplacements(globalDisplacements);
 
-		    Forces = CalculateForces();
+			// Calculate local forces
+		    _localForces = CalculateForces();
 	    }
     }
 }

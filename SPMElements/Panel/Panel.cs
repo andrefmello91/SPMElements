@@ -17,6 +17,10 @@ namespace SPMElements
     /// </summary>
 	public class Panel : SPMElement, IEquatable<Panel>
 	{
+		// Auxiliary fields
+		protected Vector<double> _localForces, _globalForces, _globaldisplacements;
+		protected Matrix<double> _localStiffness;
+
 		/// <summary>
         /// Get <see cref="PanelGeometry"/> of this.
         /// </summary>
@@ -52,10 +56,10 @@ namespace SPMElements
         /// </summary>
         public Node Grip4 { get; }
 
-		/// <summary>
+        /// <summary>
         /// Get/set local stiffness <see cref="Matrix"/>.
         /// </summary>
-		public virtual Matrix<double> LocalStiffness { get; set; }
+        public virtual Matrix<double> LocalStiffness => _localStiffness;
 
 		/// <summary>
 		/// Get global stiffness <see cref="Matrix"/>.
@@ -63,14 +67,14 @@ namespace SPMElements
 		public virtual Matrix<double> GlobalStiffness { get; }
 
 		/// <summary>
-		/// Get/set global displacement <see cref="Vector"/>.
+		/// Get global displacement <see cref="Vector"/>.
 		/// </summary>
-		public Vector<double> Displacements { get; set; }
+		public Vector<double> Displacements => _globaldisplacements;
 
 		/// <summary>
-		/// Get/set global force <see cref="Vector"/>.
+		/// Get global force <see cref="Vector"/>.
 		/// </summary>
-		public Vector<double> Forces { get; set; }
+		public virtual Vector<double> Forces => _globalForces;
 
 		/// <summary>
 		/// Get average <see cref="StressState"/>.
@@ -95,7 +99,7 @@ namespace SPMElements
         /// <summary>
         /// Get the DoF index of panel <see cref="Grips"/>.
         /// </summary>
-        public override int[] DoFIndex => GlobalIndexes(Grips);
+        public override int[] DoFIndex => _globalIndexes ?? GlobalIndexes(Grips);
 
 		/// <summary>
         /// Get absolute maximum panel force.
@@ -169,45 +173,109 @@ namespace SPMElements
         {
         }
 
-		public static Panel ReadPanel(AnalysisType analysisType, ObjectId panelObject, Units units,
-			Parameters concreteParameters = null, Constitutive concreteConstitutive = null, Stringer[] stringers = null)
+        /// <summary>
+        /// Set panel displacements from global displacement vector.
+        /// </summary>
+        public void SetDisplacements(Vector<double> globalDisplacementVector)
+        {
+	        var u = globalDisplacementVector;
+	        var ind = DoFIndex;
+
+	        // Get the displacements
+	        var up = Vector<double>.Build.Dense(8);
+	        for (var i = 0; i < ind.Length; i++)
+	        {
+		        // Indexers
+		        var j = ind[i];
+
+		        // Set values
+		        up[i] = u[j];
+	        }
+
+	        // Set
+	        _globaldisplacements = up;
+        }
+
+        /// <summary>
+        /// Do analysis of panel.
+        /// </summary>
+        /// <param name="globalDisplacements">The global displacement vector.</param>
+        public virtual void Analysis(Vector<double> globalDisplacements = null)
+        {
+        }
+
+
+        /// <summary>
+        /// Return a panel object based on type of analysis.
+        /// <para>See: <seealso cref="AnalysisType"/>.</para>
+        /// </summary>
+        /// <param name="analysisType">The <see cref="AnalysisType"/>.</param>
+        /// <param name="objectId">The panel <see cref="ObjectId"/>.</param>
+        /// <param name="number">The panel number.</param>
+        /// <param name="grip1">The center <see cref="Node"/> of bottom edge</param>
+        /// <param name="grip2">The center <see cref="Node"/> of right edge</param>
+        /// <param name="grip3">The center <see cref="Node"/> of top edge</param>
+        /// <param name="grip4">The center <see cref="Node"/> of left edge</param>
+        /// <param name="geometry">The <see cref="PanelGeometry"/>.</param>
+        /// <param name="concreteParameters">The concrete parameters <see cref="Parameters"/>.</param>
+        /// <param name="concreteConstitutive">The concrete constitutive <see cref="Constitutive"/>.</param>
+        /// <param name="reinforcement">The <see cref="BiaxialReinforcement"/>.</param>
+        public static Panel Read(AnalysisType analysisType, ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, Node grip4, PanelGeometry geometry, Parameters concreteParameters, Constitutive concreteConstitutive, BiaxialReinforcement reinforcement = null)
 		{
 			if (analysisType == AnalysisType.Linear)
-				return new LinearPanel(panelObject, units, concreteParameters, concreteConstitutive);
+				return new LinearPanel(objectId, number, grip1, grip2, grip3, grip4, geometry, concreteParameters, concreteConstitutive, reinforcement);
 
-			return new NonLinearPanel(panelObject, units, concreteParameters, concreteConstitutive, stringers);
+			return new NonLinearPanel(objectId, number, grip1, grip2, grip3, grip4, geometry, concreteParameters, concreteConstitutive, reinforcement);
 		}
 
-
-		/// <summary>
-		/// Set panel displacements from global displacement vector.
-		/// </summary>
-		public void SetDisplacements(Vector<double> globalDisplacementVector)
+        /// <summary>
+        /// Return a panel object based on type of analysis.
+        /// <para>See: <seealso cref="AnalysisType"/>.</para>
+        /// </summary>
+        /// <param name="analysisType">The <see cref="AnalysisType"/>.</param>
+        /// <param name="objectId">The panel <see cref="ObjectId"/>.</param>
+        /// <param name="number">The panel number.</param>
+        /// <param name="grip1">The center <see cref="Node"/> of bottom edge</param>
+        /// <param name="grip2">The center <see cref="Node"/> of right edge</param>
+        /// <param name="grip3">The center <see cref="Node"/> of top edge</param>
+        /// <param name="grip4">The center <see cref="Node"/> of left edge</param>
+        /// <param name="vertices">Panel <see cref="Vertices"/> object.</param>
+        /// <param name="width">Panel width, in <paramref name="geometryUnit"/>.</param>
+        /// <param name="concreteParameters">The concrete parameters <see cref="Parameters"/>.</param>
+        /// <param name="concreteConstitutive">The concrete constitutive <see cref="Constitutive"/>.</param>
+        /// <param name="reinforcement">The <see cref="BiaxialReinforcement"/>.</param>
+        /// <param name="geometryUnit">The <see cref="LengthUnit"/> of <paramref name="width"/> and <paramref name="vertices"/>' coordinates.</param>
+        public static Panel Read(AnalysisType analysisType, ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, Node grip4, Vertices vertices, double width, Parameters concreteParameters, Constitutive concreteConstitutive, BiaxialReinforcement reinforcement = null, LengthUnit geometryUnit = LengthUnit.Millimeter)
 		{
-			var u = globalDisplacementVector;
-			var ind = DoFIndex;
+			if (analysisType == AnalysisType.Linear)
+				return new LinearPanel(objectId, number, grip1, grip2, grip3, grip4, vertices, width, concreteParameters, concreteConstitutive, reinforcement, geometryUnit);
 
-			// Get the displacements
-			var up = Vector<double>.Build.Dense(8);
-			for (var i = 0; i < ind.Length; i++)
-			{
-				// Indexers
-				var j = ind[i];
-
-				// Set values
-				up[i] = u[j];
-			}
-
-			// Set
-			Displacements = up;
+			return new NonLinearPanel(objectId, number, grip1, grip2, grip3, grip4, vertices, width, concreteParameters, concreteConstitutive, reinforcement, geometryUnit);
 		}
 
-		/// <summary>
-		/// Do analysis of panel.
-		/// </summary>
-		/// <param name="globalDisplacements">The global displacement vector.</param>
-		public virtual void Analysis(Vector<double> globalDisplacements = null)
+        /// <summary>
+        /// Return a panel object based on type of analysis.
+        /// <para>See: <seealso cref="AnalysisType"/>.</para>
+        /// </summary>
+        /// <param name="analysisType">The <see cref="AnalysisType"/>.</param>
+        /// <param name="objectId">The panel <see cref="ObjectId"/>.</param>
+        /// <param name="number">The panel number.</param>
+        /// <param name="grip1">The center <see cref="Node"/> of bottom edge</param>
+        /// <param name="grip2">The center <see cref="Node"/> of right edge</param>
+        /// <param name="grip3">The center <see cref="Node"/> of top edge</param>
+        /// <param name="grip4">The center <see cref="Node"/> of left edge</param>
+        /// <param name="vertices">The array of <see cref="Point3d"/> panel vertices.</param>
+        /// <param name="width">Panel width, in <paramref name="geometryUnit"/>.</param>
+        /// <param name="concreteParameters">The concrete parameters <see cref="Parameters"/>.</param>
+        /// <param name="concreteConstitutive">The concrete constitutive <see cref="Constitutive"/>.</param>
+        /// <param name="reinforcement">The <see cref="BiaxialReinforcement"/>.</param>
+        /// <param name="geometryUnit">The <see cref="LengthUnit"/> of <paramref name="width"/> and <paramref name="vertices"/>' coordinates.</param>
+        public static Panel Read(AnalysisType analysisType, ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, Node grip4, Point3d[] vertices, double width, Parameters concreteParameters, Constitutive concreteConstitutive, BiaxialReinforcement reinforcement = null, LengthUnit geometryUnit = LengthUnit.Millimeter)
 		{
+			if (analysisType == AnalysisType.Linear)
+				return new LinearPanel(objectId, number, grip1, grip2, grip3, grip4, vertices, width, concreteParameters, concreteConstitutive, reinforcement, geometryUnit);
+
+			return new NonLinearPanel(objectId, number, grip1, grip2, grip3, grip4, vertices, width, concreteParameters, concreteConstitutive, reinforcement, geometryUnit);
 		}
 
 		/// <summary>

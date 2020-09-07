@@ -15,6 +15,8 @@ namespace SPMElements
 		private Matrix<double> _FMatrix;
 		private (double e1, double e3) _genStrains,  _iterationGenStrains;
 		private (double N1, double N3) _genStresses, _iterationGenStresses;
+		private (double T, double C)? _maxPlasticStrain;
+
 
 		private readonly Matrix<double> _BMatrix = 
 			Matrix<double>.Build.DenseOfArray(new double[,]
@@ -96,28 +98,10 @@ namespace SPMElements
 			}
 		}
 
-		// Calculate the maximum plastic strain in a Stringer for tension and compression
-		public (double eput, double epuc) MaxPlasticStrain
-		{
-			get
-			{
-				// Calculate the maximum plastic strain for tension
-				double
-					ec   = Concrete.ec,
-					ecu  = Concrete.ecu,
-					ey   = Steel?.YieldStrain ?? ec,
-					esu  = Steel?.UltimateStrain ?? 0.01,
-					eput = 0.3 * esu * Geometry.Length;
-
-				// Calculate the maximum plastic strain for compression
-				double et = Math.Max(ec, -ey);
-				double a = Math.Min(Geometry.Width, Geometry.Height);
-				double epuc = (ecu - et) * a;
-
-				// Return a tuple in order Tension || Compression
-				return (eput, epuc);
-			}
-		}
+        /// <summary>
+        /// Get the maximum plastic strain in a Stringer for tension (T) and compression (C).
+        /// </summary>
+		public (double T, double C) MaxPlasticStrain => _maxPlasticStrain ?? CalculateMaxPlasticStrain();
 
 		/// <summary>
 		/// Nonlinear stringer object
@@ -145,7 +129,7 @@ namespace SPMElements
         /// <summary>
         /// Calculate the initial flexibility matrix.
         /// </summary>
-        public Matrix<double> InitialFMatrix()
+        private Matrix<double> InitialFMatrix()
 		{
 			double
 				t1 = Concrete.Stiffness + (Reinforcement?.Stiffness ?? 0), 
@@ -227,30 +211,9 @@ namespace SPMElements
 		}
 
 		/// <summary>
-		/// Calculate the plastic force.
-		/// </summary>
-		/// <param name="N">Force to verify, in N.</param>
-		private double PlasticForce(double N)
-		{
-			double
-				Nt  = Relations.MaxCompressiveForce,
-				Nyr = Reinforcement?.YieldForce ?? 0;
-
-			// Check the value of N
-			if (N < Nt)
-				return Nt;
-
-			if (N > Nyr)
-				return Nyr;
-
-			return N;
-		}
-
-		/// <summary>
 		/// Calculate the stringer flexibility matrix and generalized strains.
 		/// </summary>
 		/// <param name="genStresses">Current generalized stresses.</param>
-		/// <returns></returns>
 		public ((double e1, double e3) genStrains, Matrix<double> F) StringerGenStrains((double N1, double N3) genStresses)
 		{
 			var (N1, N3) = genStresses;
@@ -299,10 +262,30 @@ namespace SPMElements
 		}
 
 		/// <summary>
-		/// Calculate plastic strains
+		/// Calculate the plastic force.
 		/// </summary>
-		/// <param name="strain">Current strain</param>
-		private double PlasticStrain(double strain)
+		/// <param name="force">Force to verify, in N.</param>
+		private double PlasticForce(double force)
+		{
+			double
+				Nt  = Relations.MaxCompressiveForce,
+				Nyr = Reinforcement?.YieldForce ?? 0;
+
+			// Check the value of N
+			if (force < Nt)
+				return Nt;
+
+			if (force > Nyr)
+				return Nyr;
+
+			return force;
+		}
+
+        /// <summary>
+        /// Calculate plastic strains
+        /// </summary>
+        /// <param name="strain">Current strain</param>
+        private double PlasticStrain(double strain)
 		{
 			// Initialize the plastic strain
 			double
@@ -320,6 +303,30 @@ namespace SPMElements
 
 			return ep;
 		}
+
+        /// <summary>
+        /// Calculate the maximum plastic strain in a Stringer for tension (T) and compression (C).
+        /// </summary>
+        private (double T, double C) CalculateMaxPlasticStrain()
+        {
+	        // Calculate the maximum plastic strain for tension
+	        double
+		        ec = Concrete.ec,
+		        ecu = Concrete.ecu,
+		        ey = Steel?.YieldStrain ?? ec,
+		        esu = Steel?.UltimateStrain ?? 0.01,
+		        eput = 0.3 * esu * Geometry.Length;
+
+	        // Calculate the maximum plastic strain for compression
+	        double et = Math.Max(ec, -ey);
+	        double a = Math.Min(Geometry.Width, Geometry.Height);
+	        double epuc = (ecu - et) * a;
+
+	        // Return a tuple in order Tension || Compression
+	        _maxPlasticStrain = (eput, epuc);
+
+	        return (eput, epuc);
+        }
 	}
 }
 

@@ -30,7 +30,8 @@ namespace SPMElements
 		}
 
 		// Auxiliary fields
-		private Matrix<double> _transMatrix;
+		private   Matrix<double> _transMatrix;
+		protected Vector<double> _localForces, _displacements;
 
 		/// <summary>
         /// Get the initial <see cref="Node"/> of this.
@@ -58,24 +59,24 @@ namespace SPMElements
         public UniaxialConcrete Concrete { get; set; }
 
         /// <summary>
-        /// Get/set the <see cref="UniaxialReinforcement"/> of this.
+        /// Get the <see cref="UniaxialReinforcement"/> of this.
         /// </summary>
-        public UniaxialReinforcement Reinforcement { get; set; }
+        public UniaxialReinforcement Reinforcement { get; }
 
         /// <summary>
         /// Get local stiffness <see cref="Matrix"/>.
         /// </summary>
         public virtual Matrix<double> LocalStiffness { get; }
 
-		/// <summary>
+        /// <summary>
         /// Get/set local force <see cref="Vector"/>.
         /// </summary>
-		public virtual Vector<double> LocalForces { get; set; }
+        public virtual Vector<double> LocalForces => _localForces;
 
-		/// <summary>
-		/// Get/set global displacement <see cref="Vector"/>.
-		/// </summary>
-		public Vector<double> Displacements { get; set; }
+        /// <summary>
+        /// Get/set global displacement <see cref="Vector"/>.
+        /// </summary>
+        public Vector<double> Displacements => _displacements;
 
         /// <summary>
         /// Get the grip numbers of this.
@@ -90,7 +91,7 @@ namespace SPMElements
         /// <summary>
         /// Get the DoF index of stringer <see cref="Grips"/>.
         /// </summary>
-        public override int[] DoFIndex => GlobalIndexes(Grips);
+        public override int[] DoFIndex => _globalIndexes ?? GlobalIndexes(Grips);
 
 		/// <summary>
         /// Get concrete area.
@@ -137,7 +138,7 @@ namespace SPMElements
 		/// <summary>
         /// Get stringer global force <see cref="Vector"/>.
         /// </summary>
-        public Vector<double> GlobalForces => TransformationMatrix.Transpose() * LocalForces;
+        public Vector<double> Forces => TransformationMatrix.Transpose() * LocalForces;
 
         /// <summary>
         /// Get absolute maximum stringer force.
@@ -207,7 +208,7 @@ namespace SPMElements
 	        }
 
 	        // Set
-	        Displacements = us;
+	        _displacements = us;
         }
 
 		/// <summary>

@@ -69,25 +69,37 @@ namespace SPMElements.StringerProperties
         /// <summary>
         /// Stringer geometry object.
         /// </summary>
-        /// <param name="initialPoint">The initial <see cref="Point3d"/> of the <see cref="Stringer"/>.</param>
-        /// <param name="endPoint">The final <see cref="Point3d"/> of the <see cref="Stringer"/>.</param>
+        /// <param name="initialPoint">The initial <see cref="Point3d"/> of the <see cref="Stringer"/>, with coordinates in <paramref name="unit"/> considered.</param>
+        /// <param name="endPoint">The final <see cref="Point3d"/> of the <see cref="Stringer"/>, with coordinates in <paramref name="unit"/> considered.</param>
+        /// <param name="width">The stringer width, in <paramref name="unit"/> considered.</param>
+        /// <param name="height">The stringer height, in <paramref name="unit"/> considered.</param>
+        /// <param name="unit">The <see cref="LengthUnit"/> of <paramref name="width"/>, <paramref name="height"/> and nodes' coordinates.
+        /// <para>Default: <seealso cref="LengthUnit.Millimeter"/>.</para></param>
+        public StringerGeometry(Point3d initialPoint, Point3d endPoint, double width, double height, LengthUnit unit = LengthUnit.Millimeter) 
+	        : this (initialPoint, endPoint, UnitsNet.Length.From(width, unit), UnitsNet.Length.From(height, unit))
+		{
+		}
+
+        /// <summary>
+        /// Stringer geometry object.
+        /// </summary>
+        /// <param name="initialPoint">The initial <see cref="Point3d"/> of the <see cref="Stringer"/>, in equal unit of <paramref name="width"/> and <paramref name="height"/>.</param>
+        /// <param name="endPoint">The final <see cref="Point3d"/> of the <see cref="Stringer"/>, in equal unit of <paramref name="width"/> and <paramref name="height"/>..</param>
         /// <param name="width">The stringer width.</param>
         /// <param name="height">The stringer height.</param>
-        /// <param name="geometryUnit">The <see cref="LengthUnit"/> of <paramref name="width"/>, <paramref name="height"/> and nodes' coordinates.
-        /// <para>Default: <seealso cref="LengthUnit.Millimeter"/>.</para></param>
-        public StringerGeometry(Point3d initialPoint, Point3d endPoint, double width, double height, LengthUnit geometryUnit = LengthUnit.Millimeter)
+        public StringerGeometry(Point3d initialPoint, Point3d endPoint, Length width, Length height)
 		{
 			InitialPoint = initialPoint;
 			EndPoint     = endPoint;
 			CenterPoint  = initialPoint.MidPoint(endPoint);
 
 			// Calculate length and angle
-			_length = UnitsNet.Length.From(initialPoint.DistanceTo(endPoint), geometryUnit);
+			_length = UnitsNet.Length.From(initialPoint.DistanceTo(endPoint), width.Unit);
 			Angle   = initialPoint.AngleTo(endPoint);
 
 			// Set values
-			_width  = UnitsNet.Length.From(width, geometryUnit);
-			_height = UnitsNet.Length.From(height, geometryUnit);
+			_width  = width;
+			_height = height;
 		}
 
 		/// <summary>

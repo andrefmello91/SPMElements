@@ -139,13 +139,13 @@ namespace SPMElements
         /// <param name="grip3">The center <see cref="Node"/> of top edge</param>
         /// <param name="grip4">The center <see cref="Node"/> of left edge</param>
         /// <param name="vertices">Panel <see cref="Vertices"/> object.</param>
-        /// <param name="width">Panel width, in <paramref name="geometryUnit"/>.</param>
+        /// <param name="width">Panel width, in <paramref name="unit"/>.</param>
         /// <param name="concreteParameters">The concrete parameters <see cref="Parameters"/>.</param>
         /// <param name="concreteConstitutive">The concrete constitutive <see cref="Constitutive"/>.</param>
         /// <param name="reinforcement">The <see cref="BiaxialReinforcement"/>.</param>
-        /// <param name="geometryUnit">The <see cref="LengthUnit"/> of <paramref name="width"/> and <paramref name="vertices"/>' coordinates.</param>
-        public Panel(ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, Node grip4, Vertices vertices, double width, Parameters concreteParameters, Constitutive concreteConstitutive, BiaxialReinforcement reinforcement = null, LengthUnit geometryUnit = LengthUnit.Millimeter) 
-	        : this(objectId, number, grip1, grip2, grip3, grip4, new PanelGeometry(vertices, width, geometryUnit), concreteParameters, concreteConstitutive, reinforcement)
+        /// <param name="unit">The <see cref="LengthUnit"/> of <paramref name="width"/> and <paramref name="vertices"/>' coordinates.</param>
+        public Panel(ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, Node grip4, Vertices vertices, double width, Parameters concreteParameters, Constitutive concreteConstitutive, BiaxialReinforcement reinforcement = null, LengthUnit unit = LengthUnit.Millimeter) 
+	        : this(objectId, number, grip1, grip2, grip3, grip4, new PanelGeometry(vertices, width, unit), concreteParameters, concreteConstitutive, reinforcement)
         {
         }
 
@@ -159,13 +159,51 @@ namespace SPMElements
         /// <param name="grip3">The center <see cref="Node"/> of top edge</param>
         /// <param name="grip4">The center <see cref="Node"/> of left edge</param>
         /// <param name="vertices">The array of <see cref="Point3d"/> panel vertices.</param>
-        /// <param name="width">Panel width, in <paramref name="geometryUnit"/>.</param>
+        /// <param name="width">Panel width, in <paramref name="unit"/>.</param>
         /// <param name="concreteParameters">The concrete parameters <see cref="Parameters"/>.</param>
         /// <param name="concreteConstitutive">The concrete constitutive <see cref="Constitutive"/>.</param>
         /// <param name="reinforcement">The <see cref="BiaxialReinforcement"/>.</param>
-        /// <param name="geometryUnit">The <see cref="LengthUnit"/> of <paramref name="width"/> and <paramref name="vertices"/>' coordinates.</param>
-        public Panel(ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, Node grip4, Point3d[] vertices, double width, Parameters concreteParameters, Constitutive concreteConstitutive, BiaxialReinforcement reinforcement = null, LengthUnit geometryUnit = LengthUnit.Millimeter) 
-	        : this(objectId, number, grip1, grip2, grip3, grip4, new PanelGeometry(vertices, width, geometryUnit), concreteParameters, concreteConstitutive, reinforcement)
+        /// <param name="unit">The <see cref="LengthUnit"/> of <paramref name="width"/> and <paramref name="vertices"/>' coordinates.</param>
+        public Panel(ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, Node grip4, Point3d[] vertices, double width, Parameters concreteParameters, Constitutive concreteConstitutive, BiaxialReinforcement reinforcement = null, LengthUnit unit = LengthUnit.Millimeter) 
+	        : this(objectId, number, grip1, grip2, grip3, grip4, new PanelGeometry(vertices, width, unit), concreteParameters, concreteConstitutive, reinforcement)
+        {
+        }
+        
+        /// <summary>
+        /// Base panel object.
+        /// </summary>
+        /// <param name="objectId">The panel <see cref="ObjectId"/>.</param>
+        /// <param name="number">The panel number.</param>
+        /// <param name="grip1">The center <see cref="Node"/> of bottom edge</param>
+        /// <param name="grip2">The center <see cref="Node"/> of right edge</param>
+        /// <param name="grip3">The center <see cref="Node"/> of top edge</param>
+        /// <param name="grip4">The center <see cref="Node"/> of left edge</param>
+        /// <param name="vertices">Panel <see cref="Vertices"/> object.</param>
+        /// <param name="width">Panel width.</param>
+        /// <param name="concreteParameters">The concrete parameters <see cref="Parameters"/>.</param>
+        /// <param name="concreteConstitutive">The concrete constitutive <see cref="Constitutive"/>.</param>
+        /// <param name="reinforcement">The <see cref="BiaxialReinforcement"/>.</param>
+        public Panel(ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, Node grip4, Vertices vertices, Length width, Parameters concreteParameters, Constitutive concreteConstitutive, BiaxialReinforcement reinforcement = null) 
+	        : this(objectId, number, grip1, grip2, grip3, grip4, new PanelGeometry(vertices, width), concreteParameters, concreteConstitutive, reinforcement)
+        {
+        }
+
+        /// <summary>
+        /// Base panel object.
+        /// </summary>
+        /// <param name="objectId">The panel <see cref="ObjectId"/>.</param>
+        /// <param name="number">The panel number.</param>
+        /// <param name="grip1">The center <see cref="Node"/> of bottom edge</param>
+        /// <param name="grip2">The center <see cref="Node"/> of right edge</param>
+        /// <param name="grip3">The center <see cref="Node"/> of top edge</param>
+        /// <param name="grip4">The center <see cref="Node"/> of left edge</param>
+        /// <param name="vertices">The array of <see cref="Point3d"/> panel vertices.</param>
+        /// <param name="width">Panel width, in <paramref name="unit"/>.</param>
+        /// <param name="concreteParameters">The concrete parameters <see cref="Parameters"/>.</param>
+        /// <param name="concreteConstitutive">The concrete constitutive <see cref="Constitutive"/>.</param>
+        /// <param name="reinforcement">The <see cref="BiaxialReinforcement"/>.</param>
+        public Panel(ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, Node grip4, Point3d[] vertices, Length width, Parameters concreteParameters, Constitutive concreteConstitutive, BiaxialReinforcement reinforcement = null) 
+	        : this(objectId, number, grip1, grip2, grip3, grip4, new PanelGeometry(vertices, width), concreteParameters, concreteConstitutive, reinforcement)
         {
         }
 

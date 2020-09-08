@@ -152,18 +152,37 @@ namespace SPMElements
         /// <param name="grip1">The initial <see cref="Node"/> of the <see cref="Stringer"/>.</param>
         /// <param name="grip2">The center <see cref="Node"/> of the <see cref="Stringer"/>.</param>
         /// <param name="grip3">The final <see cref="Node"/> of the <see cref="Stringer"/>.</param>
+        /// <param name="width">The stringer width, in <paramref name="unit"/> considered.</param>
+        /// <param name="height">The stringer height, in <paramref name="unit"/> considered.</param>
+        /// <param name="concreteParameters">The concrete parameters <see cref="Parameters"/>.</param>
+        /// <param name="concreteConstitutive">The concrete constitutive <see cref="Constitutive"/>.</param>
+        /// <param name="reinforcement">The <see cref="UniaxialReinforcement"/> of this stringer.</param>
+        /// <param name="unit">The <see cref="LengthUnit"/> of <paramref name="width"/> and <paramref name="height"/>.
+        /// <para>Default: <seealso cref="LengthUnit.Millimeter"/>.</para></param>
+        public Stringer(ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, double width, double height, Parameters concreteParameters, Constitutive concreteConstitutive, UniaxialReinforcement reinforcement = null, LengthUnit unit = LengthUnit.Millimeter)
+			: this (objectId, number, grip1, grip2, grip3, Length.From(width, unit), Length.From(height, unit), concreteParameters, concreteConstitutive, reinforcement)
+        {
+        }
+
+        /// <summary>
+        /// Stringer object.
+        /// </summary>
+        /// <param name="objectId">The stringer <see cref="ObjectId"/>.</param>
+        /// <param name="number">The stringer number.</param>
+        /// <param name="grip1">The initial <see cref="Node"/> of the <see cref="Stringer"/>.</param>
+        /// <param name="grip2">The center <see cref="Node"/> of the <see cref="Stringer"/>.</param>
+        /// <param name="grip3">The final <see cref="Node"/> of the <see cref="Stringer"/>.</param>
         /// <param name="width">The stringer width.</param>
         /// <param name="height">The stringer height.</param>
         /// <param name="concreteParameters">The concrete parameters <see cref="Parameters"/>.</param>
         /// <param name="concreteConstitutive">The concrete constitutive <see cref="Constitutive"/>.</param>
         /// <param name="reinforcement">The <see cref="UniaxialReinforcement"/> of this stringer.</param>
-        /// <param name="geometryUnit">The <see cref="LengthUnit"/> of <paramref name="width"/> and <paramref name="height"/>.<para>Default: <seealso cref="LengthUnit.Millimeter"/>.</para></param>
-        public Stringer(ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, double width, double height, Parameters concreteParameters, Constitutive concreteConstitutive, UniaxialReinforcement reinforcement = null, LengthUnit geometryUnit = LengthUnit.Millimeter) : base(objectId, number)
+        public Stringer(ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, Length width, Length height, Parameters concreteParameters, Constitutive concreteConstitutive, UniaxialReinforcement reinforcement = null) : base(objectId, number)
         {
 	        Grip1         = grip1;
 	        Grip2         = grip2;
 	        Grip3         = grip3;
-	        Geometry      = new StringerGeometry(grip1.Position, grip3.Position, width, height, geometryUnit);
+	        Geometry      = new StringerGeometry(grip1.Position, grip3.Position, width, height);
 	        Reinforcement = reinforcement;
 	        Concrete      = new UniaxialConcrete(concreteParameters, ConcreteArea, concreteConstitutive);
         }

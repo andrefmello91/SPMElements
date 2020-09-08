@@ -4,6 +4,7 @@ using Material.Concrete;
 using Material.Reinforcement;
 using MathNet.Numerics.LinearAlgebra;
 using MathNet.Numerics.LinearAlgebra.Double;
+using UnitsNet;
 using UnitsNet.Units;
 using Concrete = Material.Concrete.UniaxialConcrete;
 
@@ -24,11 +25,18 @@ namespace SPMElements
         /// Linear stringer object.
         /// </summary>
         /// <inheritdoc/>
-        public LinearStringer(ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, double width, double height, Parameters concreteParameters, Constitutive concreteConstitutive, UniaxialReinforcement reinforcement = null, LengthUnit geometryUnit = LengthUnit.Millimeter) : base(objectId, number, grip1, grip2, grip3, width, height, concreteParameters, concreteConstitutive, reinforcement, geometryUnit)
-        {
-        }
+		public LinearStringer(ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, double width, double height, Parameters concreteParameters, Constitutive concreteConstitutive, UniaxialReinforcement reinforcement = null, LengthUnit unit = LengthUnit.Millimeter) : base(objectId, number, grip1, grip2, grip3, width, height, concreteParameters, concreteConstitutive, reinforcement, unit)
+		{
+		}
 
 		/// <summary>
+		/// Linear stringer object.
+		/// </summary>
+		public LinearStringer(ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, Length width, Length height, Parameters concreteParameters, Constitutive concreteConstitutive, UniaxialReinforcement reinforcement = null) : base(objectId, number, grip1, grip2, grip3, width, height, concreteParameters, concreteConstitutive, reinforcement)
+		{
+		}
+
+        /// <summary>
         /// Calculate local stiffness <see cref="Matrix"/>.
         /// </summary>
         /// <returns></returns>

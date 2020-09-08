@@ -8,6 +8,7 @@ using MathNet.Numerics.LinearAlgebra.Double;
 using OnPlaneComponents;
 using SPMElements.PanelProperties;
 using RCMembrane;
+using UnitsNet;
 using UnitsNet.Units;
 
 namespace SPMElements
@@ -115,19 +116,37 @@ namespace SPMElements
 	    /// Nonlinear panel object.
 	    /// </summary>
 	    /// <inheritdoc/>
-	    public NonLinearPanel(ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, Node grip4, Vertices vertices, double width, Parameters concreteParameters, Constitutive concreteConstitutive, BiaxialReinforcement reinforcement = null, LengthUnit geometryUnit = LengthUnit.Millimeter) : base(objectId, number, grip1, grip2, grip3, grip4, vertices, width, concreteParameters, concreteConstitutive, reinforcement, geometryUnit)
-	    {
-		    IntegrationPoints = IntPoints(concreteParameters, concreteConstitutive);
-	    }
+        public NonLinearPanel(ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, Node grip4, Vertices vertices, double width, Parameters concreteParameters, Constitutive concreteConstitutive, BiaxialReinforcement reinforcement = null, LengthUnit unit = LengthUnit.Millimeter)
+            : this(objectId, number, grip1, grip2, grip3, grip4, new PanelGeometry(vertices, width, unit), concreteParameters, concreteConstitutive, reinforcement)
+        {
+        }
 
 	    /// <summary>
 	    /// Nonlinear panel object.
 	    /// </summary>
 	    /// <inheritdoc/>
-        public NonLinearPanel(ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, Node grip4, Point3d[] vertices, double width, Parameters concreteParameters, Constitutive concreteConstitutive, BiaxialReinforcement reinforcement = null, LengthUnit geometryUnit = LengthUnit.Millimeter) : base(objectId, number, grip1, grip2, grip3, grip4, vertices, width, concreteParameters, concreteConstitutive, reinforcement, geometryUnit)
-	    {
-		    IntegrationPoints = IntPoints(concreteParameters, concreteConstitutive);
-	    }
+        public NonLinearPanel(ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, Node grip4, Point3d[] vertices, double width, Parameters concreteParameters, Constitutive concreteConstitutive, BiaxialReinforcement reinforcement = null, LengthUnit unit = LengthUnit.Millimeter)
+            : this(objectId, number, grip1, grip2, grip3, grip4, new PanelGeometry(vertices, width, unit), concreteParameters, concreteConstitutive, reinforcement)
+        {
+        }
+
+	    /// <summary>
+	    /// Nonlinear panel object.
+	    /// </summary>
+	    /// <inheritdoc/>
+        public NonLinearPanel(ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, Node grip4, Vertices vertices, Length width, Parameters concreteParameters, Constitutive concreteConstitutive, BiaxialReinforcement reinforcement = null)
+            : this(objectId, number, grip1, grip2, grip3, grip4, new PanelGeometry(vertices, width), concreteParameters, concreteConstitutive, reinforcement)
+        {
+        }
+
+	    /// <summary>
+	    /// Nonlinear panel object.
+	    /// </summary>
+	    /// <inheritdoc/>
+        public NonLinearPanel(ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, Node grip4, Point3d[] vertices, Length width, Parameters concreteParameters, Constitutive concreteConstitutive, BiaxialReinforcement reinforcement = null)
+            : this(objectId, number, grip1, grip2, grip3, grip4, new PanelGeometry(vertices, width), concreteParameters, concreteConstitutive, reinforcement)
+        {
+        }
 
         /// <summary>
         /// Initiate <see cref="Membrane"/> integration points.

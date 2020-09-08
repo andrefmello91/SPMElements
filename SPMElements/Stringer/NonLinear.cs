@@ -17,7 +17,6 @@ namespace SPMElements
 		private (double N1, double N3) _genStresses, _iterationGenStresses;
 		private (double T, double C)? _maxPlasticStrain;
 
-
 		private readonly Matrix<double> _BMatrix = 
 			Matrix<double>.Build.DenseOfArray(new double[,]
 			{
@@ -41,10 +40,10 @@ namespace SPMElements
 		private Steel Steel => Reinforcement?.Steel;
 
 		/// <inheritdoc/>
-		public override Matrix<double> LocalStiffness => _BMatrix.Transpose() * _FMatrix.Inverse() * _BMatrix;
+		public override Matrix<double> LocalStiffness => _BMatrix.Transpose() * (_FMatrix ?? InitialFMatrix()).Inverse() * _BMatrix;
 
 		/// <inheritdoc/>
-		public override Vector<double> LocalForces
+		protected override Vector<double> LocalForces
 		{
 			get
 			{
@@ -61,7 +60,7 @@ namespace SPMElements
         /// <summary>
         /// Get local force <see cref="Vector"/> calculated at each iteration.
         /// </summary>
-        public Vector<double> IterationLocalForces
+        private Vector<double> IterationLocalForces
 		{
 			get
 			{
@@ -83,7 +82,7 @@ namespace SPMElements
         /// <summary>
         /// Get total plastic generalized strain.
         /// </summary>
-        public (double ep1, double ep3) PlasticGenStrains
+        private (double ep1, double ep3) PlasticGenStrains
 		{
 			get
 			{
@@ -101,7 +100,7 @@ namespace SPMElements
         /// <summary>
         /// Get the maximum plastic strain in a Stringer for tension (T) and compression (C).
         /// </summary>
-		public (double T, double C) MaxPlasticStrain => _maxPlasticStrain ?? CalculateMaxPlasticStrain();
+		private (double T, double C) MaxPlasticStrain => _maxPlasticStrain ?? CalculateMaxPlasticStrain();
 
 		/// <summary>
 		/// Nonlinear stringer object
@@ -110,9 +109,6 @@ namespace SPMElements
 		public NonLinearStringer(ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, double width, double height, Parameters concreteParameters, Constitutive concreteConstitutive, UniaxialReinforcement reinforcement = null, LengthUnit geometryUnit = LengthUnit.Millimeter)
 			: base(objectId, number, grip1, grip2, grip3, width, height, concreteParameters, concreteConstitutive, reinforcement, geometryUnit)
 		{
-			// Initiate F matrix
-			_FMatrix = InitialFMatrix();
-
 			// Initiate integration points
 			IntPoints = new[]
 			{

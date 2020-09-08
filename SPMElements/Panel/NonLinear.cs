@@ -16,12 +16,11 @@ namespace SPMElements
     {
 		// Auxiliary fields
 		private Matrix<double> _BA, _Q, _Pc, _Ps, _Dc, _Ds;
-		private Vector<double> _sigmaC, _sigmaS;
 
-		/// <summary>
+        /// <summary>
         /// Get <see cref="Membrane"/> integration points.
         /// </summary>
-	    public  Membrane[] IntegrationPoints  { get; }
+        public Membrane[] IntegrationPoints  { get; }
 
         /// <summary>
         /// Get panel strain <see cref="Vector"/>.
@@ -29,14 +28,14 @@ namespace SPMElements
         public Vector<double> StrainVector => (_BA ?? CalculateBA()) * Displacements;
 
         /// <summary>
-        /// Get panel concrete stress <see cref="Vector"/>.
+        /// Get/set panel concrete stress <see cref="Vector"/>.
         /// </summary>
-	    public Vector<double> ConcreteStresses => _sigmaC;
+	    public Vector<double> ConcreteStresses { get; private set; }
 
         /// <summary>
-        /// Get panel reinforcement stress <see cref="Vector"/>.
+        /// Get/set panel reinforcement stress <see cref="Vector"/>.
         /// </summary>
-	    public Vector<double> ReinforcementStresses => _sigmaS;
+	    public Vector<double> ReinforcementStresses { get; private set; }
 
         /// <summary>
         /// Get panel stress <see cref="Vector"/>.
@@ -393,12 +392,12 @@ namespace SPMElements
 
 		/// <summary>
         /// Calculate and set stress vectors.
-        /// <para>See: <see cref="_sigmaC"/>, <see cref="_sigmaS"/>.</para>
+        /// <para>See: <see cref="ConcreteStresses"/>, <see cref="ReinforcementStresses"/>.</para>
         /// </summary>
 	    private void CalculateStresses()
 	    {
-		    _sigmaC = Vector<double>.Build.Dense(12);
-		    _sigmaS = Vector<double>.Build.Dense(12);
+		    ConcreteStresses = Vector<double>.Build.Dense(12);
+		    ReinforcementStresses = Vector<double>.Build.Dense(12);
 
 		    for (int i = 0; i < 4; i++)
 		    {
@@ -407,14 +406,14 @@ namespace SPMElements
 			    var sigS = IntegrationPoints[i].Reinforcement?.Stresses ?? StressState.Zero;
 
 			    // Set to stiffness
-			    _sigmaC.SetSubVector(3 * i, 3, sigC.AsVector());
-			    _sigmaS.SetSubVector(3 * i, 3, sigS.AsVector());
+			    ConcreteStresses.SetSubVector(3 * i, 3, sigC.AsVector());
+			    ReinforcementStresses.SetSubVector(3 * i, 3, sigS.AsVector());
 		    }
 	    }
 
 		/// <summary>
 		/// Calculate and set global force vector.
-		/// <para>See: <see cref="Panel._globalForces"/>, <see cref="Panel.Forces"/>.</para>
+		/// <para>See: <see cref="Panel.Forces"/>.</para>
 		/// </summary>
 	    private void CalculateForces()
 	    {
@@ -485,7 +484,7 @@ namespace SPMElements
 		    f5 = -a * t1 - b * t2 - t3;
 		    f8 = b * t1 - a * t2 - t4;
 
-		    _globalForces =
+		    Forces =
 			    Vector<double>.Build.DenseOfArray(new []
 			    {
 				    f1, f2, f3, f4, f5, f6, f7, f8
@@ -498,7 +497,7 @@ namespace SPMElements
 		/// <summary>
 		/// Update stiffness.
 		/// </summary>
-		public void UpdateStiffness()
+		private void UpdateStiffness()
 		{
 			_Dc = Matrix<double>.Build.Dense(12, 12);
 			_Ds = Matrix<double>.Build.Dense(12, 12);

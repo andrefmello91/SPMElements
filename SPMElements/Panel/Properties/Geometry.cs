@@ -77,13 +77,13 @@ namespace SPMElements.PanelProperties
 		/// <summary>
         /// Get edges' lengths as an array.
         /// </summary>
-		public double[] EdgeLengths => new [] {Edge1.Length, Edge2.Length, Edge3.Length, Edge4.Length};
+		public double[] EdgeLengths => new [] { Edge1.Length, Edge2.Length, Edge3.Length, Edge4.Length };
 
 		/// <summary>
         /// Get edges' stringer dimensions as an array.
         /// <para>See: <see cref="Edge.SetStringerDimension"/></para>
         /// </summary>
-		public double[] StringerDimensions => new [] {Edge1.StringerDimension, Edge2.StringerDimension, Edge3.StringerDimension, Edge4.StringerDimension};
+		public double[] StringerDimensions => new [] { Edge1.StringerDimension, Edge2.StringerDimension, Edge3.StringerDimension, Edge4.StringerDimension };
 
         /// <summary>
         /// Panel geometry constructor.
@@ -102,6 +102,20 @@ namespace SPMElements.PanelProperties
         /// <summary>
         /// Panel geometry constructor.
         /// </summary>
+        /// <param name="vertex1">The base left vertex.</param>
+        /// <param name="vertex2">The base right vertex.</param>
+        /// <param name="vertex3">The upper right vertex.</param>
+        /// <param name="vertex4">The upper left vertex.</param>
+        /// <param name="width">Panel width, in <paramref name="geometryUnit"/>.</param>
+        /// <param name="geometryUnit">The <see cref="LengthUnit"/> of <paramref name="width"/> and vertices' coordinates.</param>
+        public PanelGeometry(Point3d vertex1, Point3d vertex2, Point3d vertex3, Point3d vertex4, Length width) 
+			: this (new Vertices(vertex1, vertex2, vertex3, vertex4, width.Unit), width)
+		{
+		}
+
+        /// <summary>
+        /// Panel geometry constructor.
+        /// </summary>
         /// <param name="vertices">The array of vertices, in any order.</param>
         /// <param name="width">Panel width, in <paramref name="geometryUnit"/>.</param>
         /// <param name="geometryUnit">The <see cref="LengthUnit"/> of <paramref name="width"/> and <paramref name="vertices"/>' coordinates.</param>
@@ -113,19 +127,39 @@ namespace SPMElements.PanelProperties
         /// <summary>
         /// Panel geometry constructor.
         /// </summary>
+        /// <param name="vertices">The array of vertices, in any order.</param>
+        /// <param name="width">Panel width.</param>
+        public PanelGeometry(Point3d[] vertices, Length width) 
+			: this (new Vertices(vertices, width.Unit), width)
+		{
+		}
+
+        /// <summary>
+        /// Panel geometry constructor.
+        /// </summary>
         /// <param name="vertices">Panel <see cref="Vertices"/> object.</param>
         /// <param name="width">Panel width, in <paramref name="geometryUnit"/>.</param>
         /// <param name="geometryUnit">The <see cref="LengthUnit"/> of <paramref name="width"/> and <paramref name="vertices"/>' coordinates.</param>
         public PanelGeometry(Vertices vertices, double width, LengthUnit geometryUnit = LengthUnit.Millimeter)
+			: this (vertices, Length.From(width, geometryUnit))
+		{
+		}
+
+        /// <summary>
+        /// Panel geometry constructor.
+        /// </summary>
+        /// <param name="vertices">Panel <see cref="SPMElements.PanelProperties.Vertices"/> object.</param>
+        /// <param name="width">Panel width.</param>
+        public PanelGeometry(Vertices vertices, Length width)
 		{
 			Vertices = vertices;
-			_width   = Length.From(width, geometryUnit);
+			_width   = width;
 
 			// Get edges
-			Edge1 = new Edge(vertices.Vertex1, vertices.Vertex2, geometryUnit);
-			Edge2 = new Edge(vertices.Vertex2, vertices.Vertex3, geometryUnit);
-			Edge3 = new Edge(vertices.Vertex3, vertices.Vertex4, geometryUnit);
-			Edge4 = new Edge(vertices.Vertex4, vertices.Vertex1, geometryUnit);
+			Edge1 = new Edge(vertices.Vertex1, vertices.Vertex2, width.Unit);
+			Edge2 = new Edge(vertices.Vertex2, vertices.Vertex3, width.Unit);
+			Edge3 = new Edge(vertices.Vertex3, vertices.Vertex4, width.Unit);
+			Edge4 = new Edge(vertices.Vertex4, vertices.Vertex1, width.Unit);
 
 			_dimensions = null;
 		}

@@ -31,7 +31,6 @@ namespace SPMElements
 
 		// Auxiliary fields
 		private   Matrix<double> _transMatrix;
-		protected Vector<double> _localForces, _displacements;
 
 		/// <summary>
         /// Get the initial <see cref="Node"/> of this.
@@ -51,12 +50,12 @@ namespace SPMElements
         /// <summary>
         /// Get/set the <see cref="Geometry"/> of this.
         /// </summary>
-        public StringerGeometry Geometry { get; set; }
+        public StringerGeometry Geometry { get; }
 
         /// <summary>
         /// Get/set the <see cref="UniaxialConcrete"/> of this.
         /// </summary>
-        public UniaxialConcrete Concrete { get; set; }
+        public UniaxialConcrete Concrete { get; }
 
         /// <summary>
         /// Get the <see cref="UniaxialReinforcement"/> of this.
@@ -71,12 +70,12 @@ namespace SPMElements
         /// <summary>
         /// Get/set local force <see cref="Vector"/>.
         /// </summary>
-        public virtual Vector<double> LocalForces => _localForces;
+        protected virtual Vector<double> LocalForces { get; set; }
 
         /// <summary>
         /// Get/set global displacement <see cref="Vector"/>.
         /// </summary>
-        public Vector<double> Displacements => _displacements;
+        public Vector<double> Displacements { get; protected set; }
 
         /// <summary>
         /// Get the grip numbers of this.
@@ -157,7 +156,7 @@ namespace SPMElements
         /// <param name="height">The stringer height.</param>
         /// <param name="concreteParameters">The concrete parameters <see cref="Parameters"/>.</param>
         /// <param name="concreteConstitutive">The concrete constitutive <see cref="Constitutive"/>.</param>
-        /// <param name="reinforcement">The <see cref="UniaxialReinforcement"/>.</param>
+        /// <param name="reinforcement">The <see cref="UniaxialReinforcement"/> of this stringer.</param>
         /// <param name="geometryUnit">The <see cref="LengthUnit"/> of <paramref name="width"/> and <paramref name="height"/>.<para>Default: <seealso cref="LengthUnit.Millimeter"/>.</para></param>
         public Stringer(ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, double width, double height, Parameters concreteParameters, Constitutive concreteConstitutive, UniaxialReinforcement reinforcement = null, LengthUnit geometryUnit = LengthUnit.Millimeter) : base(objectId, number)
         {
@@ -208,7 +207,7 @@ namespace SPMElements
 	        }
 
 	        // Set
-	        _displacements = us;
+	        Displacements = us;
         }
 
 		/// <summary>

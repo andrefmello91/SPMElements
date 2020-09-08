@@ -14,13 +14,12 @@ namespace SPMElements.PanelProperties
 		// Auxiliary
 		private Point3d _vertex1, _vertex2, _vertex3, _vertex4;
 		private Point3d? _centerPoint;
-		private LengthUnit _unit;
 		private double[] _xCoordinates, _yCoordinates;
 
 		/// <summary>
 		/// Get the <see cref="LengthUnit"/> of vertices' coordinates.
 		/// </summary>
-		public LengthUnit Unit => _unit;
+		public LengthUnit Unit { get ; private set; }
 
 		/// <summary>
 		/// Get vertex 1 (base left vertex).
@@ -67,14 +66,14 @@ namespace SPMElements.PanelProperties
         /// <param name="geometryUnit">The <see cref="LengthUnit"/> of vertices' coordinates.</param>
         public Vertices(Point3d vertex1, Point3d vertex2, Point3d vertex3, Point3d vertex4, LengthUnit geometryUnit = LengthUnit.Millimeter)
         {
-	        _unit = geometryUnit;
+	        Unit = geometryUnit;
 
 	        _vertex1 = vertex1;
 	        _vertex2 = vertex2;
 	        _vertex3 = vertex3;
 	        _vertex4 = vertex4;
 
-	        _centerPoint = null;
+	        _centerPoint  = null;
 	        _xCoordinates = _yCoordinates = null;
         }
 
@@ -88,7 +87,7 @@ namespace SPMElements.PanelProperties
 			if (vertices.Length != 4)
 				throw new NotImplementedException();
 
-			_unit = geometryUnit;
+			Unit = geometryUnit;
 
             // Order points
             vertices = vertices.Order();
@@ -99,7 +98,7 @@ namespace SPMElements.PanelProperties
             _vertex3 = vertices[3];
             _vertex4 = vertices[2];
 
-            _centerPoint = null;
+            _centerPoint  = null;
             _xCoordinates = _yCoordinates = null;
         }
 
@@ -122,7 +121,7 @@ namespace SPMElements.PanelProperties
 	        _vertex3 = _vertex3.Convert(Unit, unit);
 	        _vertex4 = _vertex4.Convert(Unit, unit);
 
-	        _unit = unit;
+	        Unit = unit;
         }
 
         /// <summary>

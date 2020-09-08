@@ -85,7 +85,7 @@ namespace SPMElements
 		/// <summary>
 		/// Get/set nodal <see cref="OnPlaneComponents.Displacement"/>
 		/// </summary>
-		public Displacement Displacement { get; set; }
+		public Displacement Displacement { get; private set; }
 
 		/// <summary>
 		/// Node object.

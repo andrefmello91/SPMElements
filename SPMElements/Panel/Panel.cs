@@ -17,10 +17,6 @@ namespace SPMElements
     /// </summary>
 	public class Panel : SPMElement, IEquatable<Panel>
 	{
-		// Auxiliary fields
-		protected Vector<double> _localForces, _globalForces, _globaldisplacements;
-		protected Matrix<double> _localStiffness;
-
 		/// <summary>
         /// Get <see cref="PanelGeometry"/> of this.
         /// </summary>
@@ -59,27 +55,27 @@ namespace SPMElements
         /// <summary>
         /// Get/set local stiffness <see cref="Matrix"/>.
         /// </summary>
-        public virtual Matrix<double> LocalStiffness => _localStiffness;
+        public virtual Matrix<double> LocalStiffness { get; protected set; }
 
-		/// <summary>
+        /// <summary>
 		/// Get global stiffness <see cref="Matrix"/>.
 		/// </summary>
 		public virtual Matrix<double> GlobalStiffness { get; }
 
 		/// <summary>
-		/// Get global displacement <see cref="Vector"/>.
+		/// Get/set global displacement <see cref="Vector"/>.
 		/// </summary>
-		public Vector<double> Displacements => _globaldisplacements;
+		public Vector<double> Displacements { get; protected set; }
 
-		/// <summary>
-		/// Get global force <see cref="Vector"/>.
-		/// </summary>
-		public virtual Vector<double> Forces => _globalForces;
+        /// <summary>
+        /// Get/set global force <see cref="Vector"/>.
+        /// </summary>
+        public virtual Vector<double> Forces { get; protected set; }
 
-		/// <summary>
-		/// Get average <see cref="StressState"/>.
-		/// </summary>
-		public virtual StressState AverageStresses { get; }
+        /// <summary>
+        /// Get average <see cref="StressState"/>.
+        /// </summary>
+        public virtual StressState AverageStresses { get; }
 
 		/// <summary>
 		/// Get average concrete <see cref="PrincipalStressState"/>.
@@ -176,7 +172,7 @@ namespace SPMElements
         /// <summary>
         /// Set panel displacements from global displacement vector.
         /// </summary>
-        public void SetDisplacements(Vector<double> globalDisplacementVector)
+        protected void SetDisplacements(Vector<double> globalDisplacementVector)
         {
 	        var u = globalDisplacementVector;
 	        var ind = DoFIndex;
@@ -193,7 +189,7 @@ namespace SPMElements
 	        }
 
 	        // Set
-	        _globaldisplacements = up;
+	        Displacements = up;
         }
 
         /// <summary>

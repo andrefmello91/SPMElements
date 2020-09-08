@@ -53,7 +53,7 @@ namespace SPMElements
         /// <summary>
         /// Calculate Stringer forces
         /// </summary>
-        public Vector<double> CalculateForces()
+        private Vector<double> CalculateForces()
 		{
 			// Get the parameters
 			var Kl = LocalStiffness;
@@ -75,7 +75,7 @@ namespace SPMElements
 			if (globalDisplacements != null)
 				SetDisplacements(globalDisplacements);
 
-			_localForces = CalculateForces();
+			LocalForces = CalculateForces();
 		}
 	}
 }

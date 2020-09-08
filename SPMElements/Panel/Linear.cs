@@ -16,7 +16,8 @@ namespace SPMElements
     public class LinearPanel : Panel
     {
 		// Auxiliary fields
-		private Matrix<double> _transMatrix;
+		private Matrix<double> _transMatrix, _localStiffness;
+		private Vector<double> _localForces;
 
 		/// <summary>
 		/// Get transformation <see cref="Matrix"/>.

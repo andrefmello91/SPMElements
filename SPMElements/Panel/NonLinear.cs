@@ -107,7 +107,7 @@ namespace SPMElements
 	    /// Nonlinear panel object.
 	    /// </summary>
 	    /// <inheritdoc/>
-	    public NonLinearPanel(ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, Node grip4, PanelGeometry geometry, Parameters concreteParameters, Constitutive concreteConstitutive, BiaxialReinforcement reinforcement = null) : base(objectId, number, grip1, grip2, grip3, grip4, geometry, concreteParameters, concreteConstitutive, reinforcement)
+	    public NonLinearPanel(ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, Node grip4, PanelGeometry geometry, Parameters concreteParameters, Constitutive concreteConstitutive, WebReinforcement reinforcement = null) : base(objectId, number, grip1, grip2, grip3, grip4, geometry, concreteParameters, concreteConstitutive, reinforcement)
 	    {
 		    IntegrationPoints = IntPoints(concreteParameters, concreteConstitutive);
 	    }
@@ -116,7 +116,7 @@ namespace SPMElements
 	    /// Nonlinear panel object.
 	    /// </summary>
 	    /// <inheritdoc/>
-        public NonLinearPanel(ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, Node grip4, Vertices vertices, double width, Parameters concreteParameters, Constitutive concreteConstitutive, BiaxialReinforcement reinforcement = null, LengthUnit unit = LengthUnit.Millimeter)
+        public NonLinearPanel(ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, Node grip4, Vertices vertices, double width, Parameters concreteParameters, Constitutive concreteConstitutive, WebReinforcement reinforcement = null, LengthUnit unit = LengthUnit.Millimeter)
             : this(objectId, number, grip1, grip2, grip3, grip4, new PanelGeometry(vertices, width, unit), concreteParameters, concreteConstitutive, reinforcement)
         {
         }
@@ -125,7 +125,7 @@ namespace SPMElements
 	    /// Nonlinear panel object.
 	    /// </summary>
 	    /// <inheritdoc/>
-        public NonLinearPanel(ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, Node grip4, Point3d[] vertices, double width, Parameters concreteParameters, Constitutive concreteConstitutive, BiaxialReinforcement reinforcement = null, LengthUnit unit = LengthUnit.Millimeter)
+        public NonLinearPanel(ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, Node grip4, Point3d[] vertices, double width, Parameters concreteParameters, Constitutive concreteConstitutive, WebReinforcement reinforcement = null, LengthUnit unit = LengthUnit.Millimeter)
             : this(objectId, number, grip1, grip2, grip3, grip4, new PanelGeometry(vertices, width, unit), concreteParameters, concreteConstitutive, reinforcement)
         {
         }
@@ -134,7 +134,7 @@ namespace SPMElements
 	    /// Nonlinear panel object.
 	    /// </summary>
 	    /// <inheritdoc/>
-        public NonLinearPanel(ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, Node grip4, Vertices vertices, Length width, Parameters concreteParameters, Constitutive concreteConstitutive, BiaxialReinforcement reinforcement = null)
+        public NonLinearPanel(ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, Node grip4, Vertices vertices, Length width, Parameters concreteParameters, Constitutive concreteConstitutive, WebReinforcement reinforcement = null)
             : this(objectId, number, grip1, grip2, grip3, grip4, new PanelGeometry(vertices, width), concreteParameters, concreteConstitutive, reinforcement)
         {
         }
@@ -143,7 +143,7 @@ namespace SPMElements
 	    /// Nonlinear panel object.
 	    /// </summary>
 	    /// <inheritdoc/>
-        public NonLinearPanel(ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, Node grip4, Point3d[] vertices, Length width, Parameters concreteParameters, Constitutive concreteConstitutive, BiaxialReinforcement reinforcement = null)
+        public NonLinearPanel(ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, Node grip4, Point3d[] vertices, Length width, Parameters concreteParameters, Constitutive concreteConstitutive, WebReinforcement reinforcement = null)
             : this(objectId, number, grip1, grip2, grip3, grip4, new PanelGeometry(vertices, width), concreteParameters, concreteConstitutive, reinforcement)
         {
         }

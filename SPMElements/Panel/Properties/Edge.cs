@@ -35,6 +35,11 @@ namespace SPMElements.PanelProperties
 		/// </summary>
 		public Point3d FinalVertex { get; }
 
+        /// <summary>
+        /// Get center point of this <see cref="Edge"/>.
+        /// </summary>
+        public Point3d CenterPoint { get; }
+
 		/// <summary>
 		/// Get angle related to horizontal axis, in radians.
 		/// </summary>
@@ -60,6 +65,7 @@ namespace SPMElements.PanelProperties
 		{
 			InitialVertex      = initialVertex;
 			FinalVertex        = finalVertex;
+			CenterPoint        = initialVertex.MidPoint(finalVertex);
 			_length            = UnitsNet.Length.From(initialVertex.DistanceTo(finalVertex), geometryUnit);
 			Angle              = initialVertex.AngleTo(finalVertex);
 			_stringerDimension = UnitsNet.Length.Zero;

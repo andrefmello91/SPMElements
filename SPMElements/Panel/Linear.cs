@@ -10,7 +10,7 @@ using OnPlaneComponents;
 using SPMElements.PanelProperties;
 using UnitsNet;
 using UnitsNet.Units;
-using Reinforcement      = Material.Reinforcement.BiaxialReinforcement;
+using Reinforcement      = Material.Reinforcement.WebReinforcement;
 
 namespace SPMElements
 {

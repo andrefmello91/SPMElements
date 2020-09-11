@@ -188,6 +188,47 @@ namespace SPMElements
         }
 
         /// <summary>
+        /// Stringer object.
+        /// </summary>
+        /// <param name="objectId">The stringer <see cref="ObjectId"/>.</param>
+        /// <param name="number">The stringer number.</param>
+        /// <param name="nodes">The <see cref="Array"/> containing all nodes of SPM model.</param>
+        /// <param name="grip1Position">The position of initial <see cref="Node"/> of the <see cref="Stringer"/>.</param>
+        /// <param name="grip3Position">The position of final <see cref="Node"/> of the <see cref="Stringer"/>.</param>
+        /// <param name="width">The stringer width, in mm.</param>
+        /// <param name="height">The stringer height, in mm.</param>
+        /// <param name="concreteParameters">The concrete parameters <see cref="Parameters"/>.</param>
+        /// <param name="concreteConstitutive">The concrete constitutive <see cref="Constitutive"/>.</param>
+        /// <param name="reinforcement">The <see cref="UniaxialReinforcement"/> of this stringer.</param>
+        public Stringer(ObjectId objectId, int number, Node[] nodes, Point3d grip1Position, Point3d grip3Position, double width, double height, Parameters concreteParameters, Constitutive concreteConstitutive, UniaxialReinforcement reinforcement = null, LengthUnit unit = LengthUnit.Millimeter)
+	        : this(objectId, number, nodes, grip1Position, grip3Position, Length.From(width, unit), Length.From(height, unit), concreteParameters, concreteConstitutive, reinforcement)
+        {
+        }
+
+        /// <summary>
+        /// Stringer object.
+        /// </summary>
+        /// <param name="objectId">The stringer <see cref="ObjectId"/>.</param>
+        /// <param name="number">The stringer number.</param>
+        /// <param name="nodes">The <see cref="Array"/> containing all nodes of SPM model.</param>
+        /// <param name="grip1Position">The position of initial <see cref="Node"/> of the <see cref="Stringer"/>.</param>
+        /// <param name="grip3Position">The position of final <see cref="Node"/> of the <see cref="Stringer"/>.</param>
+        /// <param name="width">The stringer width.</param>
+        /// <param name="height">The stringer height.</param>
+        /// <param name="concreteParameters">The concrete parameters <see cref="Parameters"/>.</param>
+        /// <param name="concreteConstitutive">The concrete constitutive <see cref="Constitutive"/>.</param>
+        /// <param name="reinforcement">The <see cref="UniaxialReinforcement"/> of this stringer.</param>
+        public Stringer(ObjectId objectId, int number, Node[] nodes, Point3d grip1Position, Point3d grip3Position, Length width, Length height, Parameters concreteParameters, Constitutive concreteConstitutive, UniaxialReinforcement reinforcement = null) : base(objectId, number)
+        {
+	        Geometry      = new StringerGeometry(grip1Position, grip3Position, width, height);
+	        Grip1         = nodes.GetByPosition(grip1Position);
+	        Grip2         = nodes.GetByPosition(Geometry.CenterPoint);
+	        Grip3         = nodes.GetByPosition(grip3Position);
+	        Reinforcement = reinforcement;
+	        Concrete      = new UniaxialConcrete(concreteParameters, ConcreteArea, concreteConstitutive);
+        }
+
+        /// <summary>
         /// Calculate the transformation matrix.
         /// </summary>
         private Matrix<double> CalculateTransformationMatrix()

@@ -1,9 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Autodesk.AutoCAD.Geometry;
+using Extensions.AutoCAD;
+using SPMElements.PanelProperties;
 
 namespace SPMElements
 {
@@ -17,34 +16,14 @@ namespace SPMElements
 	    /// </summary>
 	    /// <param name="nodes">The array of nodes.</param>
 	    /// <param name="position">The position wanted.</param>
-	    /// <returns></returns>
-	    public static Node GetByPosition(this Node[] nodes, Point3d position)
-	    {
-		    foreach (var node in nodes)
-		    {
-			    if (position == node.Position)
-				    return node;
-		    }
+	    public static Node GetByPosition(this Node[] nodes, Point3d position) => nodes.First(node => position.Approx(node.Position));
 
-		    return null;
-	    }
-
-        /// <summary>
+	    /// <summary>
         /// Return the <see cref="SPMElement"/> of an <see cref="Array"/>, in given <paramref name="number"/>.
         /// </summary>
         /// <param name="elements">The <see cref="Array"/> of <see cref="SPMElement"/>.</param>
         /// <param name="number">The number of the node wanted.</param>
-        /// <returns></returns>
-        public static SPMElement GetByNumber(this SPMElement[] elements, int number)
-	    {
-		    foreach (var element in elements)
-		    {
-			    if (number == element.Number)
-				    return element;
-		    }
-
-		    return null;
-	    }
+        public static SPMElement GetByNumber(this SPMElement[] elements, int number) => elements.First(element => number == element.Number);
 
         /// <summary>
         /// Set stringer dimensions on edges of each panel.

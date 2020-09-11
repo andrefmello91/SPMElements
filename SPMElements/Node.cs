@@ -88,42 +88,9 @@ namespace SPMElements
 		public Displacement Displacement { get; private set; }
 
 		/// <summary>
-		/// Node object.
-		/// </summary>
-		/// <param name="objectId">The node <see cref="ObjectId"/>.</param>
-		/// <param name="number">The node number.</param>
-		/// <param name="position">The <seealso cref="Point3d"/> position.</param>
-		/// <param name="type">The <see cref="NodeType"/>.</param>
-		/// <param name="appliedForce">The applied <see cref="OnPlaneComponents.Force"/> on the node.</param>
-		/// <param name="constraint"> The <see cref="SPMElements.Constraint"/> condition of the node.</param>
-		/// <param name="geometryUnit">The <see cref="LengthUnit"/> of <paramref name="position"/>.</param>
-		/// <param name="displacementUnit">The <see cref="LengthUnit"/> of <see cref="Displacement"/>.</param>
-		public Node(ObjectId objectId, int number, Point3d position, NodeType type, Force appliedForce, Constraint constraint = Constraint.Free, LengthUnit geometryUnit = LengthUnit.Millimeter, LengthUnit displacementUnit = LengthUnit.Millimeter) : base(objectId, number)
-		{
-			// Get the position
-			Position = position;
-
-			// Get type
-			Type = type;
-
-            // Get support conditions
-            Constraint = constraint;
-
-			// Get forces
-			Force = appliedForce;
-
-			// Set units
-			_geometryUnit     = geometryUnit;
-			_displacementUnit = displacementUnit;
-
-			// Initiate displacements
-			Displacement = Displacement.Zero;
-		}
-
-		/// <summary>
         /// Returns true if the node is free.
         /// </summary>
-		public bool IsFree => Constraint == Constraint.Free;
+		public bool IsFree => Constraint is Constraint.Free;
 
 		/// <summary>
         /// Returns true if <see cref="Displacement"/> is not zero.
@@ -137,6 +104,39 @@ namespace SPMElements
 
         /// <inheritdoc/>
         public override int[] DoFIndex => _globalIndexes ?? GlobalIndexes(Number);
+
+        /// <summary>
+        /// Node object.
+        /// </summary>
+        /// <param name="objectId">The node <see cref="ObjectId"/>.</param>
+        /// <param name="number">The node number.</param>
+        /// <param name="position">The <seealso cref="Point3d"/> position.</param>
+        /// <param name="type">The <see cref="NodeType"/>.</param>
+        /// <param name="appliedForce">The applied <see cref="OnPlaneComponents.Force"/> on the node.</param>
+        /// <param name="constraint"> The <see cref="SPMElements.Constraint"/> condition of the node.</param>
+        /// <param name="geometryUnit">The <see cref="LengthUnit"/> of <paramref name="position"/>.</param>
+        /// <param name="displacementUnit">The <see cref="LengthUnit"/> of <see cref="Displacement"/>.</param>
+        public Node(ObjectId objectId, int number, Point3d position, NodeType type, Force appliedForce, Constraint constraint = Constraint.Free, LengthUnit geometryUnit = LengthUnit.Millimeter, LengthUnit displacementUnit = LengthUnit.Millimeter) : base(objectId, number)
+        {
+	        // Get the position
+	        Position = position;
+
+	        // Get type
+	        Type = type;
+
+	        // Get support conditions
+	        Constraint = constraint;
+
+	        // Get forces
+	        Force = appliedForce;
+
+	        // Set units
+	        _geometryUnit = geometryUnit;
+	        _displacementUnit = displacementUnit;
+
+	        // Initiate displacements
+	        Displacement = Displacement.Zero;
+        }
 
         /// <summary>
         /// Return the distance to another <see cref="Node"/>.

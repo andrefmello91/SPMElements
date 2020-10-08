@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.Geometry;
 using MathNet.Numerics.LinearAlgebra;
@@ -6,11 +8,11 @@ using MathNet.Numerics.LinearAlgebra.Double;
 using Material.Concrete;
 using Material.Reinforcement;
 using OnPlaneComponents;
+using SPM.Elements.PanelProperties;
 using UnitsNet;
 using UnitsNet.Units;
-using SPMElements.PanelProperties;
 
-namespace SPMElements
+namespace SPM.Elements
 {
 	/// <summary>
     /// Base panel class.
@@ -102,33 +104,34 @@ namespace SPMElements
         /// </summary>
         public double MaxForce => Forces.AbsoluteMaximum();
 
-        /// <summary>
-        /// Base panel object.
-        /// </summary>
-        /// <param name="objectId">The panel <see cref="ObjectId"/>.</param>
-        /// <param name="number">The panel number.</param>
-        /// <param name="grip1">The center <see cref="Node"/> of bottom edge</param>
-        /// <param name="grip2">The center <see cref="Node"/> of right edge</param>
-        /// <param name="grip3">The center <see cref="Node"/> of top edge</param>
-        /// <param name="grip4">The center <see cref="Node"/> of left edge</param>
-        /// <param name="geometry">The <see cref="PanelGeometry"/>.</param>
-        /// <param name="concreteParameters">The concrete parameters <see cref="Parameters"/>.</param>
-        /// <param name="concreteConstitutive">The concrete constitutive <see cref="Constitutive"/>.</param>
-        /// <param name="reinforcement">The <see cref="WebReinforcement"/>.</param>
-        public Panel(ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, Node grip4, PanelGeometry geometry, Parameters concreteParameters, Constitutive concreteConstitutive, WebReinforcement reinforcement = null)
-	        : base(objectId, number)
-        {
-	        Grip1 = grip1;
-	        Grip2 = grip2;
-	        Grip3 = grip3;
-	        Grip4 = grip4;
+		/// <summary>
+		/// Base panel object.
+		/// </summary>
+		/// <param name="objectId">The panel <see cref="ObjectId"/>.</param>
+		/// <param name="number">The panel number.</param>
+		/// <param name="grip1">The center <see cref="Node"/> of bottom edge</param>
+		/// <param name="grip2">The center <see cref="Node"/> of right edge</param>
+		/// <param name="grip3">The center <see cref="Node"/> of top edge</param>
+		/// <param name="grip4">The center <see cref="Node"/> of left edge</param>
+		/// <param name="vertices">Panel <see cref="Vertices"/> object.</param>
+		/// <param name="width">Panel width.</param>
+		/// <param name="concreteParameters">The concrete parameters <see cref="Parameters"/>.</param>
+		/// <param name="concreteConstitutive">The concrete constitutive <see cref="Constitutive"/>.</param>
+		/// <param name="reinforcement">The <see cref="WebReinforcement"/>.</param>
+		public Panel(ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, Node grip4, Vertices vertices, Length width, Parameters concreteParameters, Constitutive concreteConstitutive, WebReinforcement reinforcement = null)
+			: base(objectId, number)
+		{
+			Grip1 = grip1;
+			Grip2 = grip2;
+			Grip3 = grip3;
+			Grip4 = grip4;
 
-	        Geometry = geometry;
+			Geometry = new PanelGeometry(vertices, width);
 
 			Concrete = new BiaxialConcrete(concreteParameters, concreteConstitutive);
 
 			Reinforcement = reinforcement;
-        }
+		}
 
         /// <summary>
         /// Base panel object.
@@ -145,8 +148,8 @@ namespace SPMElements
         /// <param name="concreteConstitutive">The concrete constitutive <see cref="Constitutive"/>.</param>
         /// <param name="reinforcement">The <see cref="WebReinforcement"/>.</param>
         /// <param name="unit">The <see cref="LengthUnit"/> of <paramref name="width"/> and <paramref name="vertices"/>' coordinates.</param>
-        public Panel(ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, Node grip4, Vertices vertices, double width, Parameters concreteParameters, Constitutive concreteConstitutive, WebReinforcement reinforcement = null, LengthUnit unit = LengthUnit.Millimeter) 
-	        : this(objectId, number, grip1, grip2, grip3, grip4, new PanelGeometry(vertices, width, unit), concreteParameters, concreteConstitutive, reinforcement)
+        public Panel(ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, Node grip4, Vertices vertices, double width, Parameters concreteParameters, Constitutive concreteConstitutive, WebReinforcement reinforcement = null, LengthUnit unit = LengthUnit.Millimeter)
+			: this (objectId, number, grip1, grip2, grip3, grip4, vertices, Length.From(width, unit), concreteParameters, concreteConstitutive, reinforcement)
         {
         }
 
@@ -159,17 +162,16 @@ namespace SPMElements
         /// <param name="grip2">The center <see cref="Node"/> of right edge</param>
         /// <param name="grip3">The center <see cref="Node"/> of top edge</param>
         /// <param name="grip4">The center <see cref="Node"/> of left edge</param>
-        /// <param name="vertices">The array of <see cref="Point3d"/> panel vertices.</param>
+        /// <param name="vertices">The collection of <see cref="Point3d"/> panel vertices.</param>
         /// <param name="width">Panel width, in <paramref name="unit"/>.</param>
         /// <param name="concreteParameters">The concrete parameters <see cref="Parameters"/>.</param>
         /// <param name="concreteConstitutive">The concrete constitutive <see cref="Constitutive"/>.</param>
         /// <param name="reinforcement">The <see cref="WebReinforcement"/>.</param>
-        /// <param name="unit">The <see cref="LengthUnit"/> of <paramref name="width"/> and <paramref name="vertices"/>' coordinates.</param>
-        public Panel(ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, Node grip4, Point3d[] vertices, double width, Parameters concreteParameters, Constitutive concreteConstitutive, WebReinforcement reinforcement = null, LengthUnit unit = LengthUnit.Millimeter) 
-	        : this(objectId, number, grip1, grip2, grip3, grip4, new PanelGeometry(vertices, width, unit), concreteParameters, concreteConstitutive, reinforcement)
+        public Panel(ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, Node grip4, IEnumerable<Point3d> vertices, Length width, Parameters concreteParameters, Constitutive concreteConstitutive, WebReinforcement reinforcement = null)
+	        : this(objectId, number, grip1, grip2, grip3, grip4, new Vertices(vertices, width.Unit), width, concreteParameters, concreteConstitutive, reinforcement)
         {
         }
-        
+
         /// <summary>
         /// Base panel object.
         /// </summary>
@@ -179,49 +181,32 @@ namespace SPMElements
         /// <param name="grip2">The center <see cref="Node"/> of right edge</param>
         /// <param name="grip3">The center <see cref="Node"/> of top edge</param>
         /// <param name="grip4">The center <see cref="Node"/> of left edge</param>
+        /// <param name="vertices">The collection of <see cref="Point3d"/> panel vertices.</param>
+        /// <param name="width">Panel width, in <paramref name="unit"/>.</param>
+        /// <param name="concreteParameters">The concrete parameters <see cref="Parameters"/>.</param>
+        /// <param name="concreteConstitutive">The concrete constitutive <see cref="Constitutive"/>.</param>
+        /// <param name="reinforcement">The <see cref="WebReinforcement"/>.</param>
+        /// <param name="unit">The <see cref="LengthUnit"/> of <paramref name="width"/> and <paramref name="vertices"/>' coordinates.</param>
+        public Panel(ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, Node grip4, IEnumerable<Point3d> vertices, double width, Parameters concreteParameters, Constitutive concreteConstitutive, WebReinforcement reinforcement = null, LengthUnit unit = LengthUnit.Millimeter) 
+	        : this(objectId, number, grip1, grip2, grip3, grip4, new Vertices(vertices, unit), Length.From(width, unit), concreteParameters, concreteConstitutive, reinforcement)
+        {
+        }
+
+        /// <summary>
+        /// Base panel object.
+        /// </summary>
+        /// <param name="objectId">The panel <see cref="ObjectId"/>.</param>
+        /// <param name="number">The panel number.</param>
+        /// <param name="nodes">The collection containing all <see cref="Node"/>'s of SPM model.</param>
         /// <param name="vertices">Panel <see cref="Vertices"/> object.</param>
         /// <param name="width">Panel width.</param>
         /// <param name="concreteParameters">The concrete parameters <see cref="Parameters"/>.</param>
         /// <param name="concreteConstitutive">The concrete constitutive <see cref="Constitutive"/>.</param>
         /// <param name="reinforcement">The <see cref="WebReinforcement"/>.</param>
-        public Panel(ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, Node grip4, Vertices vertices, Length width, Parameters concreteParameters, Constitutive concreteConstitutive, WebReinforcement reinforcement = null) 
-	        : this(objectId, number, grip1, grip2, grip3, grip4, new PanelGeometry(vertices, width), concreteParameters, concreteConstitutive, reinforcement)
-        {
-        }
-
-        /// <summary>
-        /// Base panel object.
-        /// </summary>
-        /// <param name="objectId">The panel <see cref="ObjectId"/>.</param>
-        /// <param name="number">The panel number.</param>
-        /// <param name="grip1">The center <see cref="Node"/> of bottom edge</param>
-        /// <param name="grip2">The center <see cref="Node"/> of right edge</param>
-        /// <param name="grip3">The center <see cref="Node"/> of top edge</param>
-        /// <param name="grip4">The center <see cref="Node"/> of left edge</param>
-        /// <param name="vertices">The array of <see cref="Point3d"/> panel vertices.</param>
-        /// <param name="width">Panel width, in <paramref name="unit"/>.</param>
-        /// <param name="concreteParameters">The concrete parameters <see cref="Parameters"/>.</param>
-        /// <param name="concreteConstitutive">The concrete constitutive <see cref="Constitutive"/>.</param>
-        /// <param name="reinforcement">The <see cref="WebReinforcement"/>.</param>
-        public Panel(ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, Node grip4, Point3d[] vertices, Length width, Parameters concreteParameters, Constitutive concreteConstitutive, WebReinforcement reinforcement = null) 
-	        : this(objectId, number, grip1, grip2, grip3, grip4, new PanelGeometry(vertices, width), concreteParameters, concreteConstitutive, reinforcement)
-        {
-        }
-
-        /// <summary>
-        /// Base panel object.
-        /// </summary>
-        /// <param name="objectId">The panel <see cref="ObjectId"/>.</param>
-        /// <param name="number">The panel number.</param>
-        /// <param name="nodes">The <see cref="Array"/> containing all nodes of SPM model.</param>
-        /// <param name="geometry">The <see cref="PanelGeometry"/>.</param>
-        /// <param name="concreteParameters">The concrete parameters <see cref="Parameters"/>.</param>
-        /// <param name="concreteConstitutive">The concrete constitutive <see cref="Constitutive"/>.</param>
-        /// <param name="reinforcement">The <see cref="WebReinforcement"/>.</param>
-        public Panel(ObjectId objectId, int number, Node[] nodes, PanelGeometry geometry, Parameters concreteParameters, Constitutive concreteConstitutive, WebReinforcement reinforcement = null)
+        public Panel(ObjectId objectId, int number, IEnumerable<Node> nodes, Vertices vertices, Length width, Parameters concreteParameters, Constitutive concreteConstitutive, WebReinforcement reinforcement = null)
 	        : base(objectId, number)
         {
-	        Geometry = geometry;
+	        Geometry = new PanelGeometry(vertices, width);
 
 	        Grip1 = nodes.GetByPosition(Geometry.Edge1.CenterPoint);
 	        Grip2 = nodes.GetByPosition(Geometry.Edge2.CenterPoint);
@@ -238,15 +223,14 @@ namespace SPMElements
         /// </summary>
         /// <param name="objectId">The panel <see cref="ObjectId"/>.</param>
         /// <param name="number">The panel number.</param>
-        /// <param name="nodes">The <see cref="Array"/> containing all nodes of SPM model.</param>
+        /// <param name="nodes">The collection containing all <see cref="Node"/>'s of SPM model.</param>
         /// <param name="vertices">Panel <see cref="Vertices"/> object.</param>
         /// <param name="width">Panel width, in <paramref name="unit"/>.</param>
         /// <param name="concreteParameters">The concrete parameters <see cref="Parameters"/>.</param>
         /// <param name="concreteConstitutive">The concrete constitutive <see cref="Constitutive"/>.</param>
         /// <param name="reinforcement">The <see cref="WebReinforcement"/>.</param>
-        /// <param name="unit">The <see cref="LengthUnit"/> of <paramref name="width"/> and <paramref name="vertices"/>' coordinates.</param>
-        public Panel(ObjectId objectId, int number, Node[] nodes, Vertices vertices, double width, Parameters concreteParameters, Constitutive concreteConstitutive, WebReinforcement reinforcement = null, LengthUnit unit = LengthUnit.Millimeter)
-	        : this(objectId, number, nodes, new PanelGeometry(vertices, width, unit), concreteParameters, concreteConstitutive, reinforcement)
+        public Panel(ObjectId objectId, int number, IEnumerable<Node> nodes, Vertices vertices, double width, Parameters concreteParameters, Constitutive concreteConstitutive, WebReinforcement reinforcement = null, LengthUnit unit = LengthUnit.Millimeter)
+	        : this (objectId, number, nodes, vertices, Length.From(width, unit), concreteParameters, concreteConstitutive, reinforcement)
         {
         }
 
@@ -255,32 +239,14 @@ namespace SPMElements
         /// </summary>
         /// <param name="objectId">The panel <see cref="ObjectId"/>.</param>
         /// <param name="number">The panel number.</param>
-        /// <param name="nodes">The <see cref="Array"/> containing all nodes of SPM model.</param>
-        /// <param name="vertices">The array of <see cref="Point3d"/> panel vertices.</param>
-        /// <param name="width">Panel width, in <paramref name="unit"/>.</param>
+        /// <param name="nodes">The collection containing all <see cref="Node"/>'s of SPM model.</param>
+        /// <param name="vertices">The collection of <see cref="Point3d"/> panel vertices.</param>
+        /// <param name="width">Panel width.</param>
         /// <param name="concreteParameters">The concrete parameters <see cref="Parameters"/>.</param>
         /// <param name="concreteConstitutive">The concrete constitutive <see cref="Constitutive"/>.</param>
         /// <param name="reinforcement">The <see cref="WebReinforcement"/>.</param>
-        /// <param name="unit">The <see cref="LengthUnit"/> of <paramref name="width"/> and <paramref name="vertices"/>' coordinates.</param>
-        public Panel(ObjectId objectId, int number, Node[] nodes, Point3d[] vertices, double width, Parameters concreteParameters, Constitutive concreteConstitutive, WebReinforcement reinforcement = null, LengthUnit unit = LengthUnit.Millimeter)
-	        : this(objectId, number, nodes, new PanelGeometry(vertices, width, unit), concreteParameters, concreteConstitutive, reinforcement)
-        {
-        }
-        
-        /// <summary>
-        /// Base panel object.
-        /// </summary>
-        /// <param name="objectId">The panel <see cref="ObjectId"/>.</param>
-        /// <param name="number">The panel number.</param>
-        /// <param name="nodes">The <see cref="Array"/> containing all nodes of SPM model.</param>
-        /// <param name="vertices">Panel <see cref="Vertices"/> object.</param>
-        /// <param name="width">Panel width, in <paramref name="unit"/>.</param>
-        /// <param name="concreteParameters">The concrete parameters <see cref="Parameters"/>.</param>
-        /// <param name="concreteConstitutive">The concrete constitutive <see cref="Constitutive"/>.</param>
-        /// <param name="reinforcement">The <see cref="WebReinforcement"/>.</param>
-        /// <param name="unit">The <see cref="LengthUnit"/> of <paramref name="width"/> and <paramref name="vertices"/>' coordinates.</param>
-        public Panel(ObjectId objectId, int number, Node[] nodes, Vertices vertices, Length width, Parameters concreteParameters, Constitutive concreteConstitutive, WebReinforcement reinforcement = null)
-	        : this(objectId, number, nodes, new PanelGeometry(vertices, width), concreteParameters, concreteConstitutive, reinforcement)
+        public Panel(ObjectId objectId, int number, IEnumerable<Node> nodes, IEnumerable<Point3d> vertices, Length width, Parameters concreteParameters, Constitutive concreteConstitutive, WebReinforcement reinforcement = null)
+	        : this(objectId, number, nodes, new Vertices(vertices, width.Unit), width, concreteParameters, concreteConstitutive, reinforcement) 
         {
         }
 
@@ -289,17 +255,17 @@ namespace SPMElements
         /// </summary>
         /// <param name="objectId">The panel <see cref="ObjectId"/>.</param>
         /// <param name="number">The panel number.</param>
-        /// <param name="nodes">The <see cref="Array"/> containing all nodes of SPM model.</param>
-        /// <param name="vertices">The array of <see cref="Point3d"/> panel vertices.</param>
+        /// <param name="nodes">The collection containing all <see cref="Node"/>'s of SPM model.</param>
+        /// <param name="vertices">The collection of <see cref="Point3d"/> panel vertices.</param>
         /// <param name="width">Panel width, in <paramref name="unit"/>.</param>
         /// <param name="concreteParameters">The concrete parameters <see cref="Parameters"/>.</param>
         /// <param name="concreteConstitutive">The concrete constitutive <see cref="Constitutive"/>.</param>
         /// <param name="reinforcement">The <see cref="WebReinforcement"/>.</param>
-        /// <param name="unit">The <see cref="LengthUnit"/> of <paramref name="width"/> and <paramref name="vertices"/>' coordinates.</param>
-        public Panel(ObjectId objectId, int number, Node[] nodes, Point3d[] vertices, Length width, Parameters concreteParameters, Constitutive concreteConstitutive, WebReinforcement reinforcement = null)
-	        : this(objectId, number, nodes, new PanelGeometry(vertices, width), concreteParameters, concreteConstitutive, reinforcement)
+        public Panel(ObjectId objectId, int number, IEnumerable<Node> nodes, IEnumerable<Point3d> vertices, double width, Parameters concreteParameters, Constitutive concreteConstitutive, WebReinforcement reinforcement = null, LengthUnit unit = LengthUnit.Millimeter)
+	        : this (objectId, number, nodes, new Vertices(vertices, unit), Length.From(width, unit), concreteParameters, concreteConstitutive, reinforcement)
         {
         }
+
 		
         /// <summary>
         /// Set panel displacements from global displacement vector.
@@ -328,30 +294,19 @@ namespace SPMElements
         /// Set stringer dimensions on edges.
         /// <para>See: <see cref="Edge.SetStringerDimension"/></para>
         /// </summary>
-        /// <param name="stringers">The array containing all of the stringers.</param>
-        public void SetEdgeStringersDimensions(Stringer[] stringers)
+        /// <param name="stringers">The collection containing all of the stringers.</param>
+        public void SetEdgeStringersDimensions(IEnumerable<Stringer> stringers)
         {
 	        if (stringers is null)
 		        return;
 
 	        // Initiate the Stringer dimensions
-	        double[] hs = new double[4];
+	        var hs = new double[4];
 
-	        // Analyse panel grips
+	        // Analyze panel grips
 	        for (int i = 0; i < 4; i++)
 	        {
-		        int grip = Grips[i];
-
-		        // Verify if its an internal grip of a Stringer
-		        foreach (var stringer in stringers)
-		        {
-			        if (grip == stringer.Grips[1])
-			        {
-				        // The dimension is the half of Stringer height
-				        hs[i] = 0.5 * stringer.Geometry.Height;
-				        break;
-			        }
-		        }
+		        hs[i] = 0.5 * stringers.First(str => Grips[i] == str.Grips[1]).Geometry.Height;
 	        }
 
 	        // Set on edges
@@ -381,41 +336,18 @@ namespace SPMElements
         /// <param name="grip2">The center <see cref="Node"/> of right edge</param>
         /// <param name="grip3">The center <see cref="Node"/> of top edge</param>
         /// <param name="grip4">The center <see cref="Node"/> of left edge</param>
-        /// <param name="geometry">The <see cref="PanelGeometry"/>.</param>
-        /// <param name="concreteParameters">The concrete parameters <see cref="Parameters"/>.</param>
-        /// <param name="concreteConstitutive">The concrete constitutive <see cref="Constitutive"/>.</param>
-        /// <param name="reinforcement">The <see cref="WebReinforcement"/>.</param>
-        public static Panel Read(AnalysisType analysisType, ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, Node grip4, PanelGeometry geometry, Parameters concreteParameters, Constitutive concreteConstitutive, WebReinforcement reinforcement = null)
-		{
-			if (analysisType == AnalysisType.Linear)
-				return new LinearPanel(objectId, number, grip1, grip2, grip3, grip4, geometry, concreteParameters, concreteConstitutive, reinforcement);
-
-			return new NonLinearPanel(objectId, number, grip1, grip2, grip3, grip4, geometry, concreteParameters, concreteConstitutive, reinforcement);
-		}
-
-        /// <summary>
-        /// Return a panel object based on type of analysis.
-        /// <para>See: <seealso cref="AnalysisType"/>.</para>
-        /// </summary>
-        /// <param name="analysisType">The <see cref="AnalysisType"/>.</param>
-        /// <param name="objectId">The panel <see cref="ObjectId"/>.</param>
-        /// <param name="number">The panel number.</param>
-        /// <param name="grip1">The center <see cref="Node"/> of bottom edge</param>
-        /// <param name="grip2">The center <see cref="Node"/> of right edge</param>
-        /// <param name="grip3">The center <see cref="Node"/> of top edge</param>
-        /// <param name="grip4">The center <see cref="Node"/> of left edge</param>
         /// <param name="vertices">Panel <see cref="Vertices"/> object.</param>
-        /// <param name="width">Panel width, in <paramref name="geometryUnit"/>.</param>
+        /// <param name="width">Panel width, in <paramref name="unit"/>.</param>
         /// <param name="concreteParameters">The concrete parameters <see cref="Parameters"/>.</param>
         /// <param name="concreteConstitutive">The concrete constitutive <see cref="Constitutive"/>.</param>
         /// <param name="reinforcement">The <see cref="WebReinforcement"/>.</param>
-        /// <param name="geometryUnit">The <see cref="LengthUnit"/> of <paramref name="width"/> and <paramref name="vertices"/>' coordinates.</param>
-        public static Panel Read(AnalysisType analysisType, ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, Node grip4, Vertices vertices, double width, Parameters concreteParameters, Constitutive concreteConstitutive, WebReinforcement reinforcement = null, LengthUnit geometryUnit = LengthUnit.Millimeter)
+        /// <param name="unit">The <see cref="LengthUnit"/> of <paramref name="width"/> and <paramref name="vertices"/>' coordinates.</param>
+        public static Panel Read(AnalysisType analysisType, ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, Node grip4, Vertices vertices, double width, Parameters concreteParameters, Constitutive concreteConstitutive, WebReinforcement reinforcement = null, LengthUnit unit = LengthUnit.Millimeter)
 		{
-			if (analysisType == AnalysisType.Linear)
-				return new LinearPanel(objectId, number, grip1, grip2, grip3, grip4, vertices, width, concreteParameters, concreteConstitutive, reinforcement, geometryUnit);
+			if (analysisType is AnalysisType.Linear)
+				return new LinearPanel(objectId, number, grip1, grip2, grip3, grip4, vertices, width, concreteParameters, concreteConstitutive, reinforcement, unit);
 
-			return new NonLinearPanel(objectId, number, grip1, grip2, grip3, grip4, vertices, width, concreteParameters, concreteConstitutive, reinforcement, geometryUnit);
+			return new NonLinearPanel(objectId, number, grip1, grip2, grip3, grip4, vertices, width, concreteParameters, concreteConstitutive, reinforcement, unit);
 		}
 
         /// <summary>
@@ -429,18 +361,40 @@ namespace SPMElements
         /// <param name="grip2">The center <see cref="Node"/> of right edge</param>
         /// <param name="grip3">The center <see cref="Node"/> of top edge</param>
         /// <param name="grip4">The center <see cref="Node"/> of left edge</param>
-        /// <param name="vertices">The array of <see cref="Point3d"/> panel vertices.</param>
+        /// <param name="vertices">The collection of <see cref="Point3d"/> panel vertices.</param>
+        /// <param name="width">Panel width, in <paramref name="unit"/>.</param>
+        /// <param name="concreteParameters">The concrete parameters <see cref="Parameters"/>.</param>
+        /// <param name="concreteConstitutive">The concrete constitutive <see cref="Constitutive"/>.</param>
+        /// <param name="reinforcement">The <see cref="WebReinforcement"/>.</param>
+        /// <param name="unit">The <see cref="LengthUnit"/> of <paramref name="width"/> and <paramref name="vertices"/>' coordinates.</param>
+        public static Panel Read(AnalysisType analysisType, ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, Node grip4, IEnumerable<Point3d> vertices, double width, Parameters concreteParameters, Constitutive concreteConstitutive, WebReinforcement reinforcement = null, LengthUnit unit = LengthUnit.Millimeter)
+		{
+			if (analysisType is AnalysisType.Linear)
+				return new LinearPanel(objectId, number, grip1, grip2, grip3, grip4, vertices, width, concreteParameters, concreteConstitutive, reinforcement, unit);
+
+			return new NonLinearPanel(objectId, number, grip1, grip2, grip3, grip4, vertices, width, concreteParameters, concreteConstitutive, reinforcement, unit);
+		}
+
+        /// <summary>
+        /// Return a panel object based on type of analysis.
+        /// <para>See: <seealso cref="AnalysisType"/>.</para>
+        /// </summary>
+        /// <param name="analysisType">The <see cref="AnalysisType"/>.</param>
+        /// <param name="objectId">The panel <see cref="ObjectId"/>.</param>
+        /// <param name="number">The panel number.</param>
+        /// <param name="nodes">The collection containing all <see cref="Node"/>'s of SPM model.</param>
+        /// <param name="vertices">The collection of <see cref="Point3d"/> panel vertices.</param>
         /// <param name="width">Panel width, in <paramref name="geometryUnit"/>.</param>
         /// <param name="concreteParameters">The concrete parameters <see cref="Parameters"/>.</param>
         /// <param name="concreteConstitutive">The concrete constitutive <see cref="Constitutive"/>.</param>
         /// <param name="reinforcement">The <see cref="WebReinforcement"/>.</param>
-        /// <param name="geometryUnit">The <see cref="LengthUnit"/> of <paramref name="width"/> and <paramref name="vertices"/>' coordinates.</param>
-        public static Panel Read(AnalysisType analysisType, ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, Node grip4, Point3d[] vertices, double width, Parameters concreteParameters, Constitutive concreteConstitutive, WebReinforcement reinforcement = null, LengthUnit geometryUnit = LengthUnit.Millimeter)
+        /// <param name="unit">The <see cref="LengthUnit"/> of <paramref name="width"/> and <paramref name="vertices"/>' coordinates.</param>
+        public static Panel Read(AnalysisType analysisType, ObjectId objectId, int number, IEnumerable<Node> nodes, IEnumerable<Point3d> vertices, double width, Parameters concreteParameters, Constitutive concreteConstitutive, WebReinforcement reinforcement = null, LengthUnit unit = LengthUnit.Millimeter)
 		{
-			if (analysisType == AnalysisType.Linear)
-				return new LinearPanel(objectId, number, grip1, grip2, grip3, grip4, vertices, width, concreteParameters, concreteConstitutive, reinforcement, geometryUnit);
+			if (analysisType is AnalysisType.Linear)
+				return new LinearPanel(objectId, number, nodes, vertices, width, concreteParameters, concreteConstitutive, reinforcement, unit);
 
-			return new NonLinearPanel(objectId, number, grip1, grip2, grip3, grip4, vertices, width, concreteParameters, concreteConstitutive, reinforcement, geometryUnit);
+			return new NonLinearPanel(objectId, number, nodes, vertices, width, concreteParameters, concreteConstitutive, reinforcement, unit);
 		}
 
 		/// <summary>
@@ -460,12 +414,12 @@ namespace SPMElements
 		public override string ToString()
 		{
 			var msgstr =
-				$"Panel {Number} + \n\n" +
+				$"Panel {Number}\n\n" +
 				$"Grips: ({Grips[0]} - {Grips[1]} - {Grips[2]} - {Grips[3]})\n" +
-				Geometry;
+				$"{Geometry}";
 
 			if (!(Reinforcement is null))
-				msgstr += "\n\n" + Reinforcement;
+				msgstr += $"\n\n{Reinforcement}";
 
 			return msgstr;
 		}

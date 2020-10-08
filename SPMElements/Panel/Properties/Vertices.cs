@@ -1,10 +1,12 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using Autodesk.AutoCAD.Geometry;
 using Extensions;
 using Extensions.AutoCAD;
 using UnitsNet.Units;
 
-namespace SPMElements.PanelProperties
+namespace SPM.Elements.PanelProperties
 {
     /// <summary>
     /// Panel vertices struct.
@@ -12,7 +14,6 @@ namespace SPMElements.PanelProperties
     public struct Vertices : IEquatable<Vertices>
     {
 		// Auxiliary
-		private Point3d _vertex1, _vertex2, _vertex3, _vertex4;
 		private Point3d? _centerPoint;
 		private double[] _xCoordinates, _yCoordinates;
 
@@ -24,22 +25,22 @@ namespace SPMElements.PanelProperties
 		/// <summary>
 		/// Get vertex 1 (base left vertex).
 		/// </summary>
-		public Point3d Vertex1 => _vertex1;
+		public Point3d Vertex1 { get ; private set; }
 
 		/// <summary>
 		/// Get vertex 2 (base right vertex).
 		/// </summary>
-		public Point3d Vertex2 => _vertex2;
+		public Point3d Vertex2 { get ; private set; }
 
 		/// <summary>
 		/// Get vertex 3 (top right vertex).
 		/// </summary>
-		public Point3d Vertex3 => _vertex3;
+		public Point3d Vertex3 { get ; private set; }
 
 		/// <summary>
 		/// Get vertex 4 (top left vertex).
 		/// </summary>
-		public Point3d Vertex4 => _vertex4;
+		public Point3d Vertex4 { get ; private set; }
 
 		/// <summary>
 		/// Get <see cref="Vertices"/> approximated center point.
@@ -68,10 +69,10 @@ namespace SPMElements.PanelProperties
         {
 	        Unit = geometryUnit;
 
-	        _vertex1 = vertex1;
-	        _vertex2 = vertex2;
-	        _vertex3 = vertex3;
-	        _vertex4 = vertex4;
+	        Vertex1 = vertex1;
+	        Vertex2 = vertex2;
+	        Vertex3 = vertex3;
+	        Vertex4 = vertex4;
 
 	        _centerPoint  = null;
 	        _xCoordinates = _yCoordinates = null;
@@ -82,21 +83,21 @@ namespace SPMElements.PanelProperties
         /// </summary>
         /// <param name="vertices">The array of vertices, in any order.</param>
         /// <param name="geometryUnit">The <see cref="LengthUnit"/> of <paramref name="vertices"/>' coordinates.</param>
-        public Vertices(Point3d[] vertices, LengthUnit geometryUnit = LengthUnit.Millimeter)
+        public Vertices(IEnumerable<Point3d> vertices, LengthUnit geometryUnit = LengthUnit.Millimeter)
         {
-			if (vertices.Length != 4)
+	        // Order points
+	        var verts = vertices.Order().ToArray();
+
+            if (verts.Length != 4)
 				throw new NotImplementedException();
 
 			Unit = geometryUnit;
 
-            // Order points
-            vertices = vertices.Order();
-
             // Set in necessary order (invert 3 and 4)
-            _vertex1 = vertices[0];
-            _vertex2 = vertices[1];
-            _vertex3 = vertices[3];
-            _vertex4 = vertices[2];
+            Vertex1 = verts[0];
+            Vertex2 = verts[1];
+            Vertex3 = verts[3];
+            Vertex4 = verts[2];
 
             _centerPoint  = null;
             _xCoordinates = _yCoordinates = null;
@@ -116,10 +117,10 @@ namespace SPMElements.PanelProperties
 	        if (Unit == unit)
 		        return;
 
-	        _vertex1 = _vertex1.Convert(Unit, unit);
-	        _vertex2 = _vertex2.Convert(Unit, unit);
-	        _vertex3 = _vertex3.Convert(Unit, unit);
-	        _vertex4 = _vertex4.Convert(Unit, unit);
+	        Vertex1 = Vertex1.Convert(Unit, unit);
+	        Vertex2 = Vertex2.Convert(Unit, unit);
+	        Vertex3 = Vertex3.Convert(Unit, unit);
+	        Vertex4 = Vertex4.Convert(Unit, unit);
 
 	        Unit = unit;
         }
@@ -169,16 +170,7 @@ namespace SPMElements.PanelProperties
 
         public override bool Equals(object obj) => obj is Vertices other && Equals(other);
 
-        public override int GetHashCode()
-        {
-	        var array = AsArray();
-	        double result = 0;
-
-	        foreach (var point in array)
-		        result += point.X * point.Y;
-
-	        return (int) result;
-        }
+        public override int GetHashCode() => (int)AsArray().Sum(point => point.X * point.Y);
 
         public override string ToString()
         {

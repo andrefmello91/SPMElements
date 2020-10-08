@@ -1,11 +1,12 @@
 ﻿using System;
 using Autodesk.AutoCAD.Geometry;
 using Extensions;
+using Extensions.Number;
 using MathNet.Numerics;
 using UnitsNet;
 using UnitsNet.Units;
 
-namespace SPMElements.PanelProperties
+namespace SPM.Elements.PanelProperties
 {
 	/// <summary>
     /// Panel geometry struct.
@@ -62,10 +63,7 @@ namespace SPMElements.PanelProperties
 				var ang2 = Edge2.Angle - Edge1.Angle;
 				var ang4 = Edge4.Angle - Edge3.Angle;
 
-				if (ang2 == Constants.PiOver2 && ang4 == Constants.PiOver2)
-					return true;
-
-				return false;
+				return ang2.Approx(Constants.PiOver2) && ang4.Approx(Constants.PiOver2);
 			}
 		}
 
@@ -148,7 +146,7 @@ namespace SPMElements.PanelProperties
         /// <summary>
         /// Panel geometry constructor.
         /// </summary>
-        /// <param name="vertices">Panel <see cref="SPMElements.PanelProperties.Vertices"/> object.</param>
+        /// <param name="vertices">Panel <see cref="PanelProperties.Vertices"/> object.</param>
         /// <param name="width">Panel width.</param>
         public PanelGeometry(Vertices vertices, Length width)
 		{
@@ -207,7 +205,7 @@ namespace SPMElements.PanelProperties
         public override string ToString()
         {
 	        return
-		        Vertices + "\n" +
+		        $"{Vertices}\n" +
 		        $"Width = {_width}";
         }
 

@@ -10,7 +10,7 @@ using MathNet.Numerics;
 using UnitsNet;
 using UnitsNet.Units;
 
-namespace SPMElements.PanelProperties
+namespace SPM.Elements.PanelProperties
 {
 	/// <summary>
     /// Panel edge struct.

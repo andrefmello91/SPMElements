@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.Geometry;
 using Material.Concrete;
@@ -8,7 +10,7 @@ using MathNet.Numerics.LinearAlgebra.Double;
 using UnitsNet;
 using UnitsNet.Units;
 
-namespace SPMElements
+namespace SPM.Elements
 {
 	public partial class NonLinearStringer : Stringer
 	{
@@ -120,23 +122,17 @@ namespace SPMElements
 			: base(objectId, number, grip1, grip2, grip3, width, height, concreteParameters, concreteConstitutive, reinforcement)
 		{
 			// Initiate integration points
-			IntPoints = new[]
-			{
-				new IntegrationPoint(Concrete.ecr, Steel?.YieldStrain ?? 0),
-				new IntegrationPoint(Concrete.ecr, Steel?.YieldStrain ?? 0),
-				new IntegrationPoint(Concrete.ecr, Steel?.YieldStrain ?? 0),
-				new IntegrationPoint(Concrete.ecr, Steel?.YieldStrain ?? 0)
-			};
+			IntPoints = GetIntPoints().ToArray();
 
-			// Get the relations
-			Relations = StressStrainRelations.GetRelations(Concrete, Reinforcement);
+            // Get the relations
+            Relations = StressStrainRelations.GetRelations(Concrete, Reinforcement);
 		}
 
 		/// <summary>
 		/// Linear stringer object.
 		/// </summary>
 		/// <inheritdoc/>
-		public NonLinearStringer(ObjectId objectId, int number, Node[] nodes, Point3d grip1Position, Point3d grip3Position, double width, double height, Parameters concreteParameters, Constitutive concreteConstitutive, UniaxialReinforcement reinforcement = null, LengthUnit unit = LengthUnit.Millimeter)
+		public NonLinearStringer(ObjectId objectId, int number, IEnumerable<Node> nodes, Point3d grip1Position, Point3d grip3Position, double width, double height, Parameters concreteParameters, Constitutive concreteConstitutive, UniaxialReinforcement reinforcement = null, LengthUnit unit = LengthUnit.Millimeter)
 			: this(objectId, number, nodes, grip1Position, grip3Position, Length.From(width, unit), Length.From(height, unit), concreteParameters, concreteConstitutive, reinforcement)
 		{
 		}
@@ -145,20 +141,23 @@ namespace SPMElements
 		/// Linear stringer object.
 		/// </summary>
 		/// <inheritdoc/>
-		public NonLinearStringer(ObjectId objectId, int number, Node[] nodes, Point3d grip1Position, Point3d grip3Position, Length width, Length height, Parameters concreteParameters, Constitutive concreteConstitutive, UniaxialReinforcement reinforcement = null)
+		public NonLinearStringer(ObjectId objectId, int number, IEnumerable<Node> nodes, Point3d grip1Position, Point3d grip3Position, Length width, Length height, Parameters concreteParameters, Constitutive concreteConstitutive, UniaxialReinforcement reinforcement = null)
 			: base(objectId, number, nodes, grip1Position, grip3Position, width, height, concreteParameters, concreteConstitutive, reinforcement)
 		{
 			// Initiate integration points
-			IntPoints = new[]
-			{
-				new IntegrationPoint(Concrete.ecr, Steel?.YieldStrain ?? 0),
-				new IntegrationPoint(Concrete.ecr, Steel?.YieldStrain ?? 0),
-				new IntegrationPoint(Concrete.ecr, Steel?.YieldStrain ?? 0),
-				new IntegrationPoint(Concrete.ecr, Steel?.YieldStrain ?? 0)
-			};
+			IntPoints = GetIntPoints().ToArray();
 
 			// Get the relations
 			Relations = StressStrainRelations.GetRelations(Concrete, Reinforcement);
+		}
+
+		/// <summary>
+        /// Get <see cref="IntegrationPoint"/>'s.
+        /// </summary>
+		private IEnumerable<IntegrationPoint> GetIntPoints()
+		{
+			for (int i = 0; i < 4; i++)
+				yield return new IntegrationPoint(Concrete.ecr, Steel?.YieldStrain ?? 0);
 		}
 
         /// <summary>

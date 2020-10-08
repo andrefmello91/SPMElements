@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace SPMElements
+namespace SPM.Elements
 {
 	public partial class NonLinearStringer
 	{

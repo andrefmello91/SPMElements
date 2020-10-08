@@ -6,7 +6,7 @@ using MathNet.Numerics;
 using UnitsNet;
 using UnitsNet.Units;
 
-namespace SPMElements.StringerProperties
+namespace SPM.Elements.StringerProperties
 {
 	/// <summary>
 	/// Stringer geometry struct.

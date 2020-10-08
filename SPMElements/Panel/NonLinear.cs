@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.Geometry;
 using Material.Concrete;
@@ -6,12 +8,12 @@ using Material.Reinforcement;
 using MathNet.Numerics.LinearAlgebra;
 using MathNet.Numerics.LinearAlgebra.Double;
 using OnPlaneComponents;
-using SPMElements.PanelProperties;
 using RCMembrane;
+using SPM.Elements.PanelProperties;
 using UnitsNet;
 using UnitsNet.Units;
 
-namespace SPMElements
+namespace SPM.Elements
 {
     public class NonLinearPanel : Panel
     {
@@ -107,44 +109,73 @@ namespace SPMElements
 	    /// Nonlinear panel object.
 	    /// </summary>
 	    /// <inheritdoc/>
-	    public NonLinearPanel(ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, Node grip4, PanelGeometry geometry, Parameters concreteParameters, Constitutive concreteConstitutive, WebReinforcement reinforcement = null) : base(objectId, number, grip1, grip2, grip3, grip4, geometry, concreteParameters, concreteConstitutive, reinforcement)
+	    public NonLinearPanel(ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, Node grip4, Vertices vertices, Length width, Parameters concreteParameters, Constitutive concreteConstitutive, WebReinforcement reinforcement = null)
+		    : base(objectId, number, grip1, grip2, grip3, grip4, vertices, width, concreteParameters, concreteConstitutive, reinforcement)
 	    {
-		    IntegrationPoints = IntPoints(concreteParameters, concreteConstitutive);
+		    IntegrationPoints = IntPoints(concreteParameters, concreteConstitutive).ToArray();
 	    }
 
-	    /// <summary>
-	    /// Nonlinear panel object.
-	    /// </summary>
-	    /// <inheritdoc/>
+        /// <summary>
+        /// Nonlinear panel object.
+        /// </summary>
+        /// <inheritdoc/>
         public NonLinearPanel(ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, Node grip4, Vertices vertices, double width, Parameters concreteParameters, Constitutive concreteConstitutive, WebReinforcement reinforcement = null, LengthUnit unit = LengthUnit.Millimeter)
-            : this(objectId, number, grip1, grip2, grip3, grip4, new PanelGeometry(vertices, width, unit), concreteParameters, concreteConstitutive, reinforcement)
+            : this(objectId, number, grip1, grip2, grip3, grip4, vertices, Length.From(width, unit), concreteParameters, concreteConstitutive, reinforcement)
         {
         }
 
-	    /// <summary>
-	    /// Nonlinear panel object.
-	    /// </summary>
-	    /// <inheritdoc/>
-        public NonLinearPanel(ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, Node grip4, Point3d[] vertices, double width, Parameters concreteParameters, Constitutive concreteConstitutive, WebReinforcement reinforcement = null, LengthUnit unit = LengthUnit.Millimeter)
-            : this(objectId, number, grip1, grip2, grip3, grip4, new PanelGeometry(vertices, width, unit), concreteParameters, concreteConstitutive, reinforcement)
+        /// <summary>
+        /// Nonlinear panel object.
+        /// </summary>
+        /// <inheritdoc/>
+        public NonLinearPanel(ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, Node grip4, IEnumerable<Point3d> vertices, Length width, Parameters concreteParameters, Constitutive concreteConstitutive, WebReinforcement reinforcement = null)
+	        : this(objectId, number, grip1, grip2, grip3, grip4, new Vertices(vertices, width.Unit), width, concreteParameters, concreteConstitutive, reinforcement)
         {
         }
 
-	    /// <summary>
-	    /// Nonlinear panel object.
-	    /// </summary>
-	    /// <inheritdoc/>
-        public NonLinearPanel(ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, Node grip4, Vertices vertices, Length width, Parameters concreteParameters, Constitutive concreteConstitutive, WebReinforcement reinforcement = null)
-            : this(objectId, number, grip1, grip2, grip3, grip4, new PanelGeometry(vertices, width), concreteParameters, concreteConstitutive, reinforcement)
+        /// <summary>
+        /// Nonlinear panel object.
+        /// </summary>
+        /// <inheritdoc/>
+        public NonLinearPanel(ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, Node grip4, IEnumerable<Point3d> vertices, double width, Parameters concreteParameters, Constitutive concreteConstitutive, WebReinforcement reinforcement = null, LengthUnit unit = LengthUnit.Millimeter)
+            : this(objectId, number, grip1, grip2, grip3, grip4, new Vertices(vertices, unit), Length.From(width, unit), concreteParameters, concreteConstitutive, reinforcement)
         {
         }
 
-	    /// <summary>
-	    /// Nonlinear panel object.
-	    /// </summary>
-	    /// <inheritdoc/>
-        public NonLinearPanel(ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, Node grip4, Point3d[] vertices, Length width, Parameters concreteParameters, Constitutive concreteConstitutive, WebReinforcement reinforcement = null)
-            : this(objectId, number, grip1, grip2, grip3, grip4, new PanelGeometry(vertices, width), concreteParameters, concreteConstitutive, reinforcement)
+        /// <summary>
+        /// Nonlinear panel object.
+        /// </summary>
+        /// <inheritdoc/>
+        public NonLinearPanel(ObjectId objectId, int number, IEnumerable<Node> nodes, Vertices vertices, Length width, Parameters concreteParameters, Constitutive concreteConstitutive, WebReinforcement reinforcement = null)
+            : base(objectId, number, nodes, vertices, width, concreteParameters, concreteConstitutive, reinforcement)
+        {
+	        IntegrationPoints = IntPoints(concreteParameters, concreteConstitutive).ToArray();
+        }
+
+        /// <summary>
+        /// Nonlinear panel object.
+        /// </summary>
+        /// <inheritdoc/>
+        public NonLinearPanel(ObjectId objectId, int number, IEnumerable<Node> nodes, Vertices vertices, double width, Parameters concreteParameters, Constitutive concreteConstitutive, WebReinforcement reinforcement = null, LengthUnit unit = LengthUnit.Millimeter)
+            : this(objectId, number, nodes, vertices, Length.From(width, unit), concreteParameters, concreteConstitutive, reinforcement)
+        {
+        }
+
+        /// <summary>
+        /// Nonlinear panel object.
+        /// </summary>
+        /// <inheritdoc/>
+        public NonLinearPanel(ObjectId objectId, int number, IEnumerable<Node> nodes, IEnumerable<Point3d> vertices, Length width, Parameters concreteParameters, Constitutive concreteConstitutive, WebReinforcement reinforcement = null)
+            : this(objectId, number, nodes, new Vertices(vertices, width.Unit), width, concreteParameters, concreteConstitutive, reinforcement)
+        {
+        }
+
+        /// <summary>
+        /// Nonlinear panel object.
+        /// </summary>
+        /// <inheritdoc/>
+        public NonLinearPanel(ObjectId objectId, int number, IEnumerable<Node> nodes, IEnumerable<Point3d> vertices, double width, Parameters concreteParameters, Constitutive concreteConstitutive, WebReinforcement reinforcement = null, LengthUnit unit = LengthUnit.Millimeter)
+            : this(objectId, number, nodes, new Vertices(vertices, unit), Length.From(width, unit), concreteParameters, concreteConstitutive, reinforcement)
         {
         }
 
@@ -154,15 +185,10 @@ namespace SPMElements
         /// <param name="concreteParameters">Concrete <see cref="Parameters"/> object.</param>
         /// <param name="concreteConstitutive">Concrete <see cref="Constitutive"/> object.</param>
         /// <returns></returns>
-        private Membrane[] IntPoints(Parameters concreteParameters, Constitutive concreteConstitutive)
+        private IEnumerable<Membrane> IntPoints(Parameters concreteParameters, Constitutive concreteConstitutive)
 	    {
-		    // Initiate integration points
-		    var intPts = new Membrane[4];
-
 		    for (int i = 0; i < 4; i++)
-			    intPts[i] = Membrane.ReadMembrane(concreteParameters, concreteConstitutive, Reinforcement, Geometry.Width);
-
-		    return intPts;
+			    yield return Membrane.ReadMembrane(concreteParameters, concreteConstitutive, Reinforcement, Geometry.Width);
 	    }
 
         /// <summary>
@@ -170,7 +196,7 @@ namespace SPMElements
         /// <para>See: <see cref="Edge.SetStringerDimension"/></para>
 		/// </summary>
         /// <param name="stringers">The array containing all of the stringers.</param>
-        public void SetEdgeStringersDimensions(Stringer[] stringers)
+        public void SetEdgeStringersDimensions(IEnumerable<Stringer> stringers)
 	    {
 			if (stringers is null)
 				return;
@@ -180,20 +206,7 @@ namespace SPMElements
 
 		    // Analyse panel grips
 		    for (int i = 0; i < 4; i++)
-		    {
-			    int grip = Grips[i];
-
-			    // Verify if its an internal grip of a Stringer
-			    foreach (var stringer in stringers)
-			    {
-				    if (grip == stringer.Grips[1])
-				    {
-					    // The dimension is the half of Stringer height
-					    hs[i] = 0.5 * stringer.Geometry.Height;
-					    break;
-				    }
-			    }
-		    }
+			    hs[i] = 0.5 * stringers.First(str => Grips[i] == str.Grips[1]).Geometry.Height;
 
 			// Set on edges
 			Geometry.Edge1.SetStringerDimension(hs[0]);

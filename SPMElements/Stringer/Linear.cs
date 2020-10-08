@@ -1,16 +1,17 @@
 ﻿using System;
+using System.Collections.Generic;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.Geometry;
 using Material.Concrete;
 using Material.Reinforcement;
 using MathNet.Numerics.LinearAlgebra;
 using MathNet.Numerics.LinearAlgebra.Double;
-using SPMElements.StringerProperties;
+using SPM.Elements.StringerProperties;
 using UnitsNet;
 using UnitsNet.Units;
 using Concrete = Material.Concrete.UniaxialConcrete;
 
-namespace SPMElements
+namespace SPM.Elements
 {
 	/// <summary>
 	/// Stringer linear class.
@@ -45,7 +46,7 @@ namespace SPMElements
         /// Linear stringer object.
         /// </summary>
         /// <inheritdoc/>
-        public LinearStringer(ObjectId objectId, int number, Node[] nodes, Point3d grip1Position, Point3d grip3Position, double width, double height, Parameters concreteParameters, Constitutive concreteConstitutive, UniaxialReinforcement reinforcement = null, LengthUnit unit = LengthUnit.Millimeter)
+        public LinearStringer(ObjectId objectId, int number, IEnumerable<Node> nodes, Point3d grip1Position, Point3d grip3Position, double width, double height, Parameters concreteParameters, Constitutive concreteConstitutive, UniaxialReinforcement reinforcement = null, LengthUnit unit = LengthUnit.Millimeter)
             : this(objectId, number, nodes, grip1Position, grip3Position, Length.From(width, unit), Length.From(height, unit), concreteParameters, concreteConstitutive, reinforcement)
         {
         }
@@ -54,7 +55,7 @@ namespace SPMElements
         /// Linear stringer object.
         /// </summary>
         /// <inheritdoc/>
-        public LinearStringer(ObjectId objectId, int number, Node[] nodes, Point3d grip1Position, Point3d grip3Position, Length width, Length height, Parameters concreteParameters, Constitutive concreteConstitutive, UniaxialReinforcement reinforcement = null)
+        public LinearStringer(ObjectId objectId, int number, IEnumerable<Node> nodes, Point3d grip1Position, Point3d grip3Position, Length width, Length height, Parameters concreteParameters, Constitutive concreteConstitutive, UniaxialReinforcement reinforcement = null)
 	        : base(objectId, number, nodes, grip1Position, grip3Position, width, height, concreteParameters, concreteConstitutive, reinforcement)
         {
         }

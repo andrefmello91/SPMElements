@@ -1,7 +1,7 @@
 ﻿using System;
 using Autodesk.AutoCAD.DatabaseServices;
 
-namespace SPMElements
+namespace SPM.Elements
 {
 	/// <summary>
     /// SPM element types.

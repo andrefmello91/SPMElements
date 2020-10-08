@@ -8,7 +8,7 @@ using UnitsNet.Units;
 using Extensions;
 using Extensions.AutoCAD;
 
-namespace SPMElements
+namespace SPM.Elements
 {
 	/// <summary>
 	/// Node types.
@@ -75,12 +75,12 @@ namespace SPMElements
 		/// <summary>
         /// Get applied <see cref="OnPlaneComponents.Force"/>.
         /// </summary>
-		public Force Force { get; }
+		public Force Force { get; set; }
 
         /// <summary>
-        /// Get <see cref="SPMElements.Constraint"/> condition.
+        /// Get <see cref="Elements.Constraint"/> condition.
         /// </summary>
-        public Constraint Constraint { get; }
+        public Constraint Constraint { get; set; }
 
 		/// <summary>
 		/// Get/set nodal <see cref="OnPlaneComponents.Displacement"/>
@@ -112,8 +112,22 @@ namespace SPMElements
         /// <param name="number">The node number.</param>
         /// <param name="position">The <seealso cref="Point3d"/> position.</param>
         /// <param name="type">The <see cref="NodeType"/>.</param>
+        /// <param name="geometryUnit">The <see cref="LengthUnit"/> of <paramref name="position"/>.</param>
+        /// <param name="displacementUnit">The <see cref="LengthUnit"/> of <see cref="Displacement"/>.</param>
+        public Node(ObjectId objectId, int number, Point3d position, NodeType type, LengthUnit geometryUnit = LengthUnit.Millimeter, LengthUnit displacementUnit = LengthUnit.Millimeter)
+			: this (objectId, number, position, type, Force.Zero, Constraint.Free, geometryUnit, displacementUnit)
+        {
+        }
+
+        /// <summary>
+        /// Node object.
+        /// </summary>
+        /// <param name="objectId">The node <see cref="ObjectId"/>.</param>
+        /// <param name="number">The node number.</param>
+        /// <param name="position">The <seealso cref="Point3d"/> position.</param>
+        /// <param name="type">The <see cref="NodeType"/>.</param>
         /// <param name="appliedForce">The applied <see cref="OnPlaneComponents.Force"/> on the node.</param>
-        /// <param name="constraint"> The <see cref="SPMElements.Constraint"/> condition of the node.</param>
+        /// <param name="constraint"> The <see cref="Elements.Constraint"/> condition of the node.</param>
         /// <param name="geometryUnit">The <see cref="LengthUnit"/> of <paramref name="position"/>.</param>
         /// <param name="displacementUnit">The <see cref="LengthUnit"/> of <see cref="Displacement"/>.</param>
         public Node(ObjectId objectId, int number, Point3d position, NodeType type, Force appliedForce, Constraint constraint = Constraint.Free, LengthUnit geometryUnit = LengthUnit.Millimeter, LengthUnit displacementUnit = LengthUnit.Millimeter) : base(objectId, number)

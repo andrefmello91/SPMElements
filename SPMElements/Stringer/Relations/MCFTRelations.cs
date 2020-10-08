@@ -3,7 +3,7 @@ using Material.Concrete;
 using Material.Reinforcement;
 using MathNet.Numerics;
 
-namespace SPMElements
+namespace SPM.Elements
 {
 	public partial class NonLinearStringer
 	{
@@ -70,11 +70,7 @@ namespace SPMElements
 				else if (normalForce < 0)
 				{
 					// Compressed Stringer
-					if (normalForce > MaxCompressiveForce)
-						result = ConcreteNotCrushed(normalForce);
-
-					else
-						result = ConcreteCrushing(normalForce);
+					result = normalForce > MaxCompressiveForce ? ConcreteNotCrushed(normalForce) : ConcreteCrushing(normalForce);
 				}
 
 				return result;

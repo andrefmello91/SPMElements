@@ -1,18 +1,20 @@
 ﻿using System;
+using System.Collections.Generic;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.Geometry;
 using Extensions.Number;
 using Material.Concrete;
+using Material.Reinforcement;
 using MathNet.Numerics;
 using MathNet.Numerics.LinearAlgebra;
 using MathNet.Numerics.LinearAlgebra.Double;
 using OnPlaneComponents;
-using SPMElements.PanelProperties;
+using SPM.Elements.PanelProperties;
 using UnitsNet;
 using UnitsNet.Units;
 using Reinforcement      = Material.Reinforcement.WebReinforcement;
 
-namespace SPMElements
+namespace SPM.Elements
 {
 	/// <summary>
     /// Linear panel class.
@@ -96,8 +98,9 @@ namespace SPMElements
 		/// <summary>
 		/// Linear panel object.
 		/// </summary>
-	    /// <inheritdoc/>
-	    public LinearPanel(ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, Node grip4, PanelGeometry geometry, Parameters concreteParameters, Constitutive concreteConstitutive, Reinforcement reinforcement = null) : base(objectId, number, grip1, grip2, grip3, grip4, geometry, concreteParameters, concreteConstitutive, reinforcement)
+		/// <inheritdoc/>
+        public LinearPanel(ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, Node grip4, Vertices vertices, double width, Parameters concreteParameters, Constitutive concreteConstitutive, Reinforcement reinforcement = null, LengthUnit unit = LengthUnit.Millimeter)
+			: base(objectId, number, grip1, grip2, grip3, grip4, vertices, width, concreteParameters, concreteConstitutive, reinforcement, unit)
 	    {
 	    }
 
@@ -105,34 +108,65 @@ namespace SPMElements
 		/// Linear panel object.
 		/// </summary>
 		/// <inheritdoc/>
-        public LinearPanel(ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, Node grip4, Vertices vertices, double width, Parameters concreteParameters, Constitutive concreteConstitutive, Reinforcement reinforcement = null, LengthUnit unit = LengthUnit.Millimeter) : base(objectId, number, grip1, grip2, grip3, grip4, vertices, width, concreteParameters, concreteConstitutive, reinforcement, unit)
-	    {
-	    }
+		public LinearPanel(ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, Node grip4, Vertices vertices, Length width, Parameters concreteParameters, Constitutive concreteConstitutive, Reinforcement reinforcement = null)
+			: base(objectId, number, grip1, grip2, grip3, grip4, vertices, width, concreteParameters, concreteConstitutive, reinforcement)
+		{
+		}
 
 		/// <summary>
 		/// Linear panel object.
 		/// </summary>
-	    /// <inheritdoc/>
-        public LinearPanel(ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, Node grip4, Point3d[] vertices, double width, Parameters concreteParameters, Constitutive concreteConstitutive, Reinforcement reinforcement = null, LengthUnit unit = LengthUnit.Millimeter) : base(objectId, number, grip1, grip2, grip3, grip4, vertices, width, concreteParameters, concreteConstitutive, reinforcement, unit)
+		/// <inheritdoc/>
+		public LinearPanel(ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, Node grip4, IEnumerable<Point3d> vertices, Length width, Parameters concreteParameters, Constitutive concreteConstitutive, Reinforcement reinforcement = null)
+			: base(objectId, number, grip1, grip2, grip3, grip4, vertices, width, concreteParameters, concreteConstitutive, reinforcement)
+		{
+		}
+
+        /// <summary>
+        /// Linear panel object.
+        /// </summary>
+        /// <inheritdoc/>
+        public LinearPanel(ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, Node grip4, IEnumerable<Point3d> vertices, double width, Parameters concreteParameters, Constitutive concreteConstitutive, Reinforcement reinforcement = null, LengthUnit unit = LengthUnit.Millimeter)
+	        : base(objectId, number, grip1, grip2, grip3, grip4, vertices, width, concreteParameters, concreteConstitutive, reinforcement, unit)
 	    {
 	    }
+
+        /// <summary>
+        /// Linear panel object.
+        /// </summary>
+        /// <inheritdoc/>
+        public LinearPanel(ObjectId objectId, int number, IEnumerable<Node> nodes, Vertices vertices, Length width, Parameters concreteParameters, Constitutive concreteConstitutive, WebReinforcement reinforcement = null)
+            : base(objectId, number, nodes, vertices, width, concreteParameters, concreteConstitutive, reinforcement)
+        {
+        }
+
+        /// <summary>
+        /// Linear panel object.
+        /// </summary>
+        /// <inheritdoc/>
+        public LinearPanel(ObjectId objectId, int number, IEnumerable<Node> nodes, Vertices vertices, double width, Parameters concreteParameters, Constitutive concreteConstitutive, WebReinforcement reinforcement = null, LengthUnit unit = LengthUnit.Millimeter)
+            : this (objectId, number, nodes, vertices, Length.From(width, unit), concreteParameters, concreteConstitutive, reinforcement)
+        {
+        }
+
+        /// <summary>
+        /// Linear panel object.
+        /// </summary>
+        /// <inheritdoc/>
+        public LinearPanel(ObjectId objectId, int number, IEnumerable<Node> nodes, IEnumerable<Point3d> vertices, Length width, Parameters concreteParameters, Constitutive concreteConstitutive, WebReinforcement reinforcement = null)
+            : this(objectId, number, nodes, new Vertices(vertices, width.Unit), width, concreteParameters, concreteConstitutive, reinforcement)
+        {
+        }
+
+        /// <summary>
+        /// Linear panel object.
+        /// </summary>
+        /// <inheritdoc/>
+        public LinearPanel(ObjectId objectId, int number, IEnumerable<Node> nodes, IEnumerable<Point3d> vertices, double width, Parameters concreteParameters, Constitutive concreteConstitutive, WebReinforcement reinforcement = null, LengthUnit unit = LengthUnit.Millimeter)
+            : this(objectId, number, nodes, new Vertices(vertices, unit), Length.From(width, unit), concreteParameters, concreteConstitutive, reinforcement)
+        {
+        }
 		
-		/// <summary>
-		/// Linear panel object.
-		/// </summary>
-		/// <inheritdoc/>
-        public LinearPanel(ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, Node grip4, Vertices vertices, Length width, Parameters concreteParameters, Constitutive concreteConstitutive, Reinforcement reinforcement = null) : base(objectId, number, grip1, grip2, grip3, grip4, vertices, width, concreteParameters, concreteConstitutive, reinforcement)
-	    {
-	    }
-
-		/// <summary>
-		/// Linear panel object.
-		/// </summary>
-	    /// <inheritdoc/>
-        public LinearPanel(ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, Node grip4, Point3d[] vertices, Length width, Parameters concreteParameters, Constitutive concreteConstitutive, Reinforcement reinforcement = null) : base(objectId, number, grip1, grip2, grip3, grip4, vertices, width, concreteParameters, concreteConstitutive, reinforcement)
-	    {
-	    }
-
         /// <summary>
         /// Calculate transformation matrix
         /// </summary>

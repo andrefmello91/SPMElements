@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.Geometry;
 using Autodesk.AutoCAD.GraphicsInterface;
@@ -7,11 +8,11 @@ using MathNet.Numerics.LinearAlgebra;
 using MathNet.Numerics.LinearAlgebra.Double;
 using Material.Concrete;
 using Material.Reinforcement;
+using SPM.Elements.StringerProperties;
 using UnitsNet;
 using UnitsNet.Units;
-using SPMElements.StringerProperties;
 
-namespace SPMElements
+namespace SPM.Elements
 {
 	/// <summary>
     /// Stringer base class;
@@ -192,7 +193,7 @@ namespace SPMElements
         /// </summary>
         /// <param name="objectId">The stringer <see cref="ObjectId"/>.</param>
         /// <param name="number">The stringer number.</param>
-        /// <param name="nodes">The <see cref="Array"/> containing all nodes of SPM model.</param>
+        /// <param name="nodes">The collection containing all <see cref="Node"/>'s of SPM model.</param>
         /// <param name="grip1Position">The position of initial <see cref="Node"/> of the <see cref="Stringer"/>.</param>
         /// <param name="grip3Position">The position of final <see cref="Node"/> of the <see cref="Stringer"/>.</param>
         /// <param name="width">The stringer width, in mm.</param>
@@ -200,7 +201,7 @@ namespace SPMElements
         /// <param name="concreteParameters">The concrete parameters <see cref="Parameters"/>.</param>
         /// <param name="concreteConstitutive">The concrete constitutive <see cref="Constitutive"/>.</param>
         /// <param name="reinforcement">The <see cref="UniaxialReinforcement"/> of this stringer.</param>
-        public Stringer(ObjectId objectId, int number, Node[] nodes, Point3d grip1Position, Point3d grip3Position, double width, double height, Parameters concreteParameters, Constitutive concreteConstitutive, UniaxialReinforcement reinforcement = null, LengthUnit unit = LengthUnit.Millimeter)
+        public Stringer(ObjectId objectId, int number, IEnumerable<Node> nodes, Point3d grip1Position, Point3d grip3Position, double width, double height, Parameters concreteParameters, Constitutive concreteConstitutive, UniaxialReinforcement reinforcement = null, LengthUnit unit = LengthUnit.Millimeter)
 	        : this(objectId, number, nodes, grip1Position, grip3Position, Length.From(width, unit), Length.From(height, unit), concreteParameters, concreteConstitutive, reinforcement)
         {
         }
@@ -210,7 +211,7 @@ namespace SPMElements
         /// </summary>
         /// <param name="objectId">The stringer <see cref="ObjectId"/>.</param>
         /// <param name="number">The stringer number.</param>
-        /// <param name="nodes">The <see cref="Array"/> containing all nodes of SPM model.</param>
+        /// <param name="nodes">The collection containing all <see cref="Node"/>'s of SPM model.</param>
         /// <param name="grip1Position">The position of initial <see cref="Node"/> of the <see cref="Stringer"/>.</param>
         /// <param name="grip3Position">The position of final <see cref="Node"/> of the <see cref="Stringer"/>.</param>
         /// <param name="width">The stringer width.</param>
@@ -218,7 +219,7 @@ namespace SPMElements
         /// <param name="concreteParameters">The concrete parameters <see cref="Parameters"/>.</param>
         /// <param name="concreteConstitutive">The concrete constitutive <see cref="Constitutive"/>.</param>
         /// <param name="reinforcement">The <see cref="UniaxialReinforcement"/> of this stringer.</param>
-        public Stringer(ObjectId objectId, int number, Node[] nodes, Point3d grip1Position, Point3d grip3Position, Length width, Length height, Parameters concreteParameters, Constitutive concreteConstitutive, UniaxialReinforcement reinforcement = null) : base(objectId, number)
+        public Stringer(ObjectId objectId, int number, IEnumerable<Node> nodes, Point3d grip1Position, Point3d grip3Position, Length width, Length height, Parameters concreteParameters, Constitutive concreteConstitutive, UniaxialReinforcement reinforcement = null) : base(objectId, number)
         {
 	        Geometry      = new StringerGeometry(grip1Position, grip3Position, width, height);
 	        Grip1         = nodes.GetByPosition(grip1Position);
@@ -285,6 +286,29 @@ namespace SPMElements
         /// <param name="analysisType">Type of analysis to perform (<see cref="AnalysisType"/>).</param>
         /// <param name="objectId">The stringer <see cref="ObjectId"/>.</param>
         /// <param name="number">The stringer number.</param>
+        /// <param name="nodes">The collection containing all <see cref="Node"/>'s of SPM model.</param>
+        /// <param name="grip1Position">The position of initial <see cref="Node"/> of the <see cref="Stringer"/>.</param>
+        /// <param name="grip3Position">The position of final <see cref="Node"/> of the <see cref="Stringer"/>.</param>
+        /// <param name="width">The stringer width.</param>
+        /// <param name="height">The stringer height.</param>
+        /// <param name="concreteParameters">The concrete parameters <see cref="Parameters"/>.</param>
+        /// <param name="concreteConstitutive">The concrete constitutive <see cref="Constitutive"/>.</param>
+        /// <param name="reinforcement">The <see cref="UniaxialReinforcement"/>.</param>
+        /// <param name="geometryUnit">The <see cref="LengthUnit"/> of <paramref name="width"/> and <paramref name="height"/>.<para>Default: <seealso cref="LengthUnit.Millimeter"/>.</para></param>
+		public static Stringer Read(AnalysisType analysisType, ObjectId objectId, int number, IEnumerable<Node> nodes, Point3d grip1Position, Point3d grip3Position, double width, double height, Parameters concreteParameters, Constitutive concreteConstitutive, UniaxialReinforcement reinforcement = null, LengthUnit geometryUnit = LengthUnit.Millimeter)
+        {
+	        if (analysisType is AnalysisType.Linear)
+		        return new LinearStringer(objectId, number, nodes, grip1Position, grip3Position, width, height, concreteParameters, concreteConstitutive, reinforcement, geometryUnit);
+
+	        return new NonLinearStringer(objectId, number, nodes, grip1Position, grip3Position, width, height, concreteParameters, concreteConstitutive, reinforcement, geometryUnit);
+        }
+
+        /// <summary>
+        /// Read the stringer based on <see cref="AnalysisType"/>.
+        /// </summary>
+        /// <param name="analysisType">Type of analysis to perform (<see cref="AnalysisType"/>).</param>
+        /// <param name="objectId">The stringer <see cref="ObjectId"/>.</param>
+        /// <param name="number">The stringer number.</param>
         /// <param name="initialNode">The initial <see cref="Node"/> of the <see cref="Stringer"/>.</param>
         /// <param name="centerNode">The center <see cref="Node"/> of the <see cref="Stringer"/>.</param>
         /// <param name="finalNode">The final <see cref="Node"/> of the <see cref="Stringer"/>.</param>
@@ -296,7 +320,7 @@ namespace SPMElements
         /// <param name="geometryUnit">The <see cref="LengthUnit"/> of <paramref name="width"/> and <paramref name="height"/>.<para>Default: <seealso cref="LengthUnit.Millimeter"/>.</para></param>
 		public static Stringer Read(AnalysisType analysisType, ObjectId objectId, int number, Node initialNode, Node centerNode, Node finalNode, double width, double height, Parameters concreteParameters, Constitutive concreteConstitutive, UniaxialReinforcement reinforcement = null, LengthUnit geometryUnit = LengthUnit.Millimeter)
         {
-	        if (analysisType == AnalysisType.Linear)
+	        if (analysisType is AnalysisType.Linear)
 		        return new LinearStringer(objectId, number, initialNode, centerNode, finalNode, width, height, concreteParameters, concreteConstitutive, reinforcement, geometryUnit);
 
 	        return new NonLinearStringer(objectId, number, initialNode, centerNode, finalNode, width, height, concreteParameters, concreteConstitutive, reinforcement, geometryUnit);
@@ -319,13 +343,13 @@ namespace SPMElements
 		public override string ToString()
 		{
 			string msgstr =
-				"Stringer " + Number + "\n\n" +
-				"Grips: (" + Grips[0] + " - " + Grips[1] + " - " + Grips[2] + ")" + "\n" +
-				Geometry;
+				$"Stringer {Number}\n\n" +
+				$"Grips: ({Grips[0]} - {Grips[1]} - {Grips[2]})\n" +
+				$"{Geometry}";
 
 			if (Reinforcement != null)
 			{
-				msgstr += "\n\n" + Reinforcement.ToString();
+				msgstr += $"\n\n{Reinforcement}";
 			}
 
 			return msgstr;

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Autodesk.AutoCAD.Geometry;
 using Extensions;
 using Extensions.Number;
@@ -78,6 +79,11 @@ namespace SPM.Elements.PanelProperties
 		public double[] EdgeLengths => new [] { Edge1.Length, Edge2.Length, Edge3.Length, Edge4.Length };
 
 		/// <summary>
+        /// Get grip positions as an array.
+        /// </summary>
+		public Point3d[] GripPositions => new [] { Edge1.CenterPoint, Edge2.CenterPoint, Edge3.CenterPoint, Edge4.CenterPoint };
+
+		/// <summary>
         /// Get edges' stringer dimensions as an array.
         /// <para>See: <see cref="Edge.SetStringerDimension"/></para>
         /// </summary>
@@ -114,10 +120,10 @@ namespace SPM.Elements.PanelProperties
         /// <summary>
         /// Panel geometry constructor.
         /// </summary>
-        /// <param name="vertices">The array of vertices, in any order.</param>
+        /// <param name="vertices">The collection of vertices, in any order.</param>
         /// <param name="width">Panel width, in <paramref name="geometryUnit"/>.</param>
         /// <param name="geometryUnit">The <see cref="LengthUnit"/> of <paramref name="width"/> and <paramref name="vertices"/>' coordinates.</param>
-        public PanelGeometry(Point3d[] vertices, double width, LengthUnit geometryUnit = LengthUnit.Millimeter) 
+        public PanelGeometry(IEnumerable<Point3d> vertices, double width, LengthUnit geometryUnit = LengthUnit.Millimeter) 
 			: this (new Vertices(vertices), width, geometryUnit)
 		{
 		}
@@ -125,9 +131,9 @@ namespace SPM.Elements.PanelProperties
         /// <summary>
         /// Panel geometry constructor.
         /// </summary>
-        /// <param name="vertices">The array of vertices, in any order.</param>
+        /// <param name="vertices">The collection of vertices, in any order.</param>
         /// <param name="width">Panel width.</param>
-        public PanelGeometry(Point3d[] vertices, Length width) 
+        public PanelGeometry(IEnumerable<Point3d> vertices, Length width) 
 			: this (new Vertices(vertices, width.Unit), width)
 		{
 		}

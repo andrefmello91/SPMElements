@@ -205,23 +205,28 @@ namespace SPM.Elements
         public override string ToString()
         {
 	        string msgstr =
-		        "Node " + Number + "\n" +
-		        "Position: (" + Position.X + ", " + Position.Y + ")";
+		        $"Node {Number}\n" +
+		        $"Position: ({Position.X:0.00}, {Position.Y:0.00})";
 
 	        // Read applied forces
 	        if (ForcesNotZero)
 		        msgstr +=
-			        "\n\nApplied forces: \n" + Force;
+			        "\n\n" +
+			        "Applied forces:\n" +
+			        $"{Force}";
 
 	        // Get supports
 	        if (!IsFree)
 		        msgstr +=
-			        "\n\nConstraints: " + Constraint;
+			        "\n\n" +
+			        $"Constraints: {Constraint}";
 
 	        // Get displacements
 	        if (DisplacementsNotZero)
 		        msgstr +=
-			        "\n\nDisplacements: \n" + Displacement;
+			        "\n\n" +
+			        "Displacements:\n" +
+			        $"{Displacement}";
 
 	        return msgstr;
         }

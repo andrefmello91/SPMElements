@@ -192,30 +192,6 @@ namespace SPM.Elements
 	    }
 
         /// <summary>
-        /// Set stringer dimensions on edges.
-        /// <para>See: <see cref="Edge.SetStringerDimension"/></para>
-		/// </summary>
-        /// <param name="stringers">The array containing all of the stringers.</param>
-        public void SetEdgeStringersDimensions(IEnumerable<Stringer> stringers)
-	    {
-			if (stringers is null)
-				return;
-
-		    // Initiate the Stringer dimensions
-		    double[] hs = new double[4];
-
-		    // Analyse panel grips
-		    for (int i = 0; i < 4; i++)
-			    hs[i] = 0.5 * stringers.First(str => Grips[i] == str.Grips[1]).Geometry.Height;
-
-			// Set on edges
-			Geometry.Edge1.SetStringerDimension(hs[0]);
-			Geometry.Edge2.SetStringerDimension(hs[1]);
-			Geometry.Edge3.SetStringerDimension(hs[2]);
-			Geometry.Edge4.SetStringerDimension(hs[3]);
-	    }
-
-        /// <summary>
         /// Set displacements and calculate forces.
         /// </summary>
         /// <param name="globalDisplacements">The global displacement <see cref="Vector"/>.</param>

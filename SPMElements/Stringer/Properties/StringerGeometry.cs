@@ -2,6 +2,7 @@
 using Autodesk.AutoCAD.Geometry;
 using Extensions;
 using Extensions.AutoCAD;
+using Extensions.Number;
 using MathNet.Numerics;
 using UnitsNet;
 using UnitsNet.Units;
@@ -84,7 +85,7 @@ namespace SPM.Elements.StringerProperties
         /// Stringer geometry object.
         /// </summary>
         /// <param name="initialPoint">The initial <see cref="Point3d"/> of the <see cref="Stringer"/>, in equal unit of <paramref name="width"/> and <paramref name="height"/>.</param>
-        /// <param name="endPoint">The final <see cref="Point3d"/> of the <see cref="Stringer"/>, in equal unit of <paramref name="width"/> and <paramref name="height"/>..</param>
+        /// <param name="endPoint">The final <see cref="Point3d"/> of the <see cref="Stringer"/>, in equal unit of <paramref name="width"/> and <paramref name="height"/>.</param>
         /// <param name="width">The stringer width.</param>
         /// <param name="height">The stringer height.</param>
         public StringerGeometry(Point3d initialPoint, Point3d endPoint, Length width, Length height)
@@ -119,10 +120,16 @@ namespace SPM.Elements.StringerProperties
 		public override string ToString()
 		{
 			return
-				"Lenght = " + _length + "\n" +
-				"Width = "  + _width + "\n" +
-				"Height = " + _height;
+				$"Lenght = {_length}\n" +
+				$"Width = {_width}\n" +
+				$"Height = {_height}";
 		}
+
+		/// <summary>
+		/// Returns true if <see cref="Width"/> and <seealso cref="Height"/> of <paramref name="other"/> coincide.
+		/// </summary>
+		/// <param name="other">The <see cref="StringerGeometry"/> to compare.</param>
+		public bool EqualsWidthAndHeight(StringerGeometry other) => Width.Approx(other.Width) && Height.Approx(other.Height);
 
         /// <summary>
         /// Returns true if <see cref="InitialPoint"/> and <seealso cref="EndPoint"/> of <paramref name="other"/> coincide.

@@ -73,12 +73,12 @@ namespace SPM.Elements
 		public Point3d Position { get; }
 
 		/// <summary>
-        /// Get applied <see cref="OnPlaneComponents.Force"/>.
+        /// Get/set applied <see cref="OnPlaneComponents.Force"/>.
         /// </summary>
 		public Force Force { get; set; }
 
         /// <summary>
-        /// Get <see cref="Elements.Constraint"/> condition.
+        /// Get/set <see cref="Elements.Constraint"/> condition.
         /// </summary>
         public Constraint Constraint { get; set; }
 
@@ -192,6 +192,19 @@ namespace SPM.Elements
         }
 
         /// <summary>
+        /// Set nodal displacements.
+        /// </summary>
+        /// <param name="displacement">The <see cref="Displacement"/> to set;.</param>
+        public void SetDisplacements(Displacement displacement)
+        {
+	        // Save to the node, in mm
+	        Displacement = displacement;
+
+			// Change unit
+			ChangeDisplacementUnit(_displacementUnit);
+        }
+
+        /// <summary>
         /// Change the unit of <see cref="Displacement"/>.
         /// </summary>
         /// <param name="displacementUnit">The <see cref="LengthUnit"/> to convert.</param>
@@ -235,7 +248,7 @@ namespace SPM.Elements
         /// Returns true if both nodes positions are equal.
         /// </summary>
         /// <param name="other">The other <see cref="Node"/> object.</param>
-        public bool Equals(Node other) => other != null && Position == other.Position;
+        public bool Equals(Node other) => !(other is null) && Position == other.Position;
 
 		/// <summary>
 		/// Returns true if <paramref name="other"/> is a <see cref="Node"/> and both positions are equal.
@@ -248,11 +261,11 @@ namespace SPM.Elements
 		/// <summary>
         /// Returns true if both nodes positions are equal.
         /// </summary>
-        public static bool operator == (Node left, Node right) => left != null && left.Equals(right);
+        public static bool operator == (Node left, Node right) => !(left is null) && left.Equals(right);
 
         /// <summary>
         /// Returns true if both nodes positions are different.
         /// </summary>
-        public static bool operator != (Node left, Node right) => left != null && !left.Equals(right);
+        public static bool operator != (Node left, Node right) => !(left is null) && !left.Equals(right);
     }
 }

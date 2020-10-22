@@ -110,8 +110,7 @@ namespace SPM.Elements.PanelProperties
         /// <param name="vertex2">The base right vertex.</param>
         /// <param name="vertex3">The upper right vertex.</param>
         /// <param name="vertex4">The upper left vertex.</param>
-        /// <param name="width">Panel width, in <paramref name="geometryUnit"/>.</param>
-        /// <param name="geometryUnit">The <see cref="LengthUnit"/> of <paramref name="width"/> and vertices' coordinates.</param>
+        /// <param name="width">Panel width.</param>
         public PanelGeometry(Point3d vertex1, Point3d vertex2, Point3d vertex3, Point3d vertex4, Length width) 
 			: this (new Vertices(vertex1, vertex2, vertex3, vertex4, width.Unit), width)
 		{

@@ -48,7 +48,7 @@ namespace SPM.Elements
 			    var lsV = Vector<double>.Build.DenseOfArray(Geometry.EdgeLengths);
 
 			    // Calculate the shear stresses
-			    var tau = Forces / (lsV * Geometry.Width);
+			    var tau = _localForces / (lsV * Geometry.Width);
 
 			    // Calculate the average stress
 			    double tauAvg = (-tau[0] + tau[1] - tau[2] + tau[3]) / 4;

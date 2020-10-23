@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.Geometry;
+using Extensions.Number;
 using Material.Concrete;
 using Material.Reinforcement;
 using MathNet.Numerics.LinearAlgebra;
@@ -218,6 +219,9 @@ namespace SPM.Elements
 			// Incremental process to find forces
 			for (int i = 1; i <= numStrainSteps ; i++ )
 			{
+				if (e1.IsNaN() || e3.IsNaN())
+					break;
+
 				// Calculate F determinant
 				double d = F.Determinant();
 
@@ -239,9 +243,13 @@ namespace SPM.Elements
 			N3 = PlasticForce(N3);
 
 			// Set values
-			_FMatrix              = F;
-			_iterationGenStresses = (N1, N3); 
-			_iterationGenStrains  = (e1, e3);
+			_FMatrix = F;
+
+			if (!N1.IsNaN() && !N3.IsNaN())
+				_iterationGenStresses = (N1, N3);
+
+			if (!e1.IsNaN() && !e3.IsNaN())
+				_iterationGenStrains = (e1, e3);
 		}
 
 		/// <summary>
@@ -260,9 +268,7 @@ namespace SPM.Elements
 			var de = new double[4];
 
 			for (int i = 0; i < N.Length; i++)
-			{
 				(e[i], de[i]) = Relations.StringerStrain(N[i], IntPoints[i]);
-			}
 
 			// Calculate approximated generalized strains
 			double

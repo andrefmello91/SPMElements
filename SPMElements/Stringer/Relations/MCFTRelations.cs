@@ -1,7 +1,9 @@
 ﻿using System;
+using Extensions.Number;
 using Material.Concrete;
 using Material.Reinforcement;
 using MathNet.Numerics;
+using MathNet.Numerics.RootFinding;
 
 namespace SPM.Elements
 {
@@ -24,6 +26,9 @@ namespace SPM.Elements
 			/// <inheritdoc/>
 			public override (double e, double de) StringerStrain(double normalForce, IntegrationPoint intPoint)
 			{
+				if (normalForce.IsNaN())
+					return intPoint.LastGenStrain;
+
 				double t1 = Concrete.Stiffness + (Reinforcement?.Stiffness ?? 0);
 
 				(double e, double de) result = (0, 1 / t1);
@@ -73,7 +78,12 @@ namespace SPM.Elements
 					result = normalForce > MaxCompressiveForce ? ConcreteNotCrushed(normalForce) : ConcreteCrushing(normalForce);
 				}
 
-				return result;
+				if (result.e.IsNaN())
+					return intPoint.LastGenStrain;
+
+				intPoint.LastGenStrain = result;
+
+                return result;
 			}
 
 			// Tension Cases
@@ -187,30 +197,40 @@ namespace SPM.Elements
 			private (double e, double de)? Solver(double N, double lowerBound, double upperBound)
 			{
 				// Iterate to find strain
-				(double e, double de)? result = null;
-				double? e = null;
+				//(double e, double de)? result = null;
+				//double? e = null;
 
-				try
-				{
-					e = FindRoots.OfFunction(eps => N - Force(eps), lowerBound, upperBound);
-				}
-				catch
-				{
-				}
-				finally
-				{
-					if (e.HasValue)
-					{
-						// Calculate derivative of function
-						double
-							dN = Differentiate.FirstDerivative(Force, e.Value),
-							de = 1 / dN;
+				if (!Brent.TryFindRoot(eps => N - Force(eps), lowerBound, upperBound, 1E-4, 1000, out var e))
+					return null;
 
-						result = (e.Value, de);
-					}
-				}
+				// Calculate derivative of function
+				double
+					dN = Differentiate.FirstDerivative(Force, e),
+					de = 1 / dN;
 
-				return result;
+				return (e, de);
+
+				//            try
+				//{
+				//	e = FindRoots.OfFunction(eps => N - Force(eps), lowerBound, upperBound);
+				//}
+				//catch
+				//{
+				//}
+				//finally
+				//{
+				//	if (e.HasValue)
+				//	{
+				//		// Calculate derivative of function
+				//		double
+				//			dN = Differentiate.FirstDerivative(Force, e.Value),
+				//			de = 1 / dN;
+
+				//		result = (e.Value, de);
+				//	}
+				//}
+
+				//return result;
 			}
 
 			/// <summary>

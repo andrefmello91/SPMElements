@@ -37,12 +37,18 @@ namespace SPM.Elements
             /// </summary>
             public bool CrackedAndYielding    =>  Cracked &&  Yielding;
 
+			/// <summary>
+            /// Get/set last integration point generalized strain.
+            /// </summary>
+			public (double e, double de) LastGenStrain { get; set; }
+
 			public IntegrationPoint(double ecr, double ey)
 			{
 				_ecr = ecr;
 				_ey  = ey;
 				Cracked  = false;
 				Yielding = false;
+				LastGenStrain = (0, 0);
 			}
 
             /// <summary>

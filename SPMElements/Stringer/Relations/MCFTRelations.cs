@@ -106,7 +106,7 @@ namespace SPM.Elements
 			/// Tension case 2: Cracked with not yielding steel.
 			/// </summary>
 			/// <param name="N">Normal force, in N.</param>
-			private (double e, double de)? Cracked(double N) => Solver(N, Concrete.ecr, Steel.YieldStrain);
+			private (double e, double de)? Cracked(double N) => Solver(N, Concrete.ecr, Steel?.YieldStrain ?? Concrete.ecr);
 
 			/// <summary>
 			/// Tension case 3: Cracked with yielding steel.

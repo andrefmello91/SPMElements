@@ -65,33 +65,26 @@ namespace SPM.Elements
 			    double sig2;
 
 			    // Get shear stress
-			    double tau = AverageStresses.TauXY;
+			    var tau = AverageStresses.TauXY;
 
 			    // Get steel strengths
 			    double
-				    fyx = Reinforcement?.DirectionX?.Steel.YieldStress ?? 0,
-				    fyy = Reinforcement?.DirectionY?.Steel.YieldStress ?? 0;
+				    fyx = Reinforcement?.DirectionX?.Steel?.YieldStress ?? 0,
+				    fyy = Reinforcement?.DirectionY?.Steel?.YieldStress ?? 0;
 
-				if (fyx == fyy)
-				    sig2 = -2 * Math.Abs(tau);
+			    if (fyx.Approx(fyy))
+				    sig2   = -2 * tau.Abs();
 
 			    else
 			    {
-				    // Get relation of steel strengths
-				    double rLambda = Math.Sqrt(fyx / fyy);
-				    sig2 = -Math.Abs(tau) * (rLambda + 1 / rLambda);
+					// Get relation of steel strengths
+				    var rLambda = Math.Sqrt(fyx / fyy);
+				    sig2 = -tau.Abs() * (rLambda + 1 / rLambda);
 			    }
 
-			    // Calculate theta
-			    double theta1;
+			    var theta1 = tau >= 0 ? Constants.PiOver4 : -Constants.PiOver4;
 
-			    if (tau >= 0)
-				    theta1 = Constants.PiOver4;
-
-			    else
-				    theta1 = -Constants.PiOver4;
-
-			    return new PrincipalStressState(0, sig2, theta1);
+				return new PrincipalStressState(0, sig2, theta1);
 		    }
 	    }
 

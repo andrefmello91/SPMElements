@@ -16,6 +16,16 @@ namespace SPM.Elements.StringerProperties
 		private double? _Nt, _Ncr, _xi, _t1;
 
 		/// <summary>
+		/// Last calculated strain and derivative.
+		/// </summary>
+		protected (double e, double de) LastStrain;
+
+		/// <summary>
+		/// Current calculated strain and derivative.
+		/// </summary>
+		protected (double e, double de) CurrentStrain;
+
+		/// <summary>
 		/// Get <see cref="UniaxialConcrete"/> object.
 		/// </summary>
 		protected UniaxialConcrete Concrete { get; }
@@ -82,7 +92,7 @@ namespace SPM.Elements.StringerProperties
 			get
 			{
 				if (!_xi.HasValue)
-					_xi = Reinforcement.Stiffness / Concrete.Stiffness;
+					_xi = (Reinforcement?.Stiffness ?? 0) / Concrete.Stiffness;
 
 				return _xi.Value;
 			}
@@ -91,32 +101,52 @@ namespace SPM.Elements.StringerProperties
 		/// <summary>
 		/// Get/set cracked state.
 		/// </summary>
-		public bool Cracked  { get; protected set; }
+		protected bool Cracked  { get; set; }
 
 		/// <summary>
 		/// Get/set yielding state.
 		/// </summary>
-		public bool Yielding { get; protected set; }
-			
+		protected bool Yielding { get; set; }
+
+		/// <summary>
+		/// Get/set crushed state.
+		/// </summary>
+		protected bool Crushed { get; set; }
+
 		/// <summary>
 		/// Returns true if state if state is uncracked.
 		/// </summary>
-		public bool Uncracked => !Cracked && !Yielding;
+		protected bool Uncracked => !Cracked && !Yielding;
 
 		/// <summary>
 		/// Returns  true if concrete is cracked and steel is not yielding.
 		/// </summary>
-		public bool CrackedAndNotYielding => Cracked && !Yielding;
+		protected bool CrackedAndNotYielding => Cracked && !Yielding;
 
 		/// <summary>
 		/// Returns true if concrete is cracked and steel is yielding.
 		/// </summary>
-		public bool CrackedAndYielding    =>  Cracked &&  Yielding;
+		protected bool CrackedAndYielding => Cracked &&  Yielding;
 
 		/// <summary>
-		/// Get/set last integration point generalized strain.
+		/// Returns  true if concrete is not crushed and steel is not yielding.
 		/// </summary>
-		public (double e, double de) LastGenStrain { get; set; }
+		protected bool UncrushedAndNotYielding => !Crushed && !Yielding;
+
+		/// <summary>
+		/// Returns true if concrete is not crushed and steel is yielding.
+		/// </summary>
+		protected bool UncrushedAndYielding => !Crushed && Yielding;
+
+		/// <summary>
+		/// Returns  true if concrete is crushed and steel is not yielding.
+		/// </summary>
+		protected bool CrushedAndNotYielding => Crushed && !Yielding;
+
+		/// <summary>
+		/// Returns true if concrete is crushed and steel is yielding.
+		/// </summary>
+		protected bool CrushedAndYielding => Crushed && Yielding;
 
 		/// <summary>
 		/// Base object for integration point.
@@ -126,40 +156,39 @@ namespace SPM.Elements.StringerProperties
 		protected IntegrationPoint(UniaxialConcrete concrete, UniaxialReinforcement reinforcement)
 		{
 			Concrete      = concrete.Copy();
-			Reinforcement = reinforcement.Copy();
+			Reinforcement = reinforcement?.Copy();
 			Cracked       = false;
 			Yielding      = false;
-			LastGenStrain = (0, 1 / Stiffness);
+			LastStrain    = (0, 1 / Stiffness);
 		}
 
 		/// <summary>
-		/// Calculate the strain and its derivative in the integration point.
+		/// Calculate the strain and its derivative in this <see cref="IntegrationPoint"/>.
 		/// </summary>
 		/// <param name="normalForce">Current force, in N.</param>
-		public (double e, double de) StringerStrain(double normalForce)
+		public (double e, double de) CalculateStrain(double normalForce)
 		{
 			if (normalForce.IsNaN())
-				return LastGenStrain;
-
-			(double e, double de) result;
+				return LastStrain;
 
 			// Verify the value of N
 			if (normalForce.ApproxZero(1E-6))
-				result = (0, 1 / Stiffness);
+				CurrentStrain = (0, 1 / Stiffness);
 
 			// Tensioned Stringer
 			else if (normalForce > 0)
-				result = Tensioned(normalForce);
+				CurrentStrain = Tensioned(normalForce);
 
 			else
-				result = Compressed(normalForce);
+				CurrentStrain = Compressed(normalForce);
 
-			if (result.e.IsNaN())
-				return LastGenStrain;
+			if (CurrentStrain.e.IsNaN())
+				CurrentStrain = LastStrain;
 
-			LastGenStrain = result;
+			else
+				LastStrain = CurrentStrain;
 
-			return result;
+			return CurrentStrain;
 		}
 
 		/// <summary>
@@ -178,20 +207,53 @@ namespace SPM.Elements.StringerProperties
 		/// Verify if stringer is cracked.
 		/// </summary>
 		/// <param name="strain">Current strain</param>
-		public void VerifyCracked(double strain)
+		protected bool VerifyCracked(double strain)
 		{
 			if (!Cracked && strain >= Concrete.ecr)
 				Cracked = true;
+
+			return Cracked;
 		}
 
 		/// <summary>
 		/// Verify if steel is yielding.
 		/// </summary>
 		/// <param name="strain">Current strain</param>
-		public void VerifyYielding(double strain)
+		protected bool VerifyYielding(double strain)
 		{
 			if (!(Steel is null) && !Yielding && strain.Abs() >= Steel.YieldStrain)
 				Yielding = true;
+
+			return Yielding;
+		}
+		/// <summary>
+		/// Verify if stringer is cracked.
+		/// </summary>
+		/// <param name="force">Current normal force</param>
+		protected bool VerifyCrushed(double force)
+		{
+			if (!Crushed && force >= MaxCompressiveForce)
+				Crushed = true;
+
+			return Crushed;
+		}
+
+		/// <summary>
+		/// Get an <see cref="IntegrationPoint"/> based on <paramref name="concrete"/>'s <see cref="ConstitutiveModel"/>.
+		/// </summary>
+		/// <param name="concrete">The <see cref="UniaxialConcrete"/> object.</param>
+		/// <param name="reinforcement">The <see cref="UniaxialReinforcement"/> object.</param>
+		public static IntegrationPoint Read(UniaxialConcrete concrete, UniaxialReinforcement reinforcement)
+		{
+			switch (concrete.Model)
+			{
+				case ConstitutiveModel.MCFT:
+					return new MCFTIntegrationPoint(concrete, reinforcement);
+				
+				// Implement DSFM
+				default:
+					return null;
+			}
 		}
 	}
 }

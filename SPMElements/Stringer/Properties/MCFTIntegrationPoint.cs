@@ -20,7 +20,7 @@ namespace SPM.Elements.StringerProperties
 		/// <param name="concrete">The <see cref="UniaxialConcrete"/> object.</param>
 		/// <param name="reinforcement">The <see cref="UniaxialReinforcement"/> object.</param>
 		public MCFTIntegrationPoint(UniaxialConcrete concrete, UniaxialReinforcement reinforcement)
-		: base(concrete, reinforcement)
+			: base(concrete, reinforcement)
 		{
 		}
 
@@ -67,7 +67,15 @@ namespace SPM.Elements.StringerProperties
 		}
 
 		/// <inheritdoc/>
-		protected override (double e, double de) Compressed(double normalForce) => normalForce > MaxCompressiveForce ? ConcreteNotCrushedState(normalForce) : ConcreteCrushingState(normalForce);
+		protected override (double e, double de) Compressed(double normalForce)
+		{
+			// Verify if concrete is crushed
+			VerifyCrushed(normalForce);
+
+			return !Crushed
+				? ConcreteNotCrushedState(normalForce)
+				: ConcreteCrushingState(normalForce);
+		}
 
 		// Tension Cases
 		/// <summary>
@@ -80,7 +88,7 @@ namespace SPM.Elements.StringerProperties
 		/// Tension case 2: Cracked with not yielding steel.
 		/// </summary>
 		/// <param name="N">Normal force, in N.</param>
-		private (double e, double de)? CrackedState(double N) => Solver(N, Concrete.ecr, Steel?.YieldStrain ?? Concrete.ecr);
+		private (double e, double de)? CrackedState(double N) => Solver(N, Concrete.ecr, Steel?.YieldStrain ?? 3E-3);
 
 		/// <summary>
 		/// Tension case 3: Cracked with yielding steel.
@@ -105,28 +113,39 @@ namespace SPM.Elements.StringerProperties
 		/// <param name="N">Normal force, in N.</param>
 		private (double e, double de) ConcreteNotCrushedState(double N)
 		{
-			// Calculate the strain for steel not yielding
-			double
-				ec = Concrete.ec,
-				Nc = Concrete.MaxForce,
-				t2 = Math.Sqrt((1 + Stiffness) * (1 + Stiffness) - N / Nc),
-				e = ec * (1 + Stiffness - t2);
-
-			// Check the strain
-			if (Steel != null && e < -Steel.YieldStrain)
-			{
-				double Nyr = Reinforcement.YieldForce;
-
-				// Recalculate the strain for steel yielding
-				t2 = Math.Sqrt(1 - (N + Nyr) / Nc);
-				e = ec * (1 - t2);
-			}
+			// Calculate e and t2
+			var e = Calculate(out var t2);
 
 			// Calculate de
-			double de = 1 / (Concrete.Stiffness * t2);
+			var de = 1 / (Concrete.Stiffness * t2);
 
 			return
 				(e, de);
+
+			double Calculate(out double constantT2)
+			{
+				double
+					ec = Concrete.ec,
+					Nc = Concrete.MaxForce;
+
+				// Calculate the strain for steel not yielding
+				if (!Yielding || Reinforcement is null)
+				{
+					constantT2 = Math.Sqrt((1 + Stiffness) * (1 + Stiffness) - N / Nc);
+					var strain = ec * (1 + Stiffness - constantT2);
+
+					if (!VerifyYielding(strain))
+						return strain;
+				}
+
+				var Nyr = Reinforcement.YieldForce;
+
+				// Recalculate the strain for steel yielding
+				constantT2 = Math.Sqrt(1 - (N + Nyr) / Nc);
+
+				return 
+					ec * (1 - constantT2);
+			}
 		}
 
 		/// <summary>
@@ -135,29 +154,37 @@ namespace SPM.Elements.StringerProperties
 		/// <param name="N">Normal force, in N.</param>
 		private (double e, double de) ConcreteCrushingState(double N)
 		{
-			// Calculate the strain for steel not yielding
-			double
-				ec = Concrete.ec,
-				Nc = Concrete.MaxForce,
-				xi = (Reinforcement?.Stiffness ?? 0) / Concrete.Stiffness,
-				t1 = Concrete.Stiffness + (Reinforcement?.Stiffness ?? 0),
-				t2 = Math.Sqrt((1 + xi) * (1 + xi) - MaxCompressiveForce / Nc),
-				e = ec * (1 + xi - t2) + (N - MaxCompressiveForce) / t1;
-
-			// Check the strain
-			if (Steel != null && e < -Steel.YieldStrain)
-			{
-				double Nyr = Reinforcement.YieldForce;
-
-				// Recalculate the strain for steel yielding
-				e = ec * (1 - Math.Sqrt(1 - (Nyr + MaxCompressiveForce) / Nc)) + (N - MaxCompressiveForce) / t1;
-			}
+			// Calculate strain
+			var e = Calculate();
 
 			// Calculate de
-			double de = 1 / t1;
+			var de = 1 / Stiffness;
 
 			return
 				(e, de);
+
+			double Calculate()
+			{
+				double
+					ec = Concrete.ec,
+					Nc = Concrete.MaxForce;
+
+				// Calculate the strain for steel not yielding
+				if (!Yielding || Reinforcement is null)
+				{
+					var t2     = Math.Sqrt((1 + StiffnessRatio) * (1 + StiffnessRatio) - MaxCompressiveForce / Nc);
+					var strain = ec * (1 + StiffnessRatio - t2) + (N - MaxCompressiveForce) / Stiffness;
+
+					if (!VerifyYielding(strain))
+						return strain;
+				}
+
+				var Nyr = Reinforcement.YieldForce;
+
+				// Recalculate the strain for steel yielding
+				return
+					ec * (1 - Math.Sqrt(1 - (Nyr + MaxCompressiveForce) / Nc)) + (N - MaxCompressiveForce) / Stiffness;
+			}
 		}
 
 		/// <summary>
@@ -181,6 +208,5 @@ namespace SPM.Elements.StringerProperties
 		/// </summary>
 		/// <param name="strain">Current strain.</param>
 		private double Force(double strain) => Concrete.CalculateForce(strain) + (Reinforcement?.CalculateForce(strain) ?? 0);
-
 	}
 }

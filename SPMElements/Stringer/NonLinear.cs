@@ -35,11 +35,6 @@ namespace SPM.Elements
         /// </summary>
         private IntegrationPoint[] IntPoints { get; }
 
-        /// <summary>
-        /// Get <see cref="StressStrainRelations"/>.
-        /// </summary>
-        private StressStrainRelations Relations { get; }
-
 		/// <summary>
         /// Get <see cref="Steel"/> of <see cref="Stringer.Reinforcement"/>.
         /// </summary>
@@ -126,9 +121,6 @@ namespace SPM.Elements
 		{
 			// Initiate integration points
 			IntPoints = GetIntPoints().ToArray();
-
-            // Get the relations
-            Relations = StressStrainRelations.GetRelations(Concrete, Reinforcement);
 		}
 
 		/// <summary>
@@ -149,9 +141,6 @@ namespace SPM.Elements
 		{
 			// Initiate integration points
 			IntPoints = GetIntPoints().ToArray();
-
-			// Get the relations
-			Relations = StressStrainRelations.GetRelations(Concrete, Reinforcement);
 		}
 
 		/// <summary>
@@ -160,7 +149,7 @@ namespace SPM.Elements
 		private IEnumerable<IntegrationPoint> GetIntPoints()
 		{
 			for (int i = 0; i < 4; i++)
-				yield return new IntegrationPoint(Concrete.ecr, Steel?.YieldStrain ?? 0);
+				yield return IntegrationPoint.Read(Concrete, Reinforcement);
 		}
 
         /// <summary>
@@ -212,11 +201,8 @@ namespace SPM.Elements
 				de1 = (e1 - e1i) / numStrainSteps,
 				de3 = (e3 - e3i) / numStrainSteps;
 
-			// Initiate flexibility matrix
-			Matrix<double> F;
-
 			// Calculate generalized strains and F matrix for N1 and N3
-			((e1, e3), F) = StringerGenStrains((N1, N3));
+			(e1, e3) = StringerGenStrains((N1, N3), out var F);
 
 			// Incremental process to find forces
 			for (int i = 1; i <= numStrainSteps ; i++ )
@@ -237,7 +223,7 @@ namespace SPM.Elements
 				N3 += dN3;
 
 				// Recalculate generalized strains and F matrix for N1 and N3
-				((e1, e3), F) = StringerGenStrains((N1, N3));
+				(e1, e3) = StringerGenStrains((N1, N3), out F);
 			}
 
 			// Verify the values of N1 and N3
@@ -255,22 +241,20 @@ namespace SPM.Elements
 		}
 
 		/// <summary>
-		/// Calculate the stringer flexibility matrix and generalized strains.
+		/// Calculate the generalized strains and stringer flexibility matrix .
 		/// </summary>
 		/// <param name="genStresses">Current generalized stresses.</param>
-		public ((double e1, double e3) genStrains, Matrix<double> F) StringerGenStrains((double N1, double N3) genStresses)
+		private (double e1, double e3) StringerGenStrains((double N1, double N3) genStresses, out Matrix<double> F)
 		{
 			var (N1, N3) = genStresses;
-			var N = new[]
-			{
-				N1, (2 * N1 + N3) / 3, (N1  + 2 * N3) / 3, N3
-			};
+
+			var N = new[] { N1, (2 * N1 + N3) / 3, (N1  + 2 * N3) / 3, N3 };
 
 			var e  = new double[4];
 			var de = new double[4];
 
 			for (int i = 0; i < N.Length; i++)
-				(e[i], de[i]) = Relations.StringerStrain(N[i], IntPoints[i]);
+				(e[i], de[i]) = IntPoints[i].CalculateStrain(N[i]);
 
 			// Calculate approximated generalized strains
 			double
@@ -284,13 +268,13 @@ namespace SPM.Elements
 				de22 = Geometry.Length * (de[1] + 4 * de[2] + 3 * de[3]) / 24;
 
 			// Get the flexibility matrix
-			var F = Matrix<double>.Build.DenseOfArray(new [,]
+			F = Matrix<double>.Build.DenseOfArray(new [,]
 			{
 				{ de11, de12},
 				{ de12, de22}
 			});
 
-			return ((e1, e3), F);
+			return (e1, e3);
 		}
 
 		/// <summary>
@@ -310,17 +294,16 @@ namespace SPM.Elements
 		private double PlasticForce(double force)
 		{
 			double
-				Nt  = Relations.MaxCompressiveForce,
+				Nt  = IntPoints[0].MaxCompressiveForce,
 				Nyr = Reinforcement?.YieldForce ?? 0;
 
 			// Check the value of N
-			if (force < Nt)
-				return Nt;
-
-			if (force > Nyr)
-				return Nyr;
-
-			return force;
+			return
+				force < Nt 
+					? Nt 
+					: force > Nyr 
+						? Nyr 
+						: force;
 		}
 
         /// <summary>

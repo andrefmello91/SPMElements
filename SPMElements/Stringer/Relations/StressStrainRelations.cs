@@ -1,6 +1,11 @@
 ﻿using System;
+using Extensions.Number;
 using Material.Concrete;
+using Material.Concrete.Uniaxial;
 using Material.Reinforcement;
+using Material.Reinforcement.Uniaxial;
+using SPM.Elements.StringerProperties;
+using Constitutive = Material.Concrete.Biaxial.Constitutive;
 
 namespace SPM.Elements
 {
@@ -11,6 +16,9 @@ namespace SPM.Elements
 		/// </summary>
 		private abstract class StressStrainRelations
 		{
+			// Auxiliary fields
+			private double? _Nt, _Ncr, _xi, _t1;
+
 			/// <summary>
             /// Get <see cref="UniaxialConcrete"/> object.
             /// </summary>
@@ -27,55 +35,72 @@ namespace SPM.Elements
             protected Steel Steel => Reinforcement?.Steel;
 
             /// <summary>
-            /// Base object for stress-strain relations.
+            /// Get maximum compressive force, in N.
             /// </summary>
-            /// <param name="concrete">The <see cref="UniaxialConcrete"/> object.</param>
-            /// <param name="reinforcement">The <see cref="UniaxialReinforcement"/> object.</param>
-            public StressStrainRelations(UniaxialConcrete concrete, UniaxialReinforcement reinforcement)
+            public double MaxCompressiveForce
+            {
+	            get
+	            {
+		            if (!_Nt.HasValue)
+			            _Nt = Reinforcement is null
+				            ? Concrete.MaxForce
+				            : Math.Max(Concrete.MaxForce * (1 + StiffnessRatio) * (1 + StiffnessRatio), Concrete.MaxForce - Reinforcement.YieldForce);
+
+		            return _Nt.Value;
+	            }
+            }
+
+            /// <summary>
+            /// Get cracking force, in N.
+            /// </summary>
+            protected double CrackingForce
+            {
+	            get
+	            {
+		            if (!_Ncr.HasValue)
+			            _Ncr = Concrete.ft * Concrete.Area * (1 + StiffnessRatio) / (1 + StiffnessRatio).Sqrt();
+
+		            return _Ncr.Value;
+	            }
+            }
+
+			/// <summary>
+			/// Get stiffness.
+			/// </summary>
+            protected double Stiffness
+            {
+	            get
+	            {
+		            if (!_t1.HasValue)
+			            _t1 = Concrete.Stiffness + (Reinforcement?.Stiffness ?? 0);
+
+		            return _t1.Value;
+	            }
+            }
+
+			/// <summary>
+			/// Get stiffness ratio.
+			/// </summary>
+            protected double StiffnessRatio
+            {
+	            get
+	            {
+		            if (!_xi.HasValue)
+			            _xi = Reinforcement.Stiffness / Concrete.Stiffness;
+
+		            return _xi.Value;
+	            }
+            }
+
+			/// <summary>
+			/// Base object for stress-strain relations.
+			/// </summary>
+			/// <param name="concrete">The <see cref="UniaxialConcrete"/> object.</param>
+			/// <param name="reinforcement">The <see cref="UniaxialReinforcement"/> object.</param>
+			public StressStrainRelations(UniaxialConcrete concrete, UniaxialReinforcement reinforcement)
 			{
 				Concrete      = concrete;
 				Reinforcement = reinforcement;
-			}
-
-			/// <summary>
-            /// Get maximum compressive force, in N.
-            /// </summary>
-			public double MaxCompressiveForce
-			{
-				get
-				{
-					var Nc = Concrete.MaxForce;
-
-					if (Steel is null)
-						return Nc;
-
-					double
-						Nyr = Reinforcement.YieldForce,
-						xi = (Reinforcement?.Stiffness ?? 0) / Concrete.Stiffness;
-
-					double
-                        Nt1 = Nc * (1 + xi) * (1 + xi),
-						Nt2 = Nc - Nyr;
-
-					return
-						Math.Max(Nt1, Nt2);
-				}
-			}
-
-			/// <summary>
-            /// Get cracking force, in N.
-            /// </summary>
-			protected double CrackingForce
-			{
-				get
-				{
-					double
-						xi  = Concrete.Stiffness / Reinforcement.Stiffness,
-						Ncr = Concrete.ft * Concrete.Area * (1 + xi);
-
-                    return
-	                    Ncr / Math.Sqrt(1 + xi);
-				}
 			}
 
 			/// <summary>

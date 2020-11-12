@@ -4,12 +4,12 @@ using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.Geometry;
 using Material.Concrete;
 using Material.Reinforcement;
+using Material.Reinforcement.Uniaxial;
 using MathNet.Numerics.LinearAlgebra;
 using MathNet.Numerics.LinearAlgebra.Double;
-using SPM.Elements.StringerProperties;
 using UnitsNet;
 using UnitsNet.Units;
-using Concrete = Material.Concrete.UniaxialConcrete;
+using Concrete = Material.Concrete.Uniaxial.UniaxialConcrete;
 
 namespace SPM.Elements
 {
@@ -28,7 +28,7 @@ namespace SPM.Elements
         /// Linear stringer object.
         /// </summary>
         /// <inheritdoc/>
-		public LinearStringer(ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, double width, double height, Parameters concreteParameters, Constitutive concreteConstitutive, UniaxialReinforcement reinforcement = null, LengthUnit unit = LengthUnit.Millimeter)
+		public LinearStringer(ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, double width, double height, Parameters concreteParameters, ConstitutiveModel concreteConstitutive, UniaxialReinforcement reinforcement = null, LengthUnit unit = LengthUnit.Millimeter)
 			: this(objectId, number, grip1, grip2, grip3, Length.From(width, unit), Length.From(height, unit),  concreteParameters, concreteConstitutive, reinforcement)
 		{
 		}
@@ -37,7 +37,7 @@ namespace SPM.Elements
         /// Linear stringer object.
         /// </summary>
         /// <inheritdoc/>
-		public LinearStringer(ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, Length width, Length height, Parameters concreteParameters, Constitutive concreteConstitutive, UniaxialReinforcement reinforcement = null)
+		public LinearStringer(ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, Length width, Length height, Parameters concreteParameters, ConstitutiveModel concreteConstitutive, UniaxialReinforcement reinforcement = null)
 	        : base(objectId, number, grip1, grip2, grip3, width, height, concreteParameters, concreteConstitutive, reinforcement)
 		{
 		}
@@ -46,7 +46,7 @@ namespace SPM.Elements
         /// Linear stringer object.
         /// </summary>
         /// <inheritdoc/>
-        public LinearStringer(ObjectId objectId, int number, IEnumerable<Node> nodes, Point3d grip1Position, Point3d grip3Position, double width, double height, Parameters concreteParameters, Constitutive concreteConstitutive, UniaxialReinforcement reinforcement = null, LengthUnit unit = LengthUnit.Millimeter)
+        public LinearStringer(ObjectId objectId, int number, IEnumerable<Node> nodes, Point3d grip1Position, Point3d grip3Position, double width, double height, Parameters concreteParameters, ConstitutiveModel concreteConstitutive, UniaxialReinforcement reinforcement = null, LengthUnit unit = LengthUnit.Millimeter)
             : this(objectId, number, nodes, grip1Position, grip3Position, Length.From(width, unit), Length.From(height, unit), concreteParameters, concreteConstitutive, reinforcement)
         {
         }
@@ -55,7 +55,7 @@ namespace SPM.Elements
         /// Linear stringer object.
         /// </summary>
         /// <inheritdoc/>
-        public LinearStringer(ObjectId objectId, int number, IEnumerable<Node> nodes, Point3d grip1Position, Point3d grip3Position, Length width, Length height, Parameters concreteParameters, Constitutive concreteConstitutive, UniaxialReinforcement reinforcement = null)
+        public LinearStringer(ObjectId objectId, int number, IEnumerable<Node> nodes, Point3d grip1Position, Point3d grip3Position, Length width, Length height, Parameters concreteParameters, ConstitutiveModel concreteConstitutive, UniaxialReinforcement reinforcement = null)
 	        : base(objectId, number, nodes, grip1Position, grip3Position, width, height, concreteParameters, concreteConstitutive, reinforcement)
         {
         }

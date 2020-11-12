@@ -1,7 +1,9 @@
 ﻿using System;
 using Extensions.Number;
 using Material.Concrete;
+using Material.Concrete.Uniaxial;
 using Material.Reinforcement;
+using Material.Reinforcement.Uniaxial;
 using MathNet.Numerics;
 using MathNet.Numerics.RootFinding;
 
@@ -29,13 +31,14 @@ namespace SPM.Elements
 				if (normalForce.IsNaN())
 					return intPoint.LastGenStrain;
 
-				double t1 = Concrete.Stiffness + (Reinforcement?.Stiffness ?? 0);
-
-				(double e, double de) result = (0, 1 / t1);
+				(double e, double de) result;
 
 				// Verify the value of N
+				if (normalForce.ApproxZero(1E-6))
+					result = (0, 1 / _t1.Value);
+
 				// Tensioned Stringer
-				if (normalForce > 0)
+				else if (normalForce > 0)
 				{
 					// Calculate uncracked
 					if (intPoint.Uncracked)
@@ -91,16 +94,7 @@ namespace SPM.Elements
 			/// Tension case 1: uncracked.
 			/// </summary>
 			/// <param name="N">Normal force, in N.</param>
-			private (double e, double de) Uncracked(double N)
-			{
-                double
-                    t1 = Concrete.Stiffness + (Reinforcement?.Stiffness ?? 0),
-                    e  = N / t1,
-					de = 1 / t1;
-
-				return
-					(e, de);
-			}
+			private (double e, double de) Uncracked(double N) => (N / Stiffness, 1 / Stiffness);
 
 			/// <summary>
 			/// Tension case 2: Cracked with not yielding steel.
@@ -117,9 +111,8 @@ namespace SPM.Elements
 				double
 					ey  = Steel?.YieldStrain ?? 0,
 					Nyr = Reinforcement?.YieldForce ?? 0,
-					t1  = Concrete.Stiffness + (Reinforcement?.Stiffness ?? 0),
-                    e   = ey + (N - Nyr) / t1,
-					de  = 1 / t1;
+                    e   = ey + (N - Nyr) / Stiffness,
+					de  = 1 / Stiffness;
 
 				return
 					(e, de);
@@ -136,9 +129,8 @@ namespace SPM.Elements
 				double
 					ec = Concrete.ec,
 					Nc = Concrete.MaxForce,
-					xi = (Reinforcement?.Stiffness ?? 0) / Concrete.Stiffness,
-					t2 = Math.Sqrt((1 + xi) * (1 + xi) - N / Nc),
-					e = ec * (1 + xi - t2);
+					t2 = Math.Sqrt((1 + Stiffness) * (1 + Stiffness) - N / Nc),
+					e  = ec * (1 + Stiffness - t2);
 
 				// Check the strain
 				if (Steel != null && e < -Steel.YieldStrain)

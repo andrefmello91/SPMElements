@@ -227,7 +227,7 @@ namespace SPM.Elements.StringerProperties
 			return Yielding;
 		}
 		/// <summary>
-		/// Verify if stringer is cracked.
+		/// Verify if stringer is crushed.
 		/// </summary>
 		/// <param name="force">Current normal force</param>
 		protected bool VerifyCrushed(double force)

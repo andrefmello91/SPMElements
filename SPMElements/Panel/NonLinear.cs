@@ -330,16 +330,16 @@ namespace SPM.Elements
 
 		    // Create Q matrix
 		    _Q = 1 / Tt4 * Matrix<double>.Build.DenseOfArray(new[,]
-			    {
-				    {  a2,     bc,  bdMt4, -ab, -a2,    -bc, MbdMt4,  ab },
-				    {   0,    Tt4,      0,   0,   0,      0,      0,   0 },
-				    {   0,      0,    Tt4,   0,   0,      0,      0,   0 },
-				    { -ab,  acMt4,     ad,  b2,  ab, MacMt4,    -ad, -b2 },
-				    { -a2,    -bc, MbdMt4,  ab,  a2,     bc,  bdMt4, -ab },
-				    {   0,      0,      0,   0,   0,    Tt4,      0,   0 },
-				    {   0,      0,      0,   0,   0,      0,    Tt4,   0 },
-				    {  ab, MacMt4,    -ad, -b2, -ab,  acMt4,     ad,  b2 }
-			    });
+		    {
+			    {  a2,     bc,  bdMt4, -ab, -a2,    -bc, MbdMt4,  ab },
+			    {   0,    Tt4,      0,   0,   0,      0,      0,   0 },
+			    {   0,      0,    Tt4,   0,   0,      0,      0,   0 },
+			    { -ab,  acMt4,     ad,  b2,  ab, MacMt4,    -ad, -b2 },
+			    { -a2,    -bc, MbdMt4,  ab,  a2,     bc,  bdMt4, -ab },
+			    {   0,      0,      0,   0,   0,    Tt4,      0,   0 },
+			    {   0,      0,      0,   0,   0,      0,    Tt4,   0 },
+			    {  ab, MacMt4,    -ad, -b2, -ab,  acMt4,     ad,  b2 }
+		    });
 
 		    return _Q;
 	    }
@@ -639,7 +639,7 @@ namespace SPM.Elements
         /// <summary>
         /// Calculate initial stiffness matrix (alternate).
         /// </summary>
-        private Matrix<double> InitialStiffness()
+        public Matrix<double> InitialStiffness()
 	    {
 		    var (a, b, _, _) = Geometry.Dimensions;
 

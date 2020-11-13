@@ -67,15 +67,7 @@ namespace SPM.Elements.StringerProperties
 		}
 
 		/// <inheritdoc/>
-		protected override (double e, double de) Compressed(double normalForce)
-		{
-			// Verify if concrete is crushed
-			VerifyCrushed(normalForce);
-
-			return !Crushed
-				? ConcreteNotCrushedState(normalForce)
-				: ConcreteCrushingState(normalForce);
-		}
+		protected override (double e, double de) Compressed(double normalForce) => !VerifyCrushed(normalForce) ? ConcreteNotCrushedState(normalForce) : ConcreteCrushingState(normalForce);
 
 		// Tension Cases
 		/// <summary>
@@ -138,7 +130,7 @@ namespace SPM.Elements.StringerProperties
 						return strain;
 				}
 
-				var Nyr = Reinforcement.YieldForce;
+				var Nyr = Reinforcement?.YieldForce ?? 0;
 
 				// Recalculate the strain for steel yielding
 				constantT2 = Math.Sqrt(1 - (N + Nyr) / Nc);
@@ -179,7 +171,7 @@ namespace SPM.Elements.StringerProperties
 						return strain;
 				}
 
-				var Nyr = Reinforcement.YieldForce;
+				var Nyr = Reinforcement?.YieldForce ?? 0;
 
 				// Recalculate the strain for steel yielding
 				return

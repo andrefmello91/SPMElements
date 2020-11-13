@@ -15,7 +15,10 @@ using UnitsNet.Units;
 
 namespace SPM.Elements
 {
-	public partial class NonLinearStringer : Stringer
+	/// <summary>
+	/// Nonlinear stringer class.
+	/// </summary>
+	public class NonLinearStringer : Stringer
 	{
 		// Auxiliary fields
 		private Matrix<double> _FMatrix;
@@ -152,10 +155,10 @@ namespace SPM.Elements
 				yield return IntegrationPoint.Read(Concrete, Reinforcement);
 		}
 
-        /// <summary>
-        /// Calculate the initial flexibility matrix.
-        /// </summary>
-        private Matrix<double> InitialFMatrix()
+		/// <summary>
+		/// Calculate the initial flexibility <see cref="Matrix"/>.
+		/// </summary>
+		private Matrix<double> InitialFMatrix()
 		{
 			double
 				t1 = Concrete.Stiffness + (Reinforcement?.Stiffness ?? 0), 
@@ -174,6 +177,16 @@ namespace SPM.Elements
 				{ de12, de22}
 			});
 		}
+
+		/// <summary>
+		/// Returns the initial local stiffness <see cref="Matrix"/>.
+		/// </summary>
+        private Matrix<double> InitialLocalStiffness() => _BMatrix.Transpose() * InitialFMatrix().Inverse() * _BMatrix;
+
+		/// <summary>
+		/// Returns the initial stiffness <see cref="Matrix"/>.
+		/// </summary>
+        public Matrix<double> InitialStiffness() => TransformationMatrix.Transpose() * InitialLocalStiffness() * TransformationMatrix;
 
 		/// <inheritdoc/>
 		public override void Analysis(Vector<double> globalDisplacements = null, int numStrainSteps = 5)

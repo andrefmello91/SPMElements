@@ -64,7 +64,8 @@ namespace SPM.Elements.PanelProperties
 				var ang2 = Edge2.Angle - Edge1.Angle;
 				var ang4 = Edge4.Angle - Edge3.Angle;
 
-				return ang2.Approx(Constants.PiOver2) && ang4.Approx(Constants.PiOver2);
+				return
+					ang2.Approx(Constants.PiOver2) && ang4.Approx(Constants.PiOver2);
 			}
 		}
 

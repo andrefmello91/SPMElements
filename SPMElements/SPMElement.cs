@@ -31,7 +31,7 @@ namespace SPM.Elements
     public abstract class SPMElement
     {
 		// Auxiliary fields
-		protected int[] _globalIndexes;
+		protected int[] Indexes;
 
 		/// <summary>
         /// Get or set the number of the element.
@@ -64,13 +64,13 @@ namespace SPM.Elements
         /// <returns></returns>
         protected int[] GlobalIndexes(int gripNumber)
 	    {
-		    _globalIndexes =
+		    Indexes =
 			    new[]
 			    {
 				    2 * gripNumber - 2, 2 * gripNumber - 1
 			    };
 
-		    return _globalIndexes;
+		    return Indexes;
 	    }
 
         /// <summary>
@@ -92,7 +92,7 @@ namespace SPM.Elements
 			    ind[j + 1] = 2 * gripNumbers[i] - 1;
 		    }
 
-		    _globalIndexes = ind;
+		    Indexes = ind;
 
 		    return ind;
 	    }

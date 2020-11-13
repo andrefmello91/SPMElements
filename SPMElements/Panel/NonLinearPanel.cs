@@ -20,6 +20,7 @@ namespace SPM.Elements
     {
 		// Auxiliary fields
 		private Matrix<double> _BA, _Q, _Pc, _Ps, _Dc, _Ds;
+		private Vector<double> _forces;
 
         /// <summary>
         /// Get <see cref="Membrane"/> integration points.
@@ -70,8 +71,11 @@ namespace SPM.Elements
 		    }
 	    }
 
-	    /// <inheritdoc/>
-	    public override PrincipalStressState ConcretePrincipalStresses
+		/// <inheritdoc/>
+	    public override Vector<double> Forces => _forces;
+
+		/// <inheritdoc/>
+		public override PrincipalStressState ConcretePrincipalStresses
 	    {
 		    get
 		    {
@@ -493,7 +497,7 @@ namespace SPM.Elements
 		    f5 = -a * t1 - b * t2 - t3;
 		    f8 = b * t1 - a * t2 - t4;
 
-		    Forces =
+		    _forces =
 			    Vector<double>.Build.DenseOfArray(new []
 			    {
 				    f1, f2, f3, f4, f5, f6, f7, f8

@@ -17,28 +17,17 @@ using UnitsNet.Units;
 namespace SPM.Elements
 {
 	/// <summary>
-    /// Stringer base class;
+    /// Stringer base class with linear properties.
     /// </summary>
 	public class Stringer : SPMElement, IEquatable<Stringer>
     {
-		/// <summary>
-        /// Type of forces that stringer can be loaded.
-        /// </summary>
-		public enum ForceState
-		{
-			Unloaded,
-			PureTension,
-			PureCompression,
-			Combined
-		}
+	    // Auxiliary fields
+		private Matrix<double> _transMatrix, _localStiffness;
 
-		// Auxiliary fields
-		private   Matrix<double> _transMatrix;
-
-		/// <summary>
+        /// <summary>
         /// Get the initial <see cref="Node"/> of this.
         /// </summary>
-		public Node Grip1 { get; }
+        public Node Grip1 { get; }
 
 		/// <summary>
 		/// Get the center <see cref="Node"/> of this.
@@ -68,7 +57,7 @@ namespace SPM.Elements
         /// <summary>
         /// Get local stiffness <see cref="Matrix"/>.
         /// </summary>
-        public virtual Matrix<double> LocalStiffness { get; }
+        public virtual Matrix<double> LocalStiffness => _localStiffness ?? CalculateStiffness();
 
         /// <summary>
         /// Get/set local force <see cref="Vector"/>.
@@ -93,7 +82,7 @@ namespace SPM.Elements
         /// <summary>
         /// Get the DoF index of stringer <see cref="Grips"/>.
         /// </summary>
-        public override int[] DoFIndex => _globalIndexes ?? GlobalIndexes(Grips);
+        public override int[] DoFIndex => Indexes ?? GlobalIndexes(Grips);
 
 		/// <summary>
         /// Get concrete area.
@@ -124,7 +113,7 @@ namespace SPM.Elements
 			{
 				var (N1, N3) = NormalForces;
 
-				if (N1 == 0 && N3 == 0)
+				if (N1.ApproxZero() && N3.ApproxZero())
 					return ForceState.Unloaded;
 
 				if (N1 > 0 && N3 > 0)
@@ -148,7 +137,7 @@ namespace SPM.Elements
         public double MaxForce => LocalForces.AbsoluteMaximum();
 
         /// <summary>
-        /// Stringer object.
+        /// Linear Stringer object.
         /// </summary>
         /// <param name="objectId">The stringer <see cref="ObjectId"/>.</param>
         /// <param name="number">The stringer number.</param>
@@ -168,7 +157,7 @@ namespace SPM.Elements
         }
 
         /// <summary>
-        /// Stringer object.
+        /// Linear Stringer object.
         /// </summary>
         /// <param name="objectId">The stringer <see cref="ObjectId"/>.</param>
         /// <param name="number">The stringer number.</param>
@@ -191,7 +180,7 @@ namespace SPM.Elements
         }
 
         /// <summary>
-        /// Stringer object.
+        /// Linear Stringer object.
         /// </summary>
         /// <param name="objectId">The stringer <see cref="ObjectId"/>.</param>
         /// <param name="number">The stringer number.</param>
@@ -209,7 +198,7 @@ namespace SPM.Elements
         }
 
         /// <summary>
-        /// Stringer object.
+        /// Linear Stringer object.
         /// </summary>
         /// <param name="objectId">The stringer <see cref="ObjectId"/>.</param>
         /// <param name="number">The stringer number.</param>
@@ -251,6 +240,27 @@ namespace SPM.Elements
         }
 
         /// <summary>
+        /// Calculate local stiffness <see cref="Matrix"/>.
+        /// </summary>
+        /// <returns></returns>
+        private Matrix<double> CalculateStiffness()
+        {
+	        // Calculate the constant factor of stiffness
+	        double EcA_L = Concrete.Stiffness / Geometry.Length;
+
+	        // Calculate the local stiffness matrix
+	        _localStiffness =
+		        EcA_L * Matrix<double>.Build.DenseOfArray(new double[,]
+		        {
+			        {  4, -6,  2 },
+			        { -6, 12, -6 },
+			        {  2, -6,  4 }
+		        });
+
+	        return _localStiffness;
+        }
+
+        /// <summary>
         /// Set Stringer displacements from global displacement vector.
         /// </summary>
         public void SetDisplacements(Vector<double> globalDisplacementVector)
@@ -280,6 +290,25 @@ namespace SPM.Elements
         /// <param name="numStrainSteps">The number of strain increments (for nonlinear analysis) (default: 5).</param>
         public virtual void Analysis(Vector<double> globalDisplacements = null, int numStrainSteps = 5)
 		{
+			// Set displacements
+			if (globalDisplacements != null)
+				SetDisplacements(globalDisplacements);
+
+			LocalForces = CalculateForces();
+		}
+
+		/// <summary>
+		/// Calculate local forces.
+		/// </summary>
+		private Vector<double> CalculateForces()
+		{
+			// Calculate the vector of normal forces
+			var fl = LocalStiffness * LocalDisplacements;
+
+			// Approximate small values to zero
+			fl.CoerceZero(0.001);
+
+			return fl;
 		}
 
         /// <summary>
@@ -297,13 +326,10 @@ namespace SPM.Elements
         /// <param name="model">The concrete <see cref="ConstitutiveModel"/>.</param>
         /// <param name="reinforcement">The <see cref="UniaxialReinforcement"/>.</param>
         /// <param name="geometryUnit">The <see cref="LengthUnit"/> of <paramref name="width"/> and <paramref name="height"/>.<para>Default: <seealso cref="LengthUnit.Millimeter"/>.</para></param>
-		public static Stringer Read(AnalysisType analysisType, ObjectId objectId, int number, IEnumerable<Node> nodes, Point3d grip1Position, Point3d grip3Position, double width, double height, Parameters concreteParameters, ConstitutiveModel model, UniaxialReinforcement reinforcement = null, LengthUnit geometryUnit = LengthUnit.Millimeter)
-        {
-	        if (analysisType is AnalysisType.Linear)
-		        return new LinearStringer(objectId, number, nodes, grip1Position, grip3Position, width, height, concreteParameters, model, reinforcement, geometryUnit);
-
-	        return new NonLinearStringer(objectId, number, nodes, grip1Position, grip3Position, width, height, concreteParameters, model, reinforcement, geometryUnit);
-        }
+		public static Stringer Read(AnalysisType analysisType, ObjectId objectId, int number, IEnumerable<Node> nodes, Point3d grip1Position, Point3d grip3Position, double width, double height, Parameters concreteParameters, ConstitutiveModel model, UniaxialReinforcement reinforcement = null, LengthUnit geometryUnit = LengthUnit.Millimeter) =>
+	        analysisType is AnalysisType.Linear 
+		        ? new Stringer(objectId, number, nodes, grip1Position, grip3Position, width, height, concreteParameters, model, reinforcement, geometryUnit) 
+		        : new NonLinearStringer(objectId, number, nodes, grip1Position, grip3Position, width, height, concreteParameters, model, reinforcement, geometryUnit);
 
         /// <summary>
         /// Read the stringer based on <see cref="AnalysisType"/>.
@@ -320,15 +346,12 @@ namespace SPM.Elements
         /// <param name="model">The concrete <see cref="ConstitutiveModel"/>.</param>
         /// <param name="reinforcement">The <see cref="UniaxialReinforcement"/>.</param>
         /// <param name="geometryUnit">The <see cref="LengthUnit"/> of <paramref name="width"/> and <paramref name="height"/>.<para>Default: <seealso cref="LengthUnit.Millimeter"/>.</para></param>
-		public static Stringer Read(AnalysisType analysisType, ObjectId objectId, int number, Node initialNode, Node centerNode, Node finalNode, double width, double height, Parameters concreteParameters, ConstitutiveModel model, UniaxialReinforcement reinforcement = null, LengthUnit geometryUnit = LengthUnit.Millimeter)
-        {
-	        if (analysisType is AnalysisType.Linear)
-		        return new LinearStringer(objectId, number, initialNode, centerNode, finalNode, width, height, concreteParameters, model, reinforcement, geometryUnit);
+		public static Stringer Read(AnalysisType analysisType, ObjectId objectId, int number, Node initialNode, Node centerNode, Node finalNode, double width, double height, Parameters concreteParameters, ConstitutiveModel model, UniaxialReinforcement reinforcement = null, LengthUnit geometryUnit = LengthUnit.Millimeter) =>
+	        analysisType is AnalysisType.Linear 
+		        ? new Stringer(objectId, number, initialNode, centerNode, finalNode, width, height, concreteParameters, model, reinforcement, geometryUnit)
+		        : new NonLinearStringer(objectId, number, initialNode, centerNode, finalNode, width, height, concreteParameters, model, reinforcement, geometryUnit);
 
-	        return new NonLinearStringer(objectId, number, initialNode, centerNode, finalNode, width, height, concreteParameters, model, reinforcement, geometryUnit);
-        }
-
-		/// <summary>
+        /// <summary>
         /// Returns true if <see cref="Geometry"/> of <paramref name="other"/> is equal to this.
         /// </summary>
         /// <param name="other"></param>

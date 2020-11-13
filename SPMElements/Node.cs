@@ -103,7 +103,7 @@ namespace SPM.Elements
         public bool ForcesNotZero => !Force.AreComponentsZero;
 
         /// <inheritdoc/>
-        public override int[] DoFIndex => _globalIndexes ?? GlobalIndexes(Number);
+        public override int[] DoFIndex => Indexes ?? GlobalIndexes(Number);
 
         /// <summary>
         /// Node object.

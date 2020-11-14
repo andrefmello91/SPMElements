@@ -35,7 +35,8 @@ namespace SPM.Elements.StringerProperties
 				result = UncrackedState(normalForce);
 
 				// Verify if concrete is cracked
-				VerifyCracked(result.e);
+				if (!VerifyCracked(result.e))
+					return result;
 			}
 
 			if (CrackedAndNotYielding)
@@ -43,19 +44,20 @@ namespace SPM.Elements.StringerProperties
 				// Calculate cracked
 				var cracked = CrackedState(normalForce);
 
-				if (cracked.HasValue)
-				{
-					result = cracked.Value;
+                if (cracked.HasValue)
+                {
+                    result = cracked.Value;
 
-					// Verify if reinforcement yielded
-					VerifyYielding(result.e);
-				}
-				else
-				{
-					// Steel yielded
-					Yielding = true;
-				}
-			}
+                    // Verify if reinforcement yielded
+                    if (!VerifyYielding(result.e))
+						return result;
+                }
+                else
+                {
+                    // Steel yielded
+                    Yielding = true;
+                }
+            }
 
 			if (CrackedAndYielding)
 			{
@@ -67,7 +69,7 @@ namespace SPM.Elements.StringerProperties
 		}
 
 		/// <inheritdoc/>
-		protected override (double e, double de) Compressed(double normalForce) => !VerifyCrushed(normalForce) ? ConcreteNotCrushedState(normalForce) : ConcreteCrushingState(normalForce);
+		protected override (double e, double de) Compressed(double normalForce) => !VerifyCrushed(normalForce) ? ConcreteNotCrushedState(normalForce) : ConcreteCrushedState(normalForce);
 
 		// Tension Cases
 		/// <summary>
@@ -83,6 +85,21 @@ namespace SPM.Elements.StringerProperties
 		private (double e, double de)? CrackedState(double N) => Solver(N, Concrete.ecr, Steel?.YieldStrain ?? 3E-3);
 
 		/// <summary>
+		/// Tension case 2: alternate cracked with not yielding steel.
+		/// </summary>
+		/// <param name="N">Normal force, in N.</param>
+		private (double e, double de) AltCrackedState(double N)
+		{
+			double
+				N2  = N * N,
+				Nr2 = CrackingForce * CrackingForce,
+				e   = (N2 - Nr2) / ((Reinforcement?.Stiffness ?? 1E-6) * N),
+				de  = (N2 + Nr2) / ((Reinforcement?.Stiffness ?? 1E-6) * N2);
+
+			return (e, de);
+		}
+
+		/// <summary>
 		/// Tension case 3: Cracked with yielding steel.
 		/// </summary>
 		/// <param name="N">Normal force, in N.</param>
@@ -92,6 +109,22 @@ namespace SPM.Elements.StringerProperties
 				ey = Steel?.YieldStrain ?? 0,
 				Nyr = Reinforcement?.YieldForce ?? 0,
 				e = ey + (N - Nyr) / Stiffness,
+				de = 1 / Stiffness;
+
+			return
+				(e, de);
+		}
+
+		/// <summary>
+		/// Tension case 3: alternate cracked with yielding steel.
+		/// </summary>
+		/// <param name="N">Normal force, in N.</param>
+		private (double e, double de) AltYieldingSteelState(double N)
+		{
+			double
+				Nr2 = CrackingForce * CrackingForce,
+				Nyr = Reinforcement?.YieldForce ?? 0,
+				e = (Nyr * Nyr - Nr2) / ((Reinforcement?.Stiffness ?? 1E-6) * Nyr) + (N - Nyr) / Stiffness,
 				de = 1 / Stiffness;
 
 			return
@@ -123,8 +156,8 @@ namespace SPM.Elements.StringerProperties
 				// Calculate the strain for steel not yielding
 				if (!Yielding || Reinforcement is null)
 				{
-					constantT2 = Math.Sqrt((1 + Stiffness) * (1 + Stiffness) - N / Nc);
-					var strain = ec * (1 + Stiffness - constantT2);
+					constantT2 = Math.Sqrt((1 + StiffnessRatio) * (1 + StiffnessRatio) - N / Nc);
+					var strain = ec * (1 + StiffnessRatio - constantT2);
 
 					if (!VerifyYielding(strain))
 						return strain;
@@ -144,7 +177,7 @@ namespace SPM.Elements.StringerProperties
 		/// Compression case 2: concrete crushed.
 		/// </summary>
 		/// <param name="N">Normal force, in N.</param>
-		private (double e, double de) ConcreteCrushingState(double N)
+		private (double e, double de) ConcreteCrushedState(double N)
 		{
 			// Calculate strain
 			var e = Calculate();

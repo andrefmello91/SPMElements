@@ -41,7 +41,7 @@ namespace SPM.Elements.StringerProperties
 		protected Steel Steel => Reinforcement?.Steel;
 
 		/// <summary>
-		/// Get maximum compressive force, in N.
+		/// Get maximum compressive force, in N (negative value).
 		/// </summary>
 		public double MaxCompressiveForce
 		{
@@ -204,7 +204,7 @@ namespace SPM.Elements.StringerProperties
 		protected abstract (double e, double de) Compressed(double normalForce);
 
 		/// <summary>
-		/// Verify if stringer is cracked.
+		/// Verify if stringer is cracked. Returns true if it is cracked.
 		/// </summary>
 		/// <param name="strain">Current strain</param>
 		protected bool VerifyCracked(double strain)
@@ -216,7 +216,7 @@ namespace SPM.Elements.StringerProperties
 		}
 
 		/// <summary>
-		/// Verify if steel is yielding.
+		/// Verify if steel is yielding. Returns true if it is yielding.
 		/// </summary>
 		/// <param name="strain">Current strain</param>
 		protected bool VerifyYielding(double strain)
@@ -227,12 +227,12 @@ namespace SPM.Elements.StringerProperties
 			return Yielding;
 		}
 		/// <summary>
-		/// Verify if stringer is crushed.
+		/// Verify if stringer is crushed. Returns true if it is crushed.
 		/// </summary>
 		/// <param name="force">Current normal force</param>
 		protected bool VerifyCrushed(double force)
 		{
-			if (!Crushed && force >= MaxCompressiveForce)
+			if (!Crushed && force <= MaxCompressiveForce)
 				Crushed = true;
 
 			return Crushed;

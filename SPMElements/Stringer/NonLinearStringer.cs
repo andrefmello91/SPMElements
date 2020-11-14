@@ -257,6 +257,7 @@ namespace SPM.Elements
 		/// Calculate the generalized strains and stringer flexibility matrix .
 		/// </summary>
 		/// <param name="genStresses">Current generalized stresses.</param>
+		/// <param name="F">The flexibility <see cref="Matrix"/>.</param>
 		private (double e1, double e3) StringerGenStrains((double N1, double N3) genStresses, out Matrix<double> F)
 		{
 			var (N1, N3) = genStresses;

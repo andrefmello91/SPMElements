@@ -151,13 +151,14 @@ namespace SPM.Elements.StringerProperties
 			{
 				double
 					ec = Concrete.ec,
+					xi = StiffnessRatio,
 					Nc = Concrete.MaxForce;
 
 				// Calculate the strain for steel not yielding
 				if (!Yielding || Reinforcement is null)
 				{
-					constantT2 = Math.Sqrt((1 + StiffnessRatio) * (1 + StiffnessRatio) - N / Nc);
-					var strain = ec * (1 + StiffnessRatio - constantT2);
+					constantT2 = Math.Sqrt((1 + xi) * (1 + xi) - N / Nc);
+					var strain = ec * (1 + xi - constantT2);
 
 					if (!VerifyYielding(strain))
 						return strain;
@@ -192,13 +193,15 @@ namespace SPM.Elements.StringerProperties
 			{
 				double
 					ec = Concrete.ec,
-					Nc = Concrete.MaxForce;
+					xi = StiffnessRatio,
+					Nc = Concrete.MaxForce,
+					Nt = MaxCompressiveForce;
 
 				// Calculate the strain for steel not yielding
 				if (!Yielding || Reinforcement is null)
 				{
-					var t2     = Math.Sqrt((1 + StiffnessRatio) * (1 + StiffnessRatio) - MaxCompressiveForce / Nc);
-					var strain = ec * (1 + StiffnessRatio - t2) + (N - MaxCompressiveForce) / Stiffness;
+					var t2     = Math.Sqrt((1 + xi) * (1 + xi) - Nt / Nc);
+					var strain = ec * (1 + xi - t2) + (N - Nt) / Stiffness;
 
 					if (!VerifyYielding(strain))
 						return strain;
@@ -208,7 +211,7 @@ namespace SPM.Elements.StringerProperties
 
 				// Recalculate the strain for steel yielding
 				return
-					ec * (1 - Math.Sqrt(1 - (Nyr + MaxCompressiveForce) / Nc)) + (N - MaxCompressiveForce) / Stiffness;
+					ec * (1 - Math.Sqrt(1 - (Nyr + Nt) / Nc)) + (N - Nt) / Stiffness;
 			}
 		}
 

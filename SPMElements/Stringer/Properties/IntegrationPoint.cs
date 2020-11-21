@@ -92,7 +92,7 @@ namespace SPM.Elements.StringerProperties
 			get
 			{
 				if (!_xi.HasValue)
-					_xi = (Reinforcement?.Stiffness ?? 0) / Concrete.Stiffness;
+					_xi = Reinforcement is null ? 0 : Reinforcement.Stiffness / Concrete.Stiffness;
 
 				return _xi.Value;
 			}
@@ -155,10 +155,11 @@ namespace SPM.Elements.StringerProperties
 		/// <param name="reinforcement">The <see cref="UniaxialReinforcement"/> object.</param>
 		protected IntegrationPoint(UniaxialConcrete concrete, UniaxialReinforcement reinforcement)
 		{
-			Concrete      = concrete.Copy();
-			Reinforcement = reinforcement?.Copy();
+			Concrete      = concrete;
+			Reinforcement = reinforcement;
 			Cracked       = false;
 			Yielding      = false;
+			Crushed       = false;
 			LastStrain    = (0, 1 / Stiffness);
 		}
 

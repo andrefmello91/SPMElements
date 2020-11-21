@@ -22,8 +22,8 @@ namespace SPM.Elements
 	{
 		// Auxiliary fields
 		private Matrix<double> _FMatrix;
-		private (double e1, double e3) _genStrains,  _iterationGenStrains;
-		private (double N1, double N3) _genStresses, _iterationGenStresses;
+		private (double e1, double e3) _lastGenStrains,  _curGenStrains;
+		private (double N1, double N3) _lastGenStresses, _curGenStresses;
 		private (double T, double C)? _maxPlasticStrain;
 
 		private readonly Matrix<double> _BMatrix = 
@@ -51,7 +51,7 @@ namespace SPM.Elements
 		{
 			get
 			{
-				var (N1, N3) = _genStresses;
+				var (N1, N3) = _lastGenStresses;
 
 				return
 					Vector<double>.Build.DenseOfArray(new[]
@@ -61,14 +61,14 @@ namespace SPM.Elements
 			}
 		}
 
-        /// <summary>
-        /// Get local force <see cref="Vector"/> calculated at each iteration.
-        /// </summary>
-        private Vector<double> IterationLocalForces
+		/// <summary>
+		/// Get local force <see cref="Vector"/> calculated at the current iteration.
+		/// </summary>
+		private Vector<double> CurrentLocalForces
 		{
 			get
 			{
-				var (N1, N3) = _iterationGenStresses;
+				var (N1, N3) = _curGenStresses;
 
 				return
 					Vector<double>.Build.DenseOfArray(new[]
@@ -79,9 +79,9 @@ namespace SPM.Elements
 		}
 
         /// <summary>
-        /// Get global force <see cref="Vector"/> calculated at each iteration.
+        /// Get global force <see cref="Vector"/> calculated at the current iteration.
         /// </summary>
-		public Vector<double> IterationGlobalForces => TransformationMatrix.Transpose() * IterationLocalForces;
+		public Vector<double> CurrentGlobalForces => TransformationMatrix.Transpose() * CurrentLocalForces;
 
         /// <summary>
         /// Get total plastic generalized strain.
@@ -91,7 +91,7 @@ namespace SPM.Elements
 			get
 			{
 				// Get generalized strains
-				var (e1, e3) = _genStrains;
+				var (e1, e3) = _lastGenStrains;
 
 				double
 					ep1 = PlasticStrain(e1),
@@ -196,10 +196,10 @@ namespace SPM.Elements
 				SetDisplacements(globalDisplacements);
 
 			// Get the initial forces (from previous load step)
-			var (N1, N3) = _genStresses;
+			var (N1, N3) = _lastGenStresses;
 
 			// Get initial generalized strains (from previous load step)
-			var (e1i, e3i) = _genStrains;
+			var (e1i, e3i) = _lastGenStrains;
 
 			// Get local displacements
 			var ul = LocalDisplacements;
@@ -220,8 +220,8 @@ namespace SPM.Elements
 			// Incremental process to find forces
 			for (int i = 1; i <= numStrainSteps ; i++ )
 			{
-				if (e1.IsNaN() || e3.IsNaN())
-					break;
+				//if (e1.IsNaN() || e3.IsNaN())
+				//	break;
 
 				// Calculate F determinant
 				double d = F.Determinant();
@@ -245,12 +245,8 @@ namespace SPM.Elements
 
 			// Set values
 			_FMatrix = F;
-
-			if (!N1.IsNaN() && !N3.IsNaN())
-				_iterationGenStresses = (N1, N3);
-
-			if (!e1.IsNaN() && !e3.IsNaN())
-				_iterationGenStrains = (e1, e3);
+			_curGenStresses = (N1, N3);
+			_curGenStrains = (e1, e3);
 		}
 
 		/// <summary>
@@ -297,8 +293,8 @@ namespace SPM.Elements
 		public void Results()
 		{
 			// Set the final values
-			_genStresses = _iterationGenStresses;
-			_genStrains  = _iterationGenStrains;
+			_lastGenStresses = _curGenStresses;
+			_lastGenStrains  = _curGenStrains;
 		}
 
 		/// <summary>

@@ -1,6 +1,8 @@
 ﻿using System;
 using Material.Concrete;
+using Material.Concrete.Uniaxial;
 using Material.Reinforcement;
+using Material.Reinforcement.Uniaxial;
 
 namespace SPM.Elements
 {
@@ -12,7 +14,7 @@ namespace SPM.Elements
 		private abstract class StressStrainRelations
 		{
 			/// <summary>
-            /// Get <see cref="UniaxialConcrete"/> object.
+            /// Get <see cref="Material.Concrete.Uniaxial.UniaxialConcrete"/> object.
             /// </summary>
 			protected UniaxialConcrete Concrete { get; }
 
@@ -93,9 +95,7 @@ namespace SPM.Elements
             /// <param name="reinforcement">The <see cref="UniaxialReinforcement"/> object.</param>
             public static StressStrainRelations GetRelations(UniaxialConcrete concrete, UniaxialReinforcement reinforcement)
 			{
-				var behavior = Constitutive.ReadConstitutiveModel(concrete.Constitutive);
-
-				switch (behavior)
+				switch (concrete.Model)
 				{
 					case ConstitutiveModel.MCFT:
 						return

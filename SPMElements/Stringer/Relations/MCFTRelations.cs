@@ -1,7 +1,7 @@
 ﻿using System;
 using Extensions.Number;
-using Material.Concrete;
-using Material.Reinforcement;
+using Material.Concrete.Uniaxial;
+using Material.Reinforcement.Uniaxial;
 using MathNet.Numerics;
 using MathNet.Numerics.RootFinding;
 

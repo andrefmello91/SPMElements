@@ -9,13 +9,12 @@ using Material.Reinforcement;
 using Material.Reinforcement.Uniaxial;
 using MathNet.Numerics.LinearAlgebra;
 using MathNet.Numerics.LinearAlgebra.Double;
-using SPM.Elements.StringerProperties;
 using UnitsNet;
 using UnitsNet.Units;
 
 namespace SPM.Elements
 {
-	public class NonLinearStringer : Stringer
+	public partial class NonLinearStringer : Stringer
 	{
 		// Auxiliary fields
 		private Matrix<double> _FMatrix;
@@ -34,6 +33,11 @@ namespace SPM.Elements
         /// Get integration points.
         /// </summary>
         private IntegrationPoint[] IntPoints { get; }
+
+        /// <summary>
+        /// Get <see cref="StressStrainRelations"/>.
+        /// </summary>
+        private StressStrainRelations Relations { get; }
 
 		/// <summary>
         /// Get <see cref="Steel"/> of <see cref="Stringer.Reinforcement"/>.
@@ -121,6 +125,9 @@ namespace SPM.Elements
 		{
 			// Initiate integration points
 			IntPoints = GetIntPoints().ToArray();
+
+            // Get the relations
+            Relations = StressStrainRelations.GetRelations(Concrete, Reinforcement);
 		}
 
 		/// <summary>
@@ -141,6 +148,9 @@ namespace SPM.Elements
 		{
 			// Initiate integration points
 			IntPoints = GetIntPoints().ToArray();
+
+			// Get the relations
+			Relations = StressStrainRelations.GetRelations(Concrete, Reinforcement);
 		}
 
 		/// <summary>
@@ -149,7 +159,7 @@ namespace SPM.Elements
 		private IEnumerable<IntegrationPoint> GetIntPoints()
 		{
 			for (int i = 0; i < 4; i++)
-				yield return IntegrationPoint.Read(Concrete, Reinforcement);
+				yield return new IntegrationPoint(Concrete.ecr, Steel?.YieldStrain ?? 0);
 		}
 
         /// <summary>
@@ -259,7 +269,7 @@ namespace SPM.Elements
 			var de = new double[4];
 
 			for (int i = 0; i < N.Length; i++)
-				(e[i], de[i]) = IntPoints[i].StringerStrain(N[i]);
+				(e[i], de[i]) = Relations.StringerStrain(N[i], IntPoints[i]);
 
 			// Calculate approximated generalized strains
 			double
@@ -299,7 +309,7 @@ namespace SPM.Elements
 		private double PlasticForce(double force)
 		{
 			double
-				Nt  = IntPoints[0].MaxCompressiveForce,
+				Nt  = Relations.MaxCompressiveForce,
 				Nyr = Reinforcement?.YieldForce ?? 0;
 
 			// Check the value of N

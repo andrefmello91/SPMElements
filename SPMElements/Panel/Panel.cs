@@ -162,7 +162,7 @@ namespace SPM.Elements
         /// <summary>
         /// Get the DoF index of panel <see cref="Grips"/>.
         /// </summary>
-        public override int[] DoFIndex => _globalIndexes ?? GlobalIndexes(Grips);
+        public override int[] DoFIndex => Indexes ?? GlobalIndexes(Grips);
 
 		/// <summary>
         /// Get absolute maximum panel force.

@@ -92,7 +92,7 @@ namespace SPM.Elements
         /// <summary>
         /// Get the DoF index of stringer <see cref="Grips"/>.
         /// </summary>
-        public override int[] DoFIndex => _globalIndexes ?? GlobalIndexes(Grips);
+        public override int[] DoFIndex => Indexes ?? GlobalIndexes(Grips);
 
 		/// <summary>
         /// Get concrete area.

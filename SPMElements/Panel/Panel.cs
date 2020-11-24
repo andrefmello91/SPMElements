@@ -87,7 +87,12 @@ namespace SPM.Elements
         public Vector<double> Displacements { get; protected set; }
 
         /// <summary>
-        /// Get/set global force <see cref="Vector"/>.
+        /// Get local force <see cref="Vector"/>.
+        /// </summary>
+        private Vector<double> LocalForces => _localForces ?? CalculateLocalForces();
+
+        /// <summary>
+        /// Get global force <see cref="Vector"/>.
         /// </summary>
         public virtual Vector<double> Forces => GlobalForces ?? CalculateGlobalForces();
 
@@ -102,7 +107,7 @@ namespace SPM.Elements
 		        var lsV = Vector<double>.Build.DenseOfArray(Geometry.EdgeLengths);
 
 		        // Calculate the shear stresses
-		        var tau = _localForces / (lsV * Geometry.Width);
+		        var tau = LocalForces / (lsV * Geometry.Width);
 
 		        // Calculate the average stress
 		        double tauAvg = (-tau[0] + tau[1] - tau[2] + tau[3]) / 4;
@@ -565,7 +570,7 @@ namespace SPM.Elements
         /// </summary>
         private Vector<double> CalculateGlobalForces()
         {
-	        GlobalForces = TransformationMatrix.Transpose() * (_localForces ?? CalculateLocalForces());
+	        GlobalForces = TransformationMatrix.Transpose() * LocalForces;
 
 	        return GlobalForces;
         }

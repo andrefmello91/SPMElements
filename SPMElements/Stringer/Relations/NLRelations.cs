@@ -1,20 +1,26 @@
 ﻿using System;
+using Extensions.Number;
 using Material.Concrete;
 using Material.Concrete.Uniaxial;
 using Material.Reinforcement;
 using Material.Reinforcement.Uniaxial;
+using MathNet.Numerics;
+using MathNet.Numerics.RootFinding;
 
 namespace SPM.Elements
 {
 	public partial class NonLinearStringer
 	{
 		/// <summary>
-		/// Base class for stress-strain relations.
+		/// Base class for nonlinear relations.
 		/// </summary>
-		private abstract class StressStrainRelations
+		private abstract class NLRelations
 		{
+			// Auxiliary fields
+			private double? _Nt, _Nr, _xi;
+
 			/// <summary>
-            /// Get <see cref="Material.Concrete.Uniaxial.UniaxialConcrete"/> object.
+            /// Get <see cref="UniaxialConcrete"/> object.
             /// </summary>
 			protected UniaxialConcrete Concrete { get; }
 
@@ -28,56 +34,35 @@ namespace SPM.Elements
             /// </summary>
             protected Steel Steel => Reinforcement?.Steel;
 
+			/// <summary>
+			/// Get stiffness.
+			/// </summary>
+            protected double Stiffness => Concrete.Stiffness + (Reinforcement?.Stiffness ?? 0);
+
+			/// <summary>
+			/// Get stiffness ratio.
+			/// </summary>
+            protected double StiffnessRatio => _xi ?? CalculateStiffnessRatio();
+
             /// <summary>
-            /// Base object for stress-strain relations.
+            /// Get maximum compressive force, in N.
             /// </summary>
-            /// <param name="concrete">The <see cref="UniaxialConcrete"/> object.</param>
-            /// <param name="reinforcement">The <see cref="UniaxialReinforcement"/> object.</param>
-            public StressStrainRelations(UniaxialConcrete concrete, UniaxialReinforcement reinforcement)
+            public double MaxCompressiveForce => _Nt ?? CalculateMaxForce();
+
+            /// <summary>
+            /// Get cracking force, in N.
+            /// </summary>
+            protected double CrackingForce => _Nr ?? CalculateCrackingForce();
+
+			/// <summary>
+			/// Base object for stress-strain relations.
+			/// </summary>
+			/// <param name="concrete">The <see cref="UniaxialConcrete"/> object.</param>
+			/// <param name="reinforcement">The <see cref="UniaxialReinforcement"/> object.</param>
+			protected NLRelations(UniaxialConcrete concrete, UniaxialReinforcement reinforcement)
 			{
 				Concrete      = concrete;
 				Reinforcement = reinforcement;
-			}
-
-			/// <summary>
-            /// Get maximum compressive force, in N.
-            /// </summary>
-			public double MaxCompressiveForce
-			{
-				get
-				{
-					var Nc = Concrete.MaxForce;
-
-					if (Steel is null)
-						return Nc;
-
-					double
-						Nyr = Reinforcement.YieldForce,
-						xi = (Reinforcement?.Stiffness ?? 0) / Concrete.Stiffness;
-
-					double
-                        Nt1 = Nc * (1 + xi) * (1 + xi),
-						Nt2 = Nc - Nyr;
-
-					return
-						Math.Max(Nt1, Nt2);
-				}
-			}
-
-			/// <summary>
-            /// Get cracking force, in N.
-            /// </summary>
-			protected double CrackingForce
-			{
-				get
-				{
-					double
-						xi  = Concrete.Stiffness / Reinforcement.Stiffness,
-						Ncr = Concrete.ft * Concrete.Area * (1 + xi);
-
-                    return
-	                    Ncr / Math.Sqrt(1 + xi);
-				}
 			}
 
 			/// <summary>
@@ -85,15 +70,118 @@ namespace SPM.Elements
 			/// </summary>
 			/// <param name="normalForce">Current force, in N.</param>
 			/// <param name="intPoint">Integration point (<see cref="IntegrationPoint"/>).</param>
-			/// <returns></returns>
-			public abstract (double e, double de) StringerStrain(double normalForce, IntegrationPoint intPoint);
+			public (double e, double de) StringerStrain(double normalForce, IntegrationPoint intPoint)
+			{
+				if (normalForce.IsNaN())
+					return intPoint.LastGenStrain;
+
+				if (normalForce.ApproxZero(1E-6))
+					return (0, 1 / Stiffness);
+
+				var result = normalForce > 0 ? TensionedCase(normalForce, intPoint) : CompressedCase(normalForce, intPoint);
+
+				if (result.e.IsNaN())
+					return intPoint.LastGenStrain;
+
+				intPoint.LastGenStrain = result;
+
+				return result;
+			}
+
+			/// <summary>
+			/// Calculate strain for tensioned case.
+			/// </summary>
+			/// <param name="normalForce">The force in N.</param>
+			/// <param name="intPoint">The <see cref="IntegrationPoint"/>.</param>
+			protected abstract (double e, double de) TensionedCase(double normalForce, IntegrationPoint intPoint);
+
+			/// <summary>
+			/// Calculate strain for compressed case.
+			/// </summary>
+			/// <param name="normalForce">The force in N.</param>
+			/// <param name="intPoint">The <see cref="IntegrationPoint"/>.</param>
+			protected abstract (double e, double de) CompressedCase(double normalForce, IntegrationPoint intPoint);
+
+			/// <summary>
+			/// Solver to find strain given force.
+			/// </summary>
+			protected (double e, double de)? Solver(double N, double lowerBound, double upperBound)
+			{
+				// Iterate to find strain
+				//(double e, double de)? result = null;
+				//double? e = null;
+
+				if (!Brent.TryFindRoot(eps => N - Force(eps), lowerBound, upperBound, 1E-4, 1000, out var e))
+					return null;
+
+				// Calculate derivative of function
+				double
+					dN = Differentiate.FirstDerivative(Force, e),
+					de = 1 / dN;
+
+				return (e, de);
+			}
+
+			/// <summary>
+			/// Calculate force based on strain.
+			/// </summary>
+			/// <param name="strain">Current strain.</param>
+			private double Force(double strain) => Concrete.CalculateForce(strain) + (Reinforcement?.CalculateForce(strain) ?? 0);
+
+			/// <summary>
+			/// Calculate maximum compressive force.
+			/// </summary>
+			private double CalculateMaxForce()
+			{
+				var Nc = Concrete.MaxForce;
+
+				if (Reinforcement is null)
+					_Nt = Nc;
+
+				else
+				{
+					double
+						Nyr = Reinforcement.YieldForce,
+						xi  = StiffnessRatio,
+						Nt1 = Nc * (1 + xi) * (1 + xi),
+						Nt2 = Nc - Nyr;
+
+					_Nt = Math.Max(Nt1, Nt2);
+				}
+
+				return _Nt.Value;
+			}
+
+			/// <summary>
+			/// Calculate cracking force.
+			/// </summary>
+			private double CalculateCrackingForce()
+			{
+				double
+					xi  = StiffnessRatio,
+					Ncr = Concrete.ft * Concrete.Area * (1 + xi);
+
+				_Nr = Ncr / Math.Sqrt(1 + xi);
+
+				return _Nr.Value;
+			}
+
+			/// <summary>
+			/// Calculate stiffness ratio.
+			/// </summary>
+			private double CalculateStiffnessRatio()
+			{
+				_xi = (Reinforcement?.Stiffness ?? 0) / Concrete.Stiffness;
+
+				return _xi.Value;
+			}
 
             /// <summary>
             /// Get stress-strain relations.
             /// </summary>
             /// <param name="concrete">The <see cref="UniaxialConcrete"/> object.</param>
             /// <param name="reinforcement">The <see cref="UniaxialReinforcement"/> object.</param>
-            public static StressStrainRelations GetRelations(UniaxialConcrete concrete, UniaxialReinforcement reinforcement)
+            public static NLRelations GetRelations(UniaxialConcrete concrete, UniaxialReinforcement reinforcement)
 			{
 				switch (concrete.Model)
 				{

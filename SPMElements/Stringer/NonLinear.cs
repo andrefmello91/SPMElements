@@ -35,9 +35,9 @@ namespace SPM.Elements
         private IntegrationPoint[] IntPoints { get; }
 
         /// <summary>
-        /// Get <see cref="StressStrainRelations"/>.
+        /// Get <see cref="NLRelations"/>.
         /// </summary>
-        private StressStrainRelations Relations { get; }
+        private NLRelations Relations { get; }
 
 		/// <summary>
         /// Get <see cref="Steel"/> of <see cref="Stringer.Reinforcement"/>.
@@ -127,7 +127,7 @@ namespace SPM.Elements
 			IntPoints = GetIntPoints().ToArray();
 
             // Get the relations
-            Relations = StressStrainRelations.GetRelations(Concrete, Reinforcement);
+            Relations = NLRelations.GetRelations(Concrete, Reinforcement);
 		}
 
 		/// <summary>
@@ -150,7 +150,7 @@ namespace SPM.Elements
 			IntPoints = GetIntPoints().ToArray();
 
 			// Get the relations
-			Relations = StressStrainRelations.GetRelations(Concrete, Reinforcement);
+			Relations = NLRelations.GetRelations(Concrete, Reinforcement);
 		}
 
 		/// <summary>

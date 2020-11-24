@@ -12,7 +12,7 @@ namespace SPM.Elements
 		/// <summary>
 		/// MCFT class for stress-strain relations.
 		/// </summary>
-		private class MCFTRelations : StressStrainRelations
+		private class MCFTRelations : NLRelations
 		{
             /// <summary>
             /// MCFT object for stress-strain relations.
@@ -24,77 +24,54 @@ namespace SPM.Elements
 			}
 
 			/// <inheritdoc/>
-			public override (double e, double de) StringerStrain(double normalForce, IntegrationPoint intPoint)
+			protected override (double e, double de) TensionedCase(double normalForce, IntegrationPoint intPoint)
 			{
-				if (normalForce.IsNaN())
-					return intPoint.LastGenStrain;
-
-				double t1 = Concrete.Stiffness + (Reinforcement?.Stiffness ?? 0);
-
-				(double e, double de) result = (0, 1 / t1);
-
-				// Verify the value of N
-				// Tensioned Stringer
-				if (normalForce > 0)
+				// Calculate uncracked
+				if (intPoint.Uncracked)
 				{
-					// Calculate uncracked
-					if (intPoint.Uncracked)
-					{
-						result = Uncracked(normalForce);
+					var unc = UncrackedState(normalForce);
 
-						// Verify if concrete is cracked
-						intPoint.VerifyCracked(result.e);
+					// Verify if concrete is cracked
+					if (!intPoint.VerifyCracked(unc.e))
+						return unc;
+				}
+
+				if (intPoint.CrackedAndNotYielding)
+				{
+					// Calculate cracked
+					var crackedN = CrackedState(normalForce);
+
+					if (crackedN.HasValue)
+					{
+						var cracked = crackedN.Value;
+
+						// Verify if reinforcement yielded
+						if (!intPoint.VerifyYielding(cracked.e))
+							return cracked;
 					}
-
-					if (intPoint.CrackedAndNotYielding)
+					else
 					{
-						// Calculate cracked
-						var cracked = Cracked(normalForce);
-
-						if (cracked.HasValue)
-						{
-							result = cracked.Value;
-
-							// Verify if reinforcement yielded
-							intPoint.VerifyYielding(result.e);
-						}
-						else
-						{
-							// Steel yielded
-							intPoint.Yielding = true;
-						}
-					}
-
-					if (intPoint.CrackedAndYielding)
-					{
-						// Steel is yielding
-						result = YieldingSteel(normalForce);
+						// Steel yielded
+						intPoint.Yielding = true;
 					}
 				}
 
-				else if (normalForce < 0)
-				{
-					// Compressed Stringer
-					result = normalForce > MaxCompressiveForce ? ConcreteNotCrushed(normalForce) : ConcreteCrushing(normalForce);
-				}
-
-				if (result.e.IsNaN())
-					return intPoint.LastGenStrain;
-
-				intPoint.LastGenStrain = result;
-
-                return result;
+				// Steel is yielding
+				return YieldingSteelState(normalForce);
 			}
+
+			/// <inheritdoc/>
+			protected override (double e, double de) CompressedCase(double normalForce, IntegrationPoint intPoint) => normalForce > MaxCompressiveForce ? ConcreteNotCrushedState(normalForce) : ConcreteCrushingState(normalForce);
 
 			// Tension Cases
 			/// <summary>
 			/// Tension case 1: uncracked.
 			/// </summary>
 			/// <param name="N">Normal force, in N.</param>
-			private (double e, double de) Uncracked(double N)
+			private (double e, double de) UncrackedState(double N)
 			{
                 double
-                    t1 = Concrete.Stiffness + (Reinforcement?.Stiffness ?? 0),
+                    t1 = Stiffness,
                     e  = N / t1,
 					de = 1 / t1;
 
@@ -106,18 +83,18 @@ namespace SPM.Elements
 			/// Tension case 2: Cracked with not yielding steel.
 			/// </summary>
 			/// <param name="N">Normal force, in N.</param>
-			private (double e, double de)? Cracked(double N) => Solver(N, Concrete.ecr, Steel?.YieldStrain ?? Concrete.ecr);
+			private (double e, double de)? CrackedState(double N) => Solver(N, Concrete.ecr, Steel?.YieldStrain ?? Concrete.ecr);
 
 			/// <summary>
 			/// Tension case 3: Cracked with yielding steel.
 			/// </summary>
 			/// <param name="N">Normal force, in N.</param>
-			private (double e, double de) YieldingSteel(double N)
+			private (double e, double de) YieldingSteelState(double N)
 			{
 				double
 					ey  = Steel?.YieldStrain ?? 0,
 					Nyr = Reinforcement?.YieldForce ?? 0,
-					t1  = Concrete.Stiffness + (Reinforcement?.Stiffness ?? 0),
+					t1  = Stiffness,
                     e   = ey + (N - Nyr) / t1,
 					de  = 1 / t1;
 
@@ -130,20 +107,20 @@ namespace SPM.Elements
 			/// Compression case 1: concrete not crushed.
 			/// </summary>
 			/// <param name="N">Normal force, in N.</param>
-			private (double e, double de) ConcreteNotCrushed(double N)
+			private (double e, double de) ConcreteNotCrushedState(double N)
 			{
 				// Calculate the strain for steel not yielding
 				double
 					ec = Concrete.ec,
 					Nc = Concrete.MaxForce,
-					xi = (Reinforcement?.Stiffness ?? 0) / Concrete.Stiffness,
+					xi = StiffnessRatio,
 					t2 = Math.Sqrt((1 + xi) * (1 + xi) - N / Nc),
 					e = ec * (1 + xi - t2);
 
 				// Check the strain
-				if (Steel != null && e < -Steel.YieldStrain)
+				if (!(Reinforcement is null) && e < -Steel.YieldStrain)
 				{
-					double Nyr = Reinforcement.YieldForce;
+					var Nyr = Reinforcement.YieldForce;
 
 					// Recalculate the strain for steel yielding
                     t2 = Math.Sqrt(1 - (N + Nyr) / Nc);
@@ -161,24 +138,25 @@ namespace SPM.Elements
 			/// Compression case 2: concrete crushed.
 			/// </summary>
 			/// <param name="N">Normal force, in N.</param>
-			private (double e, double de) ConcreteCrushing(double N)
+			private (double e, double de) ConcreteCrushingState(double N)
 			{
 				// Calculate the strain for steel not yielding
 				double
 					ec = Concrete.ec,
 					Nc = Concrete.MaxForce,
-					xi = (Reinforcement?.Stiffness ?? 0) / Concrete.Stiffness,
-					t1 = Concrete.Stiffness + (Reinforcement?.Stiffness ?? 0),
-					t2 = Math.Sqrt((1 + xi) * (1 + xi) - MaxCompressiveForce / Nc),
-					e = ec * (1 + xi - t2) + (N - MaxCompressiveForce) / t1;
+					Nt = MaxCompressiveForce,
+					xi = StiffnessRatio,
+					t1 = Stiffness,
+					t2 = Math.Sqrt((1 + xi) * (1 + xi) - Nt / Nc),
+					e = ec * (1 + xi - t2) + (N - Nt) / t1;
 
 				// Check the strain
-				if (Steel != null && e < -Steel.YieldStrain)
+				if (!(Reinforcement is null) && e < -Steel.YieldStrain)
 				{
-					double Nyr = Reinforcement.YieldForce;
+					var Nyr = Reinforcement.YieldForce;
 
                     // Recalculate the strain for steel yielding
-                    e = ec * (1 - Math.Sqrt(1 - (Nyr + MaxCompressiveForce) / Nc)) + (N - MaxCompressiveForce) / t1;
+                    e = ec * (1 - Math.Sqrt(1 - (Nyr + Nt) / Nc)) + (N - Nt) / t1;
 				}
 
 				// Calculate de
@@ -190,54 +168,6 @@ namespace SPM.Elements
 
 			// Compressed case
 			private (double e, double de)? Compressed(double N) => Solver(N, Concrete.ecu, 0);
-
-			/// <summary>
-			/// Solver to find strain given force.
-			/// </summary>
-			private (double e, double de)? Solver(double N, double lowerBound, double upperBound)
-			{
-				// Iterate to find strain
-				//(double e, double de)? result = null;
-				//double? e = null;
-
-				if (!Brent.TryFindRoot(eps => N - Force(eps), lowerBound, upperBound, 1E-4, 1000, out var e))
-					return null;
-
-				// Calculate derivative of function
-				double
-					dN = Differentiate.FirstDerivative(Force, e),
-					de = 1 / dN;
-
-				return (e, de);
-
-				//            try
-				//{
-				//	e = FindRoots.OfFunction(eps => N - Force(eps), lowerBound, upperBound);
-				//}
-				//catch
-				//{
-				//}
-				//finally
-				//{
-				//	if (e.HasValue)
-				//	{
-				//		// Calculate derivative of function
-				//		double
-				//			dN = Differentiate.FirstDerivative(Force, e.Value),
-				//			de = 1 / dN;
-
-				//		result = (e.Value, de);
-				//	}
-				//}
-
-				//return result;
-			}
-
-			/// <summary>
-			/// Calculate force based on strain.
-			/// </summary>
-			/// <param name="strain">Current strain.</param>
-			private double Force(double strain) => Concrete.CalculateForce(strain) + (Reinforcement?.CalculateForce(strain) ?? 0);
 		}
 	}
 }

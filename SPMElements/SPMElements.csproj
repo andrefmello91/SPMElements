@@ -115,7 +115,7 @@
     <Compile Include="Stringer\Linear.cs" />
     <Compile Include="Stringer\NonLinear.cs" />
     <Compile Include="Stringer\Relations\MCFTRelations.cs" />
-    <Compile Include="Stringer\Relations\StressStrainRelations.cs" />
+    <Compile Include="Stringer\Relations\NLRelations.cs" />
     <Compile Include="Stringer\Stringer.cs" />
     <Compile Include="Stringer\Properties\StringerGeometry.cs" />
   </ItemGroup>

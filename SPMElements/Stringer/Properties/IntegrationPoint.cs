@@ -1,4 +1,5 @@
 ﻿using System;
+using Extensions.Number;
 
 namespace SPM.Elements
 {
@@ -15,7 +16,7 @@ namespace SPM.Elements
             /// <summary>
             /// Get/set cracked state.
             /// </summary>
-            public bool Cracked  { get; set; }
+            private bool Cracked  { get; set; }
 
 			/// <summary>
 			/// Get/set yielding state.
@@ -35,7 +36,7 @@ namespace SPM.Elements
 			/// <summary>
             /// Returns true if concrete is cracked and steel is yielding.
             /// </summary>
-            public bool CrackedAndYielding    =>  Cracked &&  Yielding;
+            public bool CrackedAndYielding => Cracked && Yielding;
 
 			/// <summary>
             /// Get/set last integration point generalized strain.
@@ -52,23 +53,27 @@ namespace SPM.Elements
 			}
 
             /// <summary>
-            /// Verify if stringer is cracked.
+            /// Verify if stringer is cracked. Returns true if cracked.
             /// </summary>
             /// <param name="strain">Current strain</param>
-            public void VerifyCracked(double strain)
+            public bool VerifyCracked(double strain)
 			{
 				if (!Cracked && strain >= _ecr)
 					Cracked = true;
+
+				return Cracked;
 			}
 
             /// <summary>
-            /// Verify if steel is yielding.
+            /// Verify if steel is yielding. Returns true if yielding.
             /// </summary>
             /// <param name="strain">Current strain</param>
-            public void VerifyYielding(double strain)
+            public bool VerifyYielding(double strain)
 			{
-				if (!Yielding && Math.Abs(strain) >= _ey)
+				if (!Yielding && strain.Abs() >= _ey)
 					Yielding = true;
+
+				return Yielding;
 			}
 		}
 	}

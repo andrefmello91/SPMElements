@@ -7,7 +7,7 @@ using MathNet.Numerics.RootFinding;
 
 namespace SPM.Elements
 {
-	public partial class NonLinearStringer
+	public partial class NLStringer
 	{
 		/// <summary>
 		/// MCFT class for stress-strain relations.

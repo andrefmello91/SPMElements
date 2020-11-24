@@ -9,7 +9,7 @@ using MathNet.Numerics.RootFinding;
 
 namespace SPM.Elements
 {
-	public partial class NonLinearStringer
+	public partial class NLStringer
 	{
 		/// <summary>
 		/// Base class for nonlinear relations.

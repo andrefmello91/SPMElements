@@ -3,7 +3,7 @@ using Extensions.Number;
 
 namespace SPM.Elements
 {
-	public partial class NonLinearStringer
+	public partial class NLStringer
 	{
 		/// <summary>
 		/// Struct to verify cracked or yielded state on each integration point

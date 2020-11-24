@@ -14,7 +14,7 @@ using UnitsNet.Units;
 
 namespace SPM.Elements
 {
-	public partial class NonLinearStringer : Stringer
+	public partial class NLStringer : Stringer
 	{
 		// Auxiliary fields
 		private Matrix<double> _FMatrix;
@@ -111,7 +111,7 @@ namespace SPM.Elements
 		/// Nonlinear stringer object
 		/// </summary>
 		/// <inheritdoc/>
-		public NonLinearStringer(ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, double width, double height, Parameters concreteParameters, ConstitutiveModel model, UniaxialReinforcement reinforcement = null, LengthUnit unit = LengthUnit.Millimeter)
+		public NLStringer(ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, double width, double height, Parameters concreteParameters, ConstitutiveModel model, UniaxialReinforcement reinforcement = null, LengthUnit unit = LengthUnit.Millimeter)
 			: this(objectId, number, grip1, grip2, grip3, Length.From(width, unit), Length.From(height, unit), concreteParameters, model, reinforcement)
 		{
 		}
@@ -120,7 +120,7 @@ namespace SPM.Elements
 		/// Nonlinear stringer object
 		/// </summary>
 		/// <inheritdoc/>
-		public NonLinearStringer(ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, Length width, Length height, Parameters concreteParameters, ConstitutiveModel model, UniaxialReinforcement reinforcement = null)
+		public NLStringer(ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, Length width, Length height, Parameters concreteParameters, ConstitutiveModel model, UniaxialReinforcement reinforcement = null)
 			: base(objectId, number, grip1, grip2, grip3, width, height, concreteParameters, model, reinforcement)
 		{
 			// Initiate integration points
@@ -134,7 +134,7 @@ namespace SPM.Elements
 		/// Linear stringer object.
 		/// </summary>
 		/// <inheritdoc/>
-		public NonLinearStringer(ObjectId objectId, int number, IEnumerable<Node> nodes, Point3d grip1Position, Point3d grip3Position, double width, double height, Parameters concreteParameters, ConstitutiveModel model, UniaxialReinforcement reinforcement = null, LengthUnit unit = LengthUnit.Millimeter)
+		public NLStringer(ObjectId objectId, int number, IEnumerable<Node> nodes, Point3d grip1Position, Point3d grip3Position, double width, double height, Parameters concreteParameters, ConstitutiveModel model, UniaxialReinforcement reinforcement = null, LengthUnit unit = LengthUnit.Millimeter)
 			: this(objectId, number, nodes, grip1Position, grip3Position, Length.From(width, unit), Length.From(height, unit), concreteParameters, model, reinforcement)
 		{
 		}
@@ -143,7 +143,7 @@ namespace SPM.Elements
 		/// Linear stringer object.
 		/// </summary>
 		/// <inheritdoc/>
-		public NonLinearStringer(ObjectId objectId, int number, IEnumerable<Node> nodes, Point3d grip1Position, Point3d grip3Position, Length width, Length height, Parameters concreteParameters, ConstitutiveModel model, UniaxialReinforcement reinforcement = null)
+		public NLStringer(ObjectId objectId, int number, IEnumerable<Node> nodes, Point3d grip1Position, Point3d grip3Position, Length width, Length height, Parameters concreteParameters, ConstitutiveModel model, UniaxialReinforcement reinforcement = null)
 			: base(objectId, number, nodes, grip1Position, grip3Position, width, height, concreteParameters, model, reinforcement)
 		{
 			// Initiate integration points

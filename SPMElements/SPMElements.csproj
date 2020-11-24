@@ -105,15 +105,13 @@
     <Compile Include="Node.cs" />
     <Compile Include="Panel\Properties\Edge.cs" />
     <Compile Include="Panel\Properties\Geometry.cs" />
-    <Compile Include="Panel\Linear.cs" />
-    <Compile Include="Panel\NonLinear.cs" />
+    <Compile Include="Panel\NLPanel.cs" />
     <Compile Include="Panel\Panel.cs" />
     <Compile Include="Panel\Properties\Vertices.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SPMElement.cs" />
     <Compile Include="Stringer\Properties\IntegrationPoint.cs" />
-    <Compile Include="Stringer\Linear.cs" />
-    <Compile Include="Stringer\NonLinear.cs" />
+    <Compile Include="Stringer\NLStringer.cs" />
     <Compile Include="Stringer\Relations\MCFTRelations.cs" />
     <Compile Include="Stringer\Relations\NLRelations.cs" />
     <Compile Include="Stringer\Stringer.cs" />

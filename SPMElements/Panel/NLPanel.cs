@@ -15,7 +15,7 @@ using UnitsNet.Units;
 
 namespace SPM.Elements
 {
-    public class NonLinearPanel : Panel
+    public class NLPanel : Panel
     {
 		// Auxiliary fields
 		private Matrix<double> _BA, _Q, _Pc, _Ps, _Dc, _Ds;
@@ -45,8 +45,11 @@ namespace SPM.Elements
         /// </summary>
 	    public Vector<double> Stresses => ConcreteStresses + ReinforcementStresses;
 
-	    /// <inheritdoc/>
-	    public override Matrix<double> GlobalStiffness
+        /// <inheritdoc/>
+        public override Vector<double> Forces => GlobalForces;
+
+		/// <inheritdoc/>
+		public override Matrix<double> GlobalStiffness
 	    {
 		    get
 		    {
@@ -109,7 +112,7 @@ namespace SPM.Elements
 	    /// Nonlinear panel object.
 	    /// </summary>
 	    /// <inheritdoc/>
-	    public NonLinearPanel(ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, Node grip4, Vertices vertices, Length width, Parameters concreteParameters, ConstitutiveModel model, WebReinforcement reinforcement = null)
+	    public NLPanel(ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, Node grip4, Vertices vertices, Length width, Parameters concreteParameters, ConstitutiveModel model, WebReinforcement reinforcement = null)
 		    : base(objectId, number, grip1, grip2, grip3, grip4, vertices, width, concreteParameters, model, reinforcement)
 	    {
 		    IntegrationPoints = IntPoints().ToArray();
@@ -119,7 +122,7 @@ namespace SPM.Elements
         /// Nonlinear panel object.
         /// </summary>
         /// <inheritdoc/>
-        public NonLinearPanel(ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, Node grip4, Vertices vertices, double width, Parameters concreteParameters, ConstitutiveModel model, WebReinforcement reinforcement = null, LengthUnit unit = LengthUnit.Millimeter)
+        public NLPanel(ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, Node grip4, Vertices vertices, double width, Parameters concreteParameters, ConstitutiveModel model, WebReinforcement reinforcement = null, LengthUnit unit = LengthUnit.Millimeter)
             : this(objectId, number, grip1, grip2, grip3, grip4, vertices, Length.From(width, unit), concreteParameters, model, reinforcement)
         {
         }
@@ -128,7 +131,7 @@ namespace SPM.Elements
         /// Nonlinear panel object.
         /// </summary>
         /// <inheritdoc/>
-        public NonLinearPanel(ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, Node grip4, IEnumerable<Point3d> vertices, Length width, Parameters concreteParameters, ConstitutiveModel model, WebReinforcement reinforcement = null)
+        public NLPanel(ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, Node grip4, IEnumerable<Point3d> vertices, Length width, Parameters concreteParameters, ConstitutiveModel model, WebReinforcement reinforcement = null)
 	        : this(objectId, number, grip1, grip2, grip3, grip4, new Vertices(vertices, width.Unit), width, concreteParameters, model, reinforcement)
         {
         }
@@ -137,7 +140,7 @@ namespace SPM.Elements
         /// Nonlinear panel object.
         /// </summary>
         /// <inheritdoc/>
-        public NonLinearPanel(ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, Node grip4, IEnumerable<Point3d> vertices, double width, Parameters concreteParameters, ConstitutiveModel model, WebReinforcement reinforcement = null, LengthUnit unit = LengthUnit.Millimeter)
+        public NLPanel(ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, Node grip4, IEnumerable<Point3d> vertices, double width, Parameters concreteParameters, ConstitutiveModel model, WebReinforcement reinforcement = null, LengthUnit unit = LengthUnit.Millimeter)
             : this(objectId, number, grip1, grip2, grip3, grip4, new Vertices(vertices, unit), Length.From(width, unit), concreteParameters, model, reinforcement)
         {
         }
@@ -146,7 +149,7 @@ namespace SPM.Elements
         /// Nonlinear panel object.
         /// </summary>
         /// <inheritdoc/>
-        public NonLinearPanel(ObjectId objectId, int number, IEnumerable<Node> nodes, Vertices vertices, Length width, Parameters concreteParameters, ConstitutiveModel model, WebReinforcement reinforcement = null)
+        public NLPanel(ObjectId objectId, int number, IEnumerable<Node> nodes, Vertices vertices, Length width, Parameters concreteParameters, ConstitutiveModel model, WebReinforcement reinforcement = null)
             : base(objectId, number, nodes, vertices, width, concreteParameters, model, reinforcement)
         {
 	        IntegrationPoints = IntPoints().ToArray();
@@ -156,7 +159,7 @@ namespace SPM.Elements
         /// Nonlinear panel object.
         /// </summary>
         /// <inheritdoc/>
-        public NonLinearPanel(ObjectId objectId, int number, IEnumerable<Node> nodes, Vertices vertices, double width, Parameters concreteParameters, ConstitutiveModel model, WebReinforcement reinforcement = null, LengthUnit unit = LengthUnit.Millimeter)
+        public NLPanel(ObjectId objectId, int number, IEnumerable<Node> nodes, Vertices vertices, double width, Parameters concreteParameters, ConstitutiveModel model, WebReinforcement reinforcement = null, LengthUnit unit = LengthUnit.Millimeter)
             : this(objectId, number, nodes, vertices, Length.From(width, unit), concreteParameters, model, reinforcement)
         {
         }
@@ -165,7 +168,7 @@ namespace SPM.Elements
         /// Nonlinear panel object.
         /// </summary>
         /// <inheritdoc/>
-        public NonLinearPanel(ObjectId objectId, int number, IEnumerable<Node> nodes, IEnumerable<Point3d> vertices, Length width, Parameters concreteParameters, ConstitutiveModel model, WebReinforcement reinforcement = null)
+        public NLPanel(ObjectId objectId, int number, IEnumerable<Node> nodes, IEnumerable<Point3d> vertices, Length width, Parameters concreteParameters, ConstitutiveModel model, WebReinforcement reinforcement = null)
             : this(objectId, number, nodes, new Vertices(vertices, width.Unit), width, concreteParameters, model, reinforcement)
         {
         }
@@ -174,7 +177,7 @@ namespace SPM.Elements
         /// Nonlinear panel object.
         /// </summary>
         /// <inheritdoc/>
-        public NonLinearPanel(ObjectId objectId, int number, IEnumerable<Node> nodes, IEnumerable<Point3d> vertices, double width, Parameters concreteParameters, ConstitutiveModel model, WebReinforcement reinforcement = null, LengthUnit unit = LengthUnit.Millimeter)
+        public NLPanel(ObjectId objectId, int number, IEnumerable<Node> nodes, IEnumerable<Point3d> vertices, double width, Parameters concreteParameters, ConstitutiveModel model, WebReinforcement reinforcement = null, LengthUnit unit = LengthUnit.Millimeter)
             : this(objectId, number, nodes, new Vertices(vertices, unit), Length.From(width, unit), concreteParameters, model, reinforcement)
         {
         }
@@ -489,7 +492,7 @@ namespace SPM.Elements
 		    f5 = -a * t1 - b * t2 - t3;
 		    f8 = b * t1 - a * t2 - t4;
 
-		    Forces =
+		    GlobalForces =
 			    Vector<double>.Build.DenseOfArray(new []
 			    {
 				    f1, f2, f3, f4, f5, f6, f7, f8

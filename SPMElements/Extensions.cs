@@ -31,7 +31,7 @@ namespace SPM.Elements
         /// <para>See: <see cref="Edge.SetStringerDimension"/></para>
         /// </summary>
         /// <param name="stringers">The array containing all of the stringers.</param>
-        public static void SetStringerDimensions(this IEnumerable<NonLinearPanel> panels, IEnumerable<Stringer> stringers)
+        public static void SetStringerDimensions(this IEnumerable<NLPanel> panels, IEnumerable<Stringer> stringers)
         {
 	        foreach (var panel in panels)
 		        panel.SetEdgeStringersDimensions(stringers);

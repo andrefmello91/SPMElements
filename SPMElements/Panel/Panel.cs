@@ -3,11 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.Geometry;
+using Extensions.Number;
 using MathNet.Numerics.LinearAlgebra;
 using MathNet.Numerics.LinearAlgebra.Double;
 using Material.Concrete;
 using Material.Concrete.Biaxial;
 using Material.Reinforcement.Biaxial;
+using MathNet.Numerics;
 using OnPlaneComponents;
 using SPM.Elements.PanelProperties;
 using UnitsNet;
@@ -16,14 +18,19 @@ using UnitsNet.Units;
 namespace SPM.Elements
 {
 	/// <summary>
-    /// Base panel class.
+    /// Base panel class with linear properties.
     /// </summary>
 	public class Panel : SPMElement, IEquatable<Panel>
 	{
-		/// <summary>
+		// Auxiliary fields
+		private Matrix<double> _transMatrix, _localStiffness;
+		private Vector<double> _localForces;
+		protected Vector<double> GlobalForces;
+
+        /// <summary>
         /// Get <see cref="PanelGeometry"/> of this.
         /// </summary>
-		public PanelGeometry Geometry { get; }
+        public PanelGeometry Geometry { get; }
 
 		/// <summary>
 		/// Get <see cref="BiaxialConcrete"/> of this.
@@ -56,39 +63,91 @@ namespace SPM.Elements
         public Node Grip4 { get; }
 
         /// <summary>
+        /// Get transformation <see cref="Matrix"/>.
+        /// </summary>
+        private Matrix<double> TransformationMatrix => _transMatrix ?? CalculateTransformationMatrix();
+
+        /// <summary>
         /// Get/set local stiffness <see cref="Matrix"/>.
         /// </summary>
-        public virtual Matrix<double> LocalStiffness { get; protected set; }
+        public virtual Matrix<double> LocalStiffness
+        {
+	        get => _localStiffness ?? CalculateStiffness();
+	        set => _localStiffness = value;
+        }
 
         /// <summary>
 		/// Get global stiffness <see cref="Matrix"/>.
 		/// </summary>
-		public virtual Matrix<double> GlobalStiffness { get; }
+        public virtual Matrix<double> GlobalStiffness => TransformationMatrix.Transpose() * LocalStiffness * TransformationMatrix;
 
-		/// <summary>
-		/// Get/set global displacement <see cref="Vector"/>.
-		/// </summary>
-		public Vector<double> Displacements { get; protected set; }
+        /// <summary>
+        /// Get/set global displacement <see cref="Vector"/>.
+        /// </summary>
+        public Vector<double> Displacements { get; protected set; }
 
         /// <summary>
         /// Get/set global force <see cref="Vector"/>.
         /// </summary>
-        public virtual Vector<double> Forces { get; protected set; }
+        public virtual Vector<double> Forces => GlobalForces ?? CalculateGlobalForces();
 
         /// <summary>
         /// Get average <see cref="StressState"/>.
         /// </summary>
-        public virtual StressState AverageStresses { get; }
+        public virtual StressState AverageStresses
+        {
+	        get
+	        {
+		        // Get the dimensions as a vector
+		        var lsV = Vector<double>.Build.DenseOfArray(Geometry.EdgeLengths);
 
-		/// <summary>
-		/// Get average concrete <see cref="PrincipalStressState"/>.
-		/// </summary>
-		public virtual PrincipalStressState ConcretePrincipalStresses { get; }
+		        // Calculate the shear stresses
+		        var tau = _localForces / (lsV * Geometry.Width);
 
-		/// <summary>
-		/// Get average <see cref="PrincipalStressState"/>.
-		/// </summary>
-		public PrincipalStressState AveragePrincipalStresses => PrincipalStressState.FromStress(AverageStresses);
+		        // Calculate the average stress
+		        double tauAvg = (-tau[0] + tau[1] - tau[2] + tau[3]) / 4;
+
+		        return new StressState(0, 0, tauAvg);
+	        }
+        }
+
+        /// <summary>
+        /// Get average concrete <see cref="PrincipalStressState"/>.
+        /// </summary>
+        public virtual PrincipalStressState ConcretePrincipalStresses
+        {
+	        get
+	        {
+		        double sig2;
+
+		        // Get shear stress
+		        var tau = AverageStresses.TauXY;
+
+		        // Get steel strengths
+		        double
+			        fyx = Reinforcement?.DirectionX?.Steel?.YieldStress ?? 0,
+			        fyy = Reinforcement?.DirectionY?.Steel?.YieldStress ?? 0;
+
+		        if (fyx.Approx(fyy))
+			        sig2 = -2 * tau.Abs();
+
+		        else
+		        {
+			        // Get relation of steel strengths
+			        var rLambda = Math.Sqrt(fyx / fyy);
+			        sig2 = -tau.Abs() * (rLambda + 1 / rLambda);
+		        }
+
+		        var theta1 = tau >= 0 ? Constants.PiOver4 : -Constants.PiOver4;
+
+		        return new PrincipalStressState(0, sig2, theta1);
+	        }
+        }
+
+        /// <summary>
+        /// Get average <see cref="PrincipalStressState"/>.
+        /// </summary>
+        public PrincipalStressState AveragePrincipalStresses => PrincipalStressState.FromStress(AverageStresses);
 
         /// <summary>
         /// Get the grip numbers of this.
@@ -315,13 +374,212 @@ namespace SPM.Elements
         }
 
         /// <summary>
-        /// Do analysis of panel.
+        /// Calculate transformation matrix
         /// </summary>
-        /// <param name="globalDisplacements">The global displacement vector.</param>
-        public virtual void Analysis(Vector<double> globalDisplacements = null)
+        private Matrix<double> CalculateTransformationMatrix()
         {
+            // Get the transformation matrix
+            // Direction cosines
+            var (m1, n1) = Geometry.Edge1.Angle.DirectionCosines();
+            var (m2, n2) = Geometry.Edge2.Angle.DirectionCosines();
+            var (m3, n3) = Geometry.Edge3.Angle.DirectionCosines();
+            var (m4, n4) = Geometry.Edge4.Angle.DirectionCosines();
+
+            // T matrix
+            _transMatrix = Matrix<double>.Build.DenseOfArray(new[,]
+            {
+                {m1, n1,  0,  0,  0,  0,  0,  0},
+                { 0,  0, m2, n2,  0,  0,  0,  0},
+                { 0,  0,  0,  0, m3, n3,  0,  0},
+                { 0,  0,  0,  0,  0,  0, m4, n4}
+            });
+
+            return _transMatrix;
         }
 
+        /// <summary>
+        /// Calculate panel stiffness
+        /// </summary>
+        private Matrix<double> CalculateStiffness()
+        {
+            // If the panel is rectangular
+            _localStiffness = Geometry.Rectangular ? RectangularPanelStiffness() : NonRectangularPanelStiffness();
+
+            return _localStiffness;
+        }
+
+        /// <summary>
+        /// Calculate panel stiffness if panel is rectangular.
+        /// <para>See: <seealso cref="PanelGeometry.Rectangular"/></para>
+        /// </summary>
+	    private Matrix<double> RectangularPanelStiffness()
+        {
+            // Get the dimensions
+            double
+                w = Geometry.Width,
+                a = Geometry.Dimensions.a,
+                b = Geometry.Dimensions.b;
+
+            // Calculate the parameters of the stiffness matrix
+            double
+                a_b = a / b,
+                b_a = b / a;
+
+            // Calculate Gc
+            double Gc = Concrete.Ec / 2.4;
+
+            // Calculate the stiffness matrix
+            return
+                Gc * w * Matrix<double>.Build.DenseOfArray(new[,]
+                {
+                    {a_b,  -1, a_b,  -1},
+                    { -1, b_a,  -1, b_a},
+                    {a_b,  -1, a_b,  -1},
+                    { -1, b_a,  -1, b_a}
+                });
+        }
+
+        /// <summary>
+        /// Calculate panel stiffness if panel is not rectangular.
+        /// <para>See: <seealso cref="PanelGeometry.Rectangular"/></para>
+        /// </summary>
+	    private Matrix<double> NonRectangularPanelStiffness()
+        {
+            // Get the dimensions
+            double[]
+                x = Geometry.Vertices.XCoordinates,
+                y = Geometry.Vertices.YCoordinates;
+
+            var (a, b, c, d) = Geometry.Dimensions;
+            double
+                w = Geometry.Width,
+                l1 = Geometry.Edge1.Length,
+                l2 = Geometry.Edge2.Length,
+                l3 = Geometry.Edge3.Length,
+                l4 = Geometry.Edge4.Length;
+
+            // Calculate Gc
+            double Gc = Concrete.Ec / 2.4;
+
+            // Equilibrium parameters
+            double
+                c1 = x[1] - x[0],
+                c2 = x[2] - x[1],
+                c3 = x[3] - x[2],
+                c4 = x[0] - x[3],
+                s1 = y[1] - y[0],
+                s2 = y[2] - y[1],
+                s3 = y[3] - y[2],
+                s4 = y[0] - y[3],
+                r1 = x[0] * y[1] - x[1] * y[0],
+                r2 = x[1] * y[2] - x[2] * y[1],
+                r3 = x[2] * y[3] - x[3] * y[2],
+                r4 = x[3] * y[0] - x[0] * y[3];
+
+            // Kinematic parameters
+            double
+                t1 = -b * c1 - c * s1,
+                t2 = a * s2 + d * c2,
+                t3 = b * c3 + c * s3,
+                t4 = -a * s4 - d * c4;
+
+            // Matrices to calculate the determinants
+            var km1 = Matrix<double>.Build.DenseOfArray(new[,]
+            {
+                {c2, c3, c4},
+                {s2, s3, s4},
+                {r2, r3, r4},
+            });
+
+            var km2 = Matrix<double>.Build.DenseOfArray(new[,]
+            {
+                {c1, c3, c4},
+                {s1, s3, s4},
+                {r1, r3, r4},
+            });
+
+            var km3 = Matrix<double>.Build.DenseOfArray(new[,]
+            {
+                {c1, c2, c4},
+                {s1, s2, s4},
+                {r1, r2, r4},
+            });
+
+            var km4 = Matrix<double>.Build.DenseOfArray(new[,]
+            {
+                {c1, c2, c3},
+                {s1, s2, s3},
+                {r1, r2, r3},
+            });
+
+            // Calculate the determinants
+            double
+                k1 = km1.Determinant(),
+                k2 = km2.Determinant(),
+                k3 = km3.Determinant(),
+                k4 = km4.Determinant();
+
+            // Calculate kf and ku
+            double
+                kf = k1 + k2 + k3 + k4,
+                ku = -t1 * k1 + t2 * k2 - t3 * k3 + t4 * k4;
+
+            // Calculate D
+            double D = 16 * Gc * w / (kf * ku);
+
+            // Get the vector B
+            var B = Vector<double>.Build.DenseOfArray(new[]
+            {
+                -k1 * l1, k2 * l2, -k3 * l3, k4 * l4
+            });
+
+            // Get the stiffness matrix
+            return
+                B.ToColumnMatrix() * D * B.ToRowMatrix();
+        }
+
+        /// <summary>
+        /// Calculate panel local forces.
+        /// </summary>
+        private Vector<double> CalculateLocalForces()
+        {
+            // Get the parameters
+            var up = Displacements;
+            var T = TransformationMatrix;
+            var Kl = LocalStiffness;
+
+            // Get the displacements in the direction of the edges
+            var ul = T * up;
+
+            // Calculate the vector of forces
+            _localForces = Kl * ul;
+
+            // Aproximate small values to zero
+            _localForces.CoerceZero(1E-6);
+
+            return _localForces;
+        }
+
+        /// <summary>
+        /// Calculate panel global forces.
+        /// </summary>
+        private Vector<double> CalculateGlobalForces()
+        {
+	        GlobalForces = TransformationMatrix.Transpose() * (_localForces ?? CalculateLocalForces());
+
+	        return GlobalForces;
+        }
+
+        /// <summary>
+        /// Set displacements and calculate forces.
+        /// </summary>
+        /// <param name="globalDisplacements">The global displacement <see cref="Vector"/>.</param>
+        public virtual void Analysis(Vector<double> globalDisplacements = null)
+        {
+            // Set displacements
+            if (globalDisplacements != null)
+                SetDisplacements(globalDisplacements);
+        }
 
         /// <summary>
         /// Return a panel object based on type of analysis.
@@ -340,13 +598,10 @@ namespace SPM.Elements
         /// <param name="model">The concrete <see cref="ConstitutiveModel"/>.</param>
         /// <param name="reinforcement">The <see cref="WebReinforcement"/>.</param>
         /// <param name="unit">The <see cref="LengthUnit"/> of <paramref name="width"/> and <paramref name="vertices"/>' coordinates.</param>
-        public static Panel Read(AnalysisType analysisType, ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, Node grip4, Vertices vertices, double width, Parameters concreteParameters, ConstitutiveModel model, WebReinforcement reinforcement = null, LengthUnit unit = LengthUnit.Millimeter)
-		{
-			if (analysisType is AnalysisType.Linear)
-				return new LinearPanel(objectId, number, grip1, grip2, grip3, grip4, vertices, width, concreteParameters, model, reinforcement, unit);
-
-			return new NonLinearPanel(objectId, number, grip1, grip2, grip3, grip4, vertices, width, concreteParameters, model, reinforcement, unit);
-		}
+        public static Panel Read(AnalysisType analysisType, ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, Node grip4, Vertices vertices, double width, Parameters concreteParameters, ConstitutiveModel model, WebReinforcement reinforcement = null, LengthUnit unit = LengthUnit.Millimeter) => 
+	        analysisType is AnalysisType.Linear 
+		        ? new Panel(objectId, number, grip1, grip2, grip3, grip4, vertices, width, concreteParameters, model, reinforcement, unit) 
+		        : new NLPanel(objectId, number, grip1, grip2, grip3, grip4, vertices, width, concreteParameters, model, reinforcement, unit);
 
         /// <summary>
         /// Return a panel object based on type of analysis.
@@ -365,13 +620,10 @@ namespace SPM.Elements
         /// <param name="model">The concrete <see cref="ConstitutiveModel"/>.</param>
         /// <param name="reinforcement">The <see cref="WebReinforcement"/>.</param>
         /// <param name="unit">The <see cref="LengthUnit"/> of <paramref name="width"/> and <paramref name="vertices"/>' coordinates.</param>
-        public static Panel Read(AnalysisType analysisType, ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, Node grip4, IEnumerable<Point3d> vertices, double width, Parameters concreteParameters, ConstitutiveModel model, WebReinforcement reinforcement = null, LengthUnit unit = LengthUnit.Millimeter)
-		{
-			if (analysisType is AnalysisType.Linear)
-				return new LinearPanel(objectId, number, grip1, grip2, grip3, grip4, vertices, width, concreteParameters, model, reinforcement, unit);
-
-			return new NonLinearPanel(objectId, number, grip1, grip2, grip3, grip4, vertices, width, concreteParameters, model, reinforcement, unit);
-		}
+        public static Panel Read(AnalysisType analysisType, ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, Node grip4, IEnumerable<Point3d> vertices, double width, Parameters concreteParameters, ConstitutiveModel model, WebReinforcement reinforcement = null, LengthUnit unit = LengthUnit.Millimeter) => 
+	        analysisType is AnalysisType.Linear 
+		        ? new Panel(objectId, number, grip1, grip2, grip3, grip4, vertices, width, concreteParameters, model, reinforcement, unit) 
+		        : new NLPanel(objectId, number, grip1, grip2, grip3, grip4, vertices, width, concreteParameters, model, reinforcement, unit);
 
         /// <summary>
         /// Return a panel object based on type of analysis.
@@ -387,15 +639,12 @@ namespace SPM.Elements
         /// <param name="model">The concrete <see cref="ConstitutiveModel"/>.</param>
         /// <param name="reinforcement">The <see cref="WebReinforcement"/>.</param>
         /// <param name="unit">The <see cref="LengthUnit"/> of <paramref name="width"/> and <paramref name="vertices"/>' coordinates.</param>
-        public static Panel Read(AnalysisType analysisType, ObjectId objectId, int number, IEnumerable<Node> nodes, IEnumerable<Point3d> vertices, double width, Parameters concreteParameters, ConstitutiveModel model, WebReinforcement reinforcement = null, LengthUnit unit = LengthUnit.Millimeter)
-		{
-			if (analysisType is AnalysisType.Linear)
-				return new LinearPanel(objectId, number, nodes, vertices, width, concreteParameters, model, reinforcement, unit);
+        public static Panel Read(AnalysisType analysisType, ObjectId objectId, int number, IEnumerable<Node> nodes, IEnumerable<Point3d> vertices, double width, Parameters concreteParameters, ConstitutiveModel model, WebReinforcement reinforcement = null, LengthUnit unit = LengthUnit.Millimeter) => 
+	        analysisType is AnalysisType.Linear 
+		        ? new Panel(objectId, number, nodes, vertices, width, concreteParameters, model, reinforcement, unit) 
+		        : new NLPanel(objectId, number, nodes, vertices, width, concreteParameters, model, reinforcement, unit);
 
-			return new NonLinearPanel(objectId, number, nodes, vertices, width, concreteParameters, model, reinforcement, unit);
-		}
-
-		/// <summary>
+        /// <summary>
         /// Returns true if <paramref name="other"/>'s <see cref="Geometry"/> is equal.
         /// </summary>
         /// <param name="other">The other <see cref="Panel"/> object to compare.</param>

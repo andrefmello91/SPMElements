@@ -8,7 +8,6 @@ using MathNet.Numerics.LinearAlgebra;
 using MathNet.Numerics.LinearAlgebra.Double;
 using Material.Concrete;
 using Material.Concrete.Biaxial;
-using Material.Reinforcement;
 using Material.Reinforcement.Biaxial;
 using MathNet.Numerics;
 using OnPlaneComponents;
@@ -26,6 +25,7 @@ namespace SPM.Elements
 		// Auxiliary fields
 		private Matrix<double> _transMatrix, _localStiffness;
 		private Vector<double> _localForces;
+		protected Vector<double> GlobalForces;
 
         /// <summary>
         /// Get <see cref="PanelGeometry"/> of this.
@@ -63,9 +63,23 @@ namespace SPM.Elements
         public Node Grip4 { get; }
 
         /// <summary>
+        /// Get transformation <see cref="Matrix"/>.
+        /// </summary>
+        private Matrix<double> TransformationMatrix => _transMatrix ?? CalculateTransformationMatrix();
+
+        /// <summary>
+        /// Get/set local stiffness <see cref="Matrix"/>.
+        /// </summary>
+        public virtual Matrix<double> LocalStiffness
+        {
+	        get => _localStiffness ?? CalculateStiffness();
+	        set => _localStiffness = value;
+        }
+
+        /// <summary>
 		/// Get global stiffness <see cref="Matrix"/>.
 		/// </summary>
-		public virtual Matrix<double> GlobalStiffness => TransformationMatrix.Transpose() * LocalStiffness * TransformationMatrix;
+        public virtual Matrix<double> GlobalStiffness => TransformationMatrix.Transpose() * LocalStiffness * TransformationMatrix;
 
         /// <summary>
         /// Get/set global displacement <see cref="Vector"/>.
@@ -73,9 +87,14 @@ namespace SPM.Elements
         public Vector<double> Displacements { get; protected set; }
 
         /// <summary>
-        /// Get/set global force <see cref="Vector"/>.
+        /// Get local force <see cref="Vector"/>.
         /// </summary>
-        public virtual Vector<double> Forces => TransformationMatrix.Transpose() * _localForces;
+        private Vector<double> LocalForces => _localForces ?? CalculateLocalForces();
+
+        /// <summary>
+        /// Get global force <see cref="Vector"/>.
+        /// </summary>
+        public virtual Vector<double> Forces => GlobalForces ?? CalculateGlobalForces();
 
         /// <summary>
         /// Get average <see cref="StressState"/>.
@@ -88,7 +107,7 @@ namespace SPM.Elements
 		        var lsV = Vector<double>.Build.DenseOfArray(Geometry.EdgeLengths);
 
 		        // Calculate the shear stresses
-		        var tau = _localForces / (lsV * Geometry.Width);
+		        var tau = LocalForces / (lsV * Geometry.Width);
 
 		        // Calculate the average stress
 		        double tauAvg = (-tau[0] + tau[1] - tau[2] + tau[3]) / 4;
@@ -97,39 +116,39 @@ namespace SPM.Elements
 	        }
         }
 
-		/// <summary>
-		/// Get average concrete <see cref="PrincipalStressState"/>.
-		/// </summary>
-		public virtual PrincipalStressState ConcretePrincipalStresses
-		{
-			get
-			{
-				double sig2;
+        /// <summary>
+        /// Get average concrete <see cref="PrincipalStressState"/>.
+        /// </summary>
+        public virtual PrincipalStressState ConcretePrincipalStresses
+        {
+	        get
+	        {
+		        double sig2;
 
-				// Get shear stress
-				var tau = AverageStresses.TauXY;
+		        // Get shear stress
+		        var tau = AverageStresses.TauXY;
 
-				// Get steel strengths
-				double
-					fyx = Reinforcement?.DirectionX?.Steel?.YieldStress ?? 0,
-					fyy = Reinforcement?.DirectionY?.Steel?.YieldStress ?? 0;
+		        // Get steel strengths
+		        double
+			        fyx = Reinforcement?.DirectionX?.Steel?.YieldStress ?? 0,
+			        fyy = Reinforcement?.DirectionY?.Steel?.YieldStress ?? 0;
 
-				if (fyx.Approx(fyy))
-					sig2 = -2 * tau.Abs();
+		        if (fyx.Approx(fyy))
+			        sig2 = -2 * tau.Abs();
 
-				else
-				{
-					// Get relation of steel strengths
-					var rLambda = Math.Sqrt(fyx / fyy);
-					sig2 = -tau.Abs() * (rLambda + 1 / rLambda);
-				}
+		        else
+		        {
+			        // Get relation of steel strengths
+			        var rLambda = Math.Sqrt(fyx / fyy);
+			        sig2 = -tau.Abs() * (rLambda + 1 / rLambda);
+		        }
 
-				var theta1 = tau >= 0 ? Constants.PiOver4 : -Constants.PiOver4;
+		        var theta1 = tau >= 0 ? Constants.PiOver4 : -Constants.PiOver4;
 
-				return new PrincipalStressState(0, sig2, theta1);
-			}
-		}
-        
+		        return new PrincipalStressState(0, sig2, theta1);
+	        }
+        }
+
         /// <summary>
         /// Get average <see cref="PrincipalStressState"/>.
         /// </summary>
@@ -143,22 +162,12 @@ namespace SPM.Elements
         /// <summary>
         /// Get the DoF index of panel <see cref="Grips"/>.
         /// </summary>
-        public override int[] DoFIndex => Indexes ?? GlobalIndexes(Grips);
+        public override int[] DoFIndex => _globalIndexes ?? GlobalIndexes(Grips);
 
 		/// <summary>
         /// Get absolute maximum panel force.
         /// </summary>
         public double MaxForce => Forces.AbsoluteMaximum();
-
-		/// <summary>
-		/// Get transformation <see cref="Matrix"/>.
-		/// </summary>
-		private Matrix<double> TransformationMatrix => _transMatrix ?? CalculateTransformationMatrix();
-
-		/// <summary>
-		/// Get/set local stiffness <see cref="Matrix"/>.
-		/// </summary>
-		private Matrix<double> LocalStiffness => _localStiffness ?? CalculateStiffness();
 
         /// <summary>
         /// Base panel object.
@@ -219,7 +228,7 @@ namespace SPM.Elements
         /// <param name="grip3">The center <see cref="Node"/> of top edge</param>
         /// <param name="grip4">The center <see cref="Node"/> of left edge</param>
         /// <param name="vertices">The collection of <see cref="Point3d"/> panel vertices.</param>
-        /// <param name="width">Panel width, in <paramref name="unit"/>.</param>
+        /// <param name="width">Panel width.</param>
         /// <param name="concreteParameters">The concrete parameters <see cref="Parameters"/>.</param>
         /// <param name="model">The concrete <see cref="ConstitutiveModel"/>.</param>
         /// <param name="reinforcement">The <see cref="WebReinforcement"/>.</param>
@@ -321,7 +330,7 @@ namespace SPM.Elements
 	        : this (objectId, number, nodes, new Vertices(vertices, unit), Length.From(width, unit), concreteParameters, model, reinforcement)
         {
         }
-        
+
         /// <summary>
         /// Set panel displacements from global displacement vector.
         /// </summary>
@@ -367,20 +376,6 @@ namespace SPM.Elements
 	        Geometry.Edge2.SetStringerDimension(hs[1]);
 	        Geometry.Edge3.SetStringerDimension(hs[2]);
 	        Geometry.Edge4.SetStringerDimension(hs[3]);
-        }
-
-        /// <summary>
-        /// Do analysis of panel.
-        /// </summary>
-        /// <param name="globalDisplacements">The global displacement vector.</param>
-        public virtual void Analysis(Vector<double> globalDisplacements = null)
-        {
-	        // Set displacements
-	        if (globalDisplacements != null)
-		        SetDisplacements(globalDisplacements);
-
-	        // Calculate local forces
-	        _localForces = CalculateForces();
         }
 
         /// <summary>
@@ -551,7 +546,7 @@ namespace SPM.Elements
         /// <summary>
         /// Calculate panel local forces.
         /// </summary>
-        private Vector<double> CalculateForces()
+        private Vector<double> CalculateLocalForces()
         {
             // Get the parameters
             var up = Displacements;
@@ -562,12 +557,33 @@ namespace SPM.Elements
             var ul = T * up;
 
             // Calculate the vector of forces
-            var fl = Kl * ul;
+            _localForces = Kl * ul;
 
             // Aproximate small values to zero
-            fl.CoerceZero(0.000001);
+            _localForces.CoerceZero(1E-6);
 
-            return fl;
+            return _localForces;
+        }
+
+        /// <summary>
+        /// Calculate panel global forces.
+        /// </summary>
+        private Vector<double> CalculateGlobalForces()
+        {
+	        GlobalForces = TransformationMatrix.Transpose() * LocalForces;
+
+	        return GlobalForces;
+        }
+
+        /// <summary>
+        /// Set displacements and calculate forces.
+        /// </summary>
+        /// <param name="globalDisplacements">The global displacement <see cref="Vector"/>.</param>
+        public virtual void Analysis(Vector<double> globalDisplacements = null)
+        {
+            // Set displacements
+            if (globalDisplacements != null)
+                SetDisplacements(globalDisplacements);
         }
 
         /// <summary>
@@ -590,7 +606,7 @@ namespace SPM.Elements
         public static Panel Read(AnalysisType analysisType, ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, Node grip4, Vertices vertices, double width, Parameters concreteParameters, ConstitutiveModel model, WebReinforcement reinforcement = null, LengthUnit unit = LengthUnit.Millimeter) => 
 	        analysisType is AnalysisType.Linear 
 		        ? new Panel(objectId, number, grip1, grip2, grip3, grip4, vertices, width, concreteParameters, model, reinforcement, unit) 
-		        : new NonLinearPanel(objectId, number, grip1, grip2, grip3, grip4, vertices, width, concreteParameters, model, reinforcement, unit);
+		        : new NLPanel(objectId, number, grip1, grip2, grip3, grip4, vertices, width, concreteParameters, model, reinforcement, unit);
 
         /// <summary>
         /// Return a panel object based on type of analysis.
@@ -612,7 +628,7 @@ namespace SPM.Elements
         public static Panel Read(AnalysisType analysisType, ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, Node grip4, IEnumerable<Point3d> vertices, double width, Parameters concreteParameters, ConstitutiveModel model, WebReinforcement reinforcement = null, LengthUnit unit = LengthUnit.Millimeter) => 
 	        analysisType is AnalysisType.Linear 
 		        ? new Panel(objectId, number, grip1, grip2, grip3, grip4, vertices, width, concreteParameters, model, reinforcement, unit) 
-		        : new NonLinearPanel(objectId, number, grip1, grip2, grip3, grip4, vertices, width, concreteParameters, model, reinforcement, unit);
+		        : new NLPanel(objectId, number, grip1, grip2, grip3, grip4, vertices, width, concreteParameters, model, reinforcement, unit);
 
         /// <summary>
         /// Return a panel object based on type of analysis.
@@ -623,7 +639,7 @@ namespace SPM.Elements
         /// <param name="number">The panel number.</param>
         /// <param name="nodes">The collection containing all <see cref="Node"/>'s of SPM model.</param>
         /// <param name="vertices">The collection of <see cref="Point3d"/> panel vertices.</param>
-        /// <param name="width">Panel width, in <paramref name="geometryUnit"/>.</param>
+        /// <param name="width">Panel width.</param>
         /// <param name="concreteParameters">The concrete parameters <see cref="Parameters"/>.</param>
         /// <param name="model">The concrete <see cref="ConstitutiveModel"/>.</param>
         /// <param name="reinforcement">The <see cref="WebReinforcement"/>.</param>
@@ -631,7 +647,7 @@ namespace SPM.Elements
         public static Panel Read(AnalysisType analysisType, ObjectId objectId, int number, IEnumerable<Node> nodes, IEnumerable<Point3d> vertices, double width, Parameters concreteParameters, ConstitutiveModel model, WebReinforcement reinforcement = null, LengthUnit unit = LengthUnit.Millimeter) => 
 	        analysisType is AnalysisType.Linear 
 		        ? new Panel(objectId, number, nodes, vertices, width, concreteParameters, model, reinforcement, unit) 
-		        : new NonLinearPanel(objectId, number, nodes, vertices, width, concreteParameters, model, reinforcement, unit);
+		        : new NLPanel(objectId, number, nodes, vertices, width, concreteParameters, model, reinforcement, unit);
 
         /// <summary>
         /// Returns true if <paramref name="other"/>'s <see cref="Geometry"/> is equal.

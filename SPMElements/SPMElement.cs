@@ -6,7 +6,7 @@ namespace SPM.Elements
 	/// <summary>
     /// SPM element types.
     /// </summary>
-	public enum ElementTypes
+	public enum ElementType
 	{
 		Default,
 		Node,

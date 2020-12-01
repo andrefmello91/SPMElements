@@ -102,6 +102,45 @@ namespace SPM.Elements
 			/// <param name="intPoint">The <see cref="IntegrationPoint"/>.</param>
 			protected abstract (double e, double de) CompressedCase(double normalForce, IntegrationPoint intPoint);
 
+			// Tension Cases
+			/// <summary>
+			/// Tension case 1: uncracked.
+			/// </summary>
+			/// <param name="N">Normal force, in N.</param>
+			protected (double e, double de) UncrackedState(double N)
+			{
+				double
+					t1 = Stiffness,
+					e = N / t1,
+					de = 1 / t1;
+
+				return
+					(e, de);
+			}
+
+			/// <summary>
+			/// Tension case 2: Cracked with not yielding steel.
+			/// </summary>
+			/// <param name="N">Normal force, in N.</param>
+			protected (double e, double de)? CrackedState(double N) => Solver(N, Concrete.ecr, Steel?.YieldStrain ?? Concrete.ecr);
+
+			/// <summary>
+			/// Tension case 3: Cracked with yielding steel.
+			/// </summary>
+			/// <param name="N">Normal force, in N.</param>
+			protected (double e, double de) YieldingSteelState(double N)
+			{
+				double
+					ey = Steel?.YieldStrain ?? 0,
+					Nyr = Reinforcement?.YieldForce ?? 0,
+					t1 = Stiffness,
+					e = ey + (N - Nyr) / t1,
+					de = 1 / t1;
+
+				return
+					(e, de);
+			}
+
 			/// <summary>
 			/// Solver to find strain given force.
 			/// </summary>
@@ -189,11 +228,10 @@ namespace SPM.Elements
 						return
 							new MCFTRelations(concrete, reinforcement);
 
-					case ConstitutiveModel.DSFM:
-						throw new NotImplementedException(); //Implement DSFM
+					default:
+						return 
+							new DSFMRelations(concrete, reinforcement);
 				}
-
-				return null;
 			}
 		}
 	}

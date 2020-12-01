@@ -63,45 +63,6 @@ namespace SPM.Elements
 			/// <inheritdoc/>
 			protected override (double e, double de) CompressedCase(double normalForce, IntegrationPoint intPoint) => normalForce > MaxCompressiveForce ? ConcreteNotCrushedState(normalForce) : ConcreteCrushingState(normalForce);
 
-			// Tension Cases
-			/// <summary>
-			/// Tension case 1: uncracked.
-			/// </summary>
-			/// <param name="N">Normal force, in N.</param>
-			private (double e, double de) UncrackedState(double N)
-			{
-                double
-                    t1 = Stiffness,
-                    e  = N / t1,
-					de = 1 / t1;
-
-				return
-					(e, de);
-			}
-
-			/// <summary>
-			/// Tension case 2: Cracked with not yielding steel.
-			/// </summary>
-			/// <param name="N">Normal force, in N.</param>
-			private (double e, double de)? CrackedState(double N) => Solver(N, Concrete.ecr, Steel?.YieldStrain ?? Concrete.ecr);
-
-			/// <summary>
-			/// Tension case 3: Cracked with yielding steel.
-			/// </summary>
-			/// <param name="N">Normal force, in N.</param>
-			private (double e, double de) YieldingSteelState(double N)
-			{
-				double
-					ey  = Steel?.YieldStrain ?? 0,
-					Nyr = Reinforcement?.YieldForce ?? 0,
-					t1  = Stiffness,
-                    e   = ey + (N - Nyr) / t1,
-					de  = 1 / t1;
-
-				return
-					(e, de);
-			}
-
 			// Compression Cases
 			/// <summary>
 			/// Compression case 1: concrete not crushed.

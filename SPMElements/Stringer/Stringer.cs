@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.Geometry;
+using Extensions.LinearAlgebra;
 using Extensions.Number;
 using MathNet.Numerics.LinearAlgebra;
 using MathNet.Numerics.LinearAlgebra.Double;
@@ -97,7 +98,7 @@ namespace SPM.Elements
 		/// <summary>
         /// Get concrete area.
         /// </summary>
-        public double ConcreteArea => Geometry.Area - (Reinforcement?.Area ?? 0);
+        public virtual double ConcreteArea => Geometry.Area;
 
 		/// <summary>
         /// Get global stiffness <see cref="Matrix"/>.
@@ -279,16 +280,16 @@ namespace SPM.Elements
         private Matrix<double> CalculateStiffness()
         {
 	        // Calculate the constant factor of stiffness
-	        double EcA_L = Concrete.Stiffness / Geometry.Length;
+	        var k = Concrete.Stiffness / (3 * Geometry.Length);
 
 	        // Calculate the local stiffness matrix
 	        _localStiffness =
-		        EcA_L * Matrix<double>.Build.DenseOfArray(new double[,]
+		        k * new double[,]
 		        {
-			        {  4, -6,  2 },
-			        { -6, 12, -6 },
-			        {  2, -6,  4 }
-		        });
+			        {  7, -8,  1 },
+			        { -8, 16, -8 },
+			        {  1, -8,  7 }
+		        }.ToMatrix();
 
 	        return _localStiffness;
         }

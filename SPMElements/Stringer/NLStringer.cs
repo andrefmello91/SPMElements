@@ -29,10 +29,13 @@ namespace SPM.Elements
 				{  0, -1, 1}
 			});
 
-        /// <summary>
-        /// Get integration points.
-        /// </summary>
-        private IntegrationPoint[] IntPoints { get; }
+		/// <inheritdoc/>
+		public override double ConcreteArea => Geometry.Area - (Reinforcement?.Area ?? 0);
+
+		/// <summary>
+		/// Get integration points.
+		/// </summary>
+		private IntegrationPoint[] IntPoints { get; }
 
         /// <summary>
         /// Get <see cref="NLRelations"/>.

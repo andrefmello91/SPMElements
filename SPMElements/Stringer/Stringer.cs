@@ -33,7 +33,7 @@ namespace SPM.Elements
 		}
 
 		// Auxiliary fields
-		private   Matrix<double> _transMatrix, _localStiffness;
+		protected Matrix<double> TransMatrix, LocStiffness;
 
         /// <summary>
         /// Get the initial <see cref="Node"/> of this.
@@ -58,7 +58,7 @@ namespace SPM.Elements
         /// <summary>
         /// Get/set the <see cref="UniaxialConcrete"/> of this.
         /// </summary>
-        public UniaxialConcrete Concrete { get; }
+        public UniaxialConcrete Concrete { get; protected set; }
 
         /// <summary>
         /// Get the <see cref="UniaxialReinforcement"/> of this.
@@ -68,7 +68,7 @@ namespace SPM.Elements
         /// <summary>
         /// Get local stiffness <see cref="Matrix"/>.
         /// </summary>
-        public virtual Matrix<double> LocalStiffness => _localStiffness ?? CalculateStiffness();
+        public virtual Matrix<double> LocalStiffness => LocStiffness ?? CalculateStiffness();
 
         /// <summary>
         /// Get/set local force <see cref="Vector"/>.
@@ -88,19 +88,14 @@ namespace SPM.Elements
         /// <summary>
         /// Get the transformation <see cref="Matrix"/>.
         /// </summary>
-        public Matrix<double> TransformationMatrix => _transMatrix ?? CalculateTransformationMatrix();
+        public Matrix<double> TransformationMatrix => TransMatrix ?? CalculateTransformationMatrix();
 
         /// <summary>
         /// Get the DoF index of stringer <see cref="Grips"/>.
         /// </summary>
         public override int[] DoFIndex => Indexes ?? GlobalIndexes(Grips);
 
-		/// <summary>
-        /// Get concrete area.
-        /// </summary>
-        public virtual double ConcreteArea => Geometry.Area;
-
-		/// <summary>
+        /// <summary>
         /// Get global stiffness <see cref="Matrix"/>.
         /// </summary>
 		public Matrix<double> GlobalStiffness => TransformationMatrix.Transpose() * LocalStiffness * TransformationMatrix;
@@ -187,7 +182,7 @@ namespace SPM.Elements
 	        Grip3         = grip3;
 	        Geometry      = new StringerGeometry(grip1.Position, grip3.Position, width, height);
 	        Reinforcement = reinforcement;
-	        Concrete      = new UniaxialConcrete(concreteParameters, ConcreteArea, model);
+	        Concrete      = new UniaxialConcrete(concreteParameters, Geometry.Area, model);
         }
 
         /// <summary>
@@ -228,7 +223,7 @@ namespace SPM.Elements
 	        Grip2         = nodes.GetByPosition(Geometry.CenterPoint);
 	        Grip3         = nodes.GetByPosition(grip3Position);
 	        Reinforcement = reinforcement;
-	        Concrete      = new UniaxialConcrete(concreteParameters, ConcreteArea, model);
+	        Concrete      = new UniaxialConcrete(concreteParameters, Geometry.Area, model);
         }
 
         /// <summary>
@@ -240,14 +235,14 @@ namespace SPM.Elements
 	        var (l, m) = Geometry.Angle.DirectionCosines();
 
 	        // Obtain the transformation matrix
-	        _transMatrix = Matrix<double>.Build.DenseOfArray(new [,]
+	        TransMatrix = Matrix<double>.Build.DenseOfArray(new [,]
 	        {
 		        {l, m, 0, 0, 0, 0 },
 		        {0, 0, l, m, 0, 0 },
 		        {0, 0, 0, 0, l, m }
 	        });
 
-	        return _transMatrix;
+	        return TransMatrix;
         }
 
         /// <summary>
@@ -277,13 +272,13 @@ namespace SPM.Elements
         /// Calculate local stiffness <see cref="Matrix"/>.
         /// </summary>
         /// <returns></returns>
-        private Matrix<double> CalculateStiffness()
+        protected Matrix<double> CalculateStiffness()
         {
 	        // Calculate the constant factor of stiffness
 	        var k = Concrete.Stiffness / (3 * Geometry.Length);
 
 	        // Calculate the local stiffness matrix
-	        _localStiffness =
+	        LocStiffness =
 		        k * new double[,]
 		        {
 			        {  7, -8,  1 },
@@ -291,7 +286,7 @@ namespace SPM.Elements
 			        {  1, -8,  7 }
 		        }.ToMatrix();
 
-	        return _localStiffness;
+	        return LocStiffness;
         }
 
         /// <summary>

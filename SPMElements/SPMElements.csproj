@@ -110,11 +110,7 @@
     <Compile Include="Panel\Properties\Vertices.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SPMElement.cs" />
-    <Compile Include="Stringer\Properties\IntegrationPoint.cs" />
     <Compile Include="Stringer\NLStringer.cs" />
-    <Compile Include="Stringer\Relations\DSFMRelations.cs" />
-    <Compile Include="Stringer\Relations\MCFTRelations.cs" />
-    <Compile Include="Stringer\Relations\NLRelations.cs" />
     <Compile Include="Stringer\Stringer.cs" />
     <Compile Include="Stringer\Properties\StringerGeometry.cs" />
   </ItemGroup>

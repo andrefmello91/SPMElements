@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.Geometry;
+using Extensions.LinearAlgebra;
 using Extensions.Number;
 using MathNet.Numerics.LinearAlgebra;
 using MathNet.Numerics.LinearAlgebra.Double;
@@ -104,7 +105,7 @@ namespace SPM.Elements
 	        get
 	        {
 		        // Get the dimensions as a vector
-		        var lsV = Vector<double>.Build.DenseOfArray(Geometry.EdgeLengths);
+		        var lsV = Geometry.EdgeLengths.ToVector();
 
 		        // Calculate the shear stresses
 		        var tau = LocalForces / (lsV * Geometry.Width);
@@ -391,13 +392,13 @@ namespace SPM.Elements
             var (m4, n4) = Geometry.Edge4.Angle.DirectionCosines();
 
             // T matrix
-            _transMatrix = Matrix<double>.Build.DenseOfArray(new[,]
+            _transMatrix = new[,]
             {
                 {m1, n1,  0,  0,  0,  0,  0,  0},
                 { 0,  0, m2, n2,  0,  0,  0,  0},
                 { 0,  0,  0,  0, m3, n3,  0,  0},
                 { 0,  0,  0,  0,  0,  0, m4, n4}
-            });
+            }.ToMatrix();
 
             return _transMatrix;
         }
@@ -435,13 +436,13 @@ namespace SPM.Elements
 
             // Calculate the stiffness matrix
             return
-                Gc * w * Matrix<double>.Build.DenseOfArray(new[,]
+                Gc * w * new[,]
                 {
                     {a_b,  -1, a_b,  -1},
                     { -1, b_a,  -1, b_a},
                     {a_b,  -1, a_b,  -1},
                     { -1, b_a,  -1, b_a}
-                });
+                }.ToMatrix();
         }
 
         /// <summary>
@@ -489,33 +490,33 @@ namespace SPM.Elements
                 t4 = -a * s4 - d * c4;
 
             // Matrices to calculate the determinants
-            var km1 = Matrix<double>.Build.DenseOfArray(new[,]
+            var km1 = new[,]
             {
                 {c2, c3, c4},
                 {s2, s3, s4},
                 {r2, r3, r4},
-            });
+            }.ToMatrix();
 
-            var km2 = Matrix<double>.Build.DenseOfArray(new[,]
+            var km2 = new[,]
             {
                 {c1, c3, c4},
                 {s1, s3, s4},
                 {r1, r3, r4},
-            });
+            }.ToMatrix();
 
-            var km3 = Matrix<double>.Build.DenseOfArray(new[,]
+            var km3 = new[,]
             {
                 {c1, c2, c4},
                 {s1, s2, s4},
                 {r1, r2, r4},
-            });
+            }.ToMatrix();
 
-            var km4 = Matrix<double>.Build.DenseOfArray(new[,]
+            var km4 = new[,]
             {
                 {c1, c2, c3},
                 {s1, s2, s3},
                 {r1, r2, r3},
-            });
+            }.ToMatrix();
 
             // Calculate the determinants
             double
@@ -533,10 +534,10 @@ namespace SPM.Elements
             double D = 16 * Gc * w / (kf * ku);
 
             // Get the vector B
-            var B = Vector<double>.Build.DenseOfArray(new[]
+            var B = new[]
             {
                 -k1 * l1, k2 * l2, -k3 * l3, k4 * l4
-            });
+            }.ToVector();
 
             // Get the stiffness matrix
             return

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.Geometry;
+using Extensions.LinearAlgebra;
 using Material.Concrete;
 using Material.Reinforcement.Biaxial;
 using MathNet.Numerics.LinearAlgebra;
@@ -18,7 +19,7 @@ namespace SPM.Elements
     public class NLPanel : Panel
     {
 		// Auxiliary fields
-		private Matrix<double> _BA, _Q, _Pc, _Ps, _Dc, _Ds;
+		private Matrix<double> _BA;
 
         /// <summary>
         /// Get <see cref="Membrane"/> integration points.
@@ -48,29 +49,8 @@ namespace SPM.Elements
         /// <inheritdoc/>
         public override Vector<double> Forces => GlobalForces;
 
-		/// <inheritdoc/>
-		public override Matrix<double> GlobalStiffness
-	    {
-		    get
-		    {
-				if (_Dc is null || _Ds is null)
-					(_Dc, _Ds) = InitialMaterialStiffness();
-
-                Matrix<double>
-				    BA = _BA ?? CalculateBA(),
-				    Pc = _Pc ?? CalculateP().Pc,
-				    Ps = _Ps ?? CalculateP().Ps,
-				    Q  = _Q  ?? CalculateQ();
-
-			    var QPs = Q * Ps;
-			    var QPc = Q * Pc;
-
-			    var kc = QPc * _Dc * BA;
-			    var ks = QPs * _Ds * BA;
-
-			    return kc + ks;
-		    }
-	    }
+        /// <inheritdoc/>
+        public override Matrix<double> GlobalStiffness => InitialStiffness();
 
 	    /// <inheritdoc/>
 	    public override PrincipalStressState ConcretePrincipalStresses
@@ -99,12 +79,12 @@ namespace SPM.Elements
 			    var sigma = Stresses;
 
 			    // Calculate average stresses
-			    double
-				    sigxm = (sigma[0] + sigma[3] + sigma[6] + sigma[9]) / 4,
-				    sigym = (sigma[1] + sigma[4] + sigma[7] + sigma[10]) / 4,
-				    sigxym = (sigma[2] + sigma[5] + sigma[8] + sigma[11]) / 4;
+			    var avg = new double[3];
 
-			    return new StressState(sigxm, sigym, sigxym);
+			    for (int i = 0; i < 3; i++)
+				    avg[i] = 0.25 * (sigma[i] + sigma[i + 3] + sigma[i + 6] + sigma[i + 9]);
+
+			    return new StressState(avg[0], avg[1], avg[2]);
 		    }
 	    }
 
@@ -201,23 +181,9 @@ namespace SPM.Elements
 	        if (globalDisplacements != null)
 		        SetDisplacements(globalDisplacements);
 
-	        // Get the vector strains and stresses
-	        var ev = StrainVector;
-
-	        // Calculate the material matrix of each int. point by MCFT
-	        for (int i = 0; i < 4; i++)
-	        {
-		        // Get the strains and stresses
-		        var e = StrainState.FromVector(ev.SubVector(3 * i, 3));
-
-		        // Calculate stresses by MCFT
-		        IntegrationPoints[i].Calculate(e);
-	        }
-
 	        // Calculate stresses, forces and update stiffness
 	        CalculateStresses();
 	        CalculateForces();
-	        UpdateStiffness();
         }
 
         /// <summary>
@@ -247,60 +213,38 @@ namespace SPM.Elements
 			    d_2t1 = d_t1 / 2;
 
 		    // Create A matrix
-		    var A = Matrix<double>.Build.DenseOfArray(new[,]
+		    var A = new[,]
 		    {
 			    {   d_t1,     0,   b_t1,     0, -d_t1,      0, -b_t1,      0 },
 			    {      0, -a_t1,      0, -c_t1,     0,   a_t1,     0,   c_t1 },
 			    { -a_2t1, d_2t1, -c_2t1, b_2t1, a_2t1, -d_2t1, c_2t1, -b_2t1 },
 			    { - a_t2,     0,   a_t2,     0, -a_t2,      0,  a_t2,      0 },
 			    {      0,  b_t3,      0, -b_t3,     0,   b_t3,     0,  -b_t3 }
-		    });
+		    }.ToMatrix();
 
 		    // Calculate the components of B matrix
 		    double
 			    c_a = c / a,
-			    d_b = d / b,
-			    a2_b = 2 * a / b,
-			    b2_a = 2 * b / a,
-			    c2_b = 2 * c / b,
-			    d2_a = 2 * d / a;
+			    d_b = d / b;
 
-            // Create B matrix
-            //var B = Matrix<double>.Build.DenseOfArray(new[,]
-            //{
-            // {1, 0, 0,  -c_a,     0 },
-            // {0, 1, 0,     0,    -1 },
-            // {0, 0, 2,  b2_a,  c2_b },
-            // {1, 0, 0,     1,     0 },
-            // {0, 1, 0,     0,   d_b },
-            // {0, 0, 2, -d2_a, -a2_b },
-            // {1, 0, 0,   c_a,     0 },
-            // {0, 1, 0,     0,     1 },
-            // {0, 0, 2, -b2_a, -c2_b },
-            // {1, 0, 0,    -1,     0 },
-            // {0, 1, 0,     0,  -d_b },
-            // {0, 0, 2,  d2_a,  a2_b }
-            //});
-
-            var B = Matrix<double>.Build.DenseOfArray(new[,]
+			// Create B matrix
+            var B = new[,]
             {
-             {1, 0, 0, -c_a,    0 },
-             {0, 1, 0,    0,   -1 },
-             {0, 0, 2,    0,    0 },
-             {1, 0, 0,    1,    0 },
-             {0, 1, 0,    0,  d_b },
-             {0, 0, 2,    0,    0 },
-             {1, 0, 0,  c_a,    0 },
-             {0, 1, 0,    0,    1 },
-             {0, 0, 2,    0,    0 },
-             {1, 0, 0,   -1,    0 },
-             {0, 1, 0,    0, -d_b },
-             {0, 0, 2,    0,    0 }
-            });
+	             {1, 0, 0, -c_a,    0 },
+	             {0, 1, 0,    0,   -1 },
+	             {0, 0, 2,    0,    0 },
+	             {1, 0, 0,    1,    0 },
+	             {0, 1, 0,    0,  d_b },
+	             {0, 0, 2,    0,    0 },
+	             {1, 0, 0,  c_a,    0 },
+	             {0, 1, 0,    0,    1 },
+	             {0, 0, 2,    0,    0 },
+	             {1, 0, 0,   -1,    0 },
+	             {0, 1, 0,    0, -d_b },
+	             {0, 0, 2,    0,    0 }
+            }.ToMatrix();
 
-            _BA = B * A;
-
-		    return _BA;
+            return B * A;
 	    }
 
         /// <summary>
@@ -328,7 +272,8 @@ namespace SPM.Elements
 			    MacMt4 = -a * c - t4;
 
 		    // Create Q matrix
-		    _Q = 1 / Tt4 * Matrix<double>.Build.DenseOfArray(new[,]
+		    return
+			    1.0 / Tt4 * new[,]
 			    {
 				    {  a2,     bc,  bdMt4, -ab, -a2,    -bc, MbdMt4,  ab },
 				    {   0,    Tt4,      0,   0,   0,      0,      0,   0 },
@@ -338,9 +283,7 @@ namespace SPM.Elements
 				    {   0,      0,      0,   0,   0,    Tt4,      0,   0 },
 				    {   0,      0,      0,   0,   0,      0,    Tt4,   0 },
 				    {  ab, MacMt4,    -ad, -b2, -ab,  acMt4,     ad,  b2 }
-			    });
-
-		    return _Q;
+			    }.ToMatrix();
 	    }
 
         /// <summary>
@@ -351,17 +294,17 @@ namespace SPM.Elements
 		    // Get dimensions
 		    double[]
 			    x = Geometry.Vertices.XCoordinates,
-			    y = Geometry.Vertices.YCoordinates;
-
-		    double t = Geometry.Width;
-		    var c = Geometry.StringerDimensions;
+			    y = Geometry.Vertices.YCoordinates,
+			    c = Geometry.StringerDimensions;
+			
+		    var t = Geometry.Width;
 
 		    // Create P matrices
 		    var Pc = Matrix<double>.Build.Dense(8, 12);
 		    var Ps = Matrix<double>.Build.Dense(8, 12);
 
-		    // Calculate the components of Pc
-		    Pc[0, 0] = Pc[1, 2] = t * (y[1] - y[0]);
+			// Calculate the components of Pc
+			Pc[0, 0] = Pc[1, 2] = t * (y[1] - y[0]);
 		    Pc[0, 2] = t * (x[0] - x[1]);
 		    Pc[1, 1] = t * (x[0] - x[1] + c[1] + c[3]);
 
@@ -390,10 +333,6 @@ namespace SPM.Elements
 		    Ps[6, 9] = t * (y[0] - y[3]);
 		    Ps[7, 10] = Pc[7, 10];
 
-			// Set values
-			_Pc = Pc;
-			_Ps = Ps;
-
 		    return
 			    (Pc, Ps);
 	    }
@@ -404,7 +343,21 @@ namespace SPM.Elements
         /// </summary>
 	    private void CalculateStresses()
 	    {
-		    ConcreteStresses = Vector<double>.Build.Dense(12);
+		    // Get the vector strains and stresses
+		    var ev = StrainVector;
+
+		    // Calculate stresses based on strains
+		    for (int i = 0; i < 4; i++)
+		    {
+			    // Get the strains and stresses
+			    var e = StrainState.FromVector(ev.SubVector(3 * i, 3));
+
+			    // Calculate stresses
+			    IntegrationPoints[i].Calculate(e);
+		    }
+
+			// Update vectors
+			ConcreteStresses = Vector<double>.Build.Dense(12);
 		    ReinforcementStresses = Vector<double>.Build.Dense(12);
 
 		    for (int i = 0; i < 4; i++)
@@ -493,39 +446,40 @@ namespace SPM.Elements
 		    f8 = b * t1 - a * t2 - t4;
 
 		    GlobalForces =
-			    Vector<double>.Build.DenseOfArray(new []
+			    new []
 			    {
 				    f1, f2, f3, f4, f5, f6, f7, f8
-			    });
+			    }.ToVector();
 
 		    // Check value of t3
 		    double CheckT3(double value) => value < 0 ? 0 : value;
 	    }
 
 		/// <summary>
-		/// Update stiffness.
+		/// Calculate initial stiffness <see cref="Matrix"/>.
 		/// </summary>
-		private void UpdateStiffness()
+		private Matrix<double> InitialStiffness()
 		{
-			_Dc = Matrix<double>.Build.Dense(12, 12);
-			_Ds = Matrix<double>.Build.Dense(12, 12);
+			var (Dc, Ds) = InitialMaterialStiffness();
+			var (Pc, Ps) = CalculateP();
 
-			for (int i = 0; i < 4; i++)
-			{
-				// Get the stiffness
-				var Dci = IntegrationPoints[i].Concrete.Stiffness;
-				var Dsi = IntegrationPoints[i].Reinforcement.Stiffness;
+			Matrix<double>
+				BA = CalculateBA(),
+				Q  = CalculateQ();
 
-				// Set to stiffness
-				_Dc.SetSubMatrix(3 * i, 3 * i, Dci);
-				_Ds.SetSubMatrix(3 * i, 3 * i, Dsi);
-			}
+			var QPs = Q * Ps;
+			var QPc = Q * Pc;
+
+			var kc = QPc * Dc * BA;
+			var ks = QPs * Ds * BA;
+
+			return kc + ks;
 		}
 
-        /// <summary>
-        /// Calculate initial material stiffness matrices.
-        /// </summary>
-        public (Matrix<double> Dc, Matrix<double> Ds) InitialMaterialStiffness()
+		/// <summary>
+		/// Calculate initial material stiffness matrices.
+		/// </summary>
+		private (Matrix<double> Dc, Matrix<double> Ds) InitialMaterialStiffness()
 	    {
 		    var Dc = Matrix<double>.Build.Dense(12, 12);
 		    var Ds = Matrix<double>.Build.Dense(12, 12);
@@ -534,142 +488,19 @@ namespace SPM.Elements
 		    {
 			    // Get the stiffness
 			    var Dci = IntegrationPoints[i].Concrete.InitialStiffness;
-			    var Dsi = IntegrationPoints[i].Concrete.InitialStiffness;
+			    var Dsi = IntegrationPoints[i].Reinforcement?.InitialStiffness;
 
 			    // Set to stiffness
 			    Dc.SetSubMatrix(3 * i, 3 * i, Dci);
+
+				if (Dsi is null)
+					continue;
+
 			    Ds.SetSubMatrix(3 * i, 3 * i, Dsi);
 		    }
 
 		    return
 			    (Dc, Ds);
 	    }
-
-        /// <summary>
-        /// Calculate the vector of strains (alternate method).
-        /// </summary>
-        private Vector<double> CalculateStrains()
-        {
-	        // Get dimensions and displacements
-	        var (a, b, c, d) = Geometry.Dimensions;
-	        var u = Displacements;
-
-	        // Calculate constants
-	        double
-		        t1 = a * b - c * d,
-		        t2 = a * a - c * c,
-		        t3 = b * b - d * d,
-		        t4 = 0.5 * t2 + t3,
-		        t5 = 0.5 * t3 + t2;
-
-	        // Calculate generalized strains
-	        double
-		        e1 = (d * u[0] + b * u[2] - d * u[4] - b * u[6]) / t1,
-		        e2 = (-a * u[1] - c * u[3] + a * u[5] + c * u[7]) / t1,
-		        e3 = (-a * u[0] + d * u[1] - c * u[2] + b * u[3] +
-		              a * u[4] - d * u[5] + c * u[6] - b * u[7]) * 0.5 / t1,
-		        e4 = (-u[0] + u[2] - u[4] + u[6]) * a / t4,
-		        e5 = (u[1] - u[3] + u[5] - u[7]) * b / t5;
-
-	        return
-		        Vector<double>.Build.DenseOfArray(new[]
-		        {
-			        e1 - c / a * e4,
-			        e2 - e5,
-			        2 * (e3 + b / a * e4 + c / b * e5),
-			        e1 + e4,
-			        e2 + d / b * e5,
-			        2 * (e3 - d / a * e4 - a / b * e5),
-			        e1 + c / a * e4,
-			        e2 + e5,
-			        2 * (e3 - b / a * e4 - c / b * e5),
-			        e1 - e4,
-			        e2 - d / b * e5,
-			        2 * (e3 + d / a * e4 * a / b * e5)
-		        });
-        }
-
-        /// <summary>
-        /// Calculate tangent stiffness.
-        /// </summary>
-        private Matrix<double> TangentStiffness()
-		{
-			// Get displacements
-			var u = Displacements;
-
-			// Set step size
-			double d = 2E-10;
-
-			// Calculate elements of matrix
-			var K = Matrix<double>.Build.Dense(8, 8);
-			for (int i = 0; i < 8; i++)
-			{
-				// Get row update vector
-				var ud = CreateVector.Dense<double>(8);
-				ud[i] = d;
-
-				// Set displacements and do analysis
-				SetDisplacements(u + ud);
-				Analysis();
-
-				// Get updated panel forces
-				var fd1 = Forces;
-
-				// Set displacements and do analysis
-				SetDisplacements(u - ud);
-				Analysis();
-
-				// Get updated panel forces
-				var fd2 = Forces;
-
-				// Calculate ith column
-				var km = 0.5 / d * (fd1 - fd2);
-
-				// Set column
-				K.SetColumn(i, km);
-			}
-
-			// Set displacements again
-			SetDisplacements(u);
-
-			return K;
-		}
-
-        /// <summary>
-        /// Calculate initial stiffness matrix (alternate).
-        /// </summary>
-        private Matrix<double> InitialStiffness()
-	    {
-		    var (a, b, _, _) = Geometry.Dimensions;
-
-		    // Calculate constants
-		    double
-			    a2  = a * a,
-			    b2  = b * b,
-			    ab  = a * b,
-			    a_b = a / b,
-			    b_a = b / a,
-			    nu  = Concrete.nu,
-			    t0  = Concrete.Ec * Geometry.Width / (1 - nu * nu),
-			    t1  = 2 * ab / (a2 + 2 * b2),
-			    t2  = 2 * ab / (2 * a2 + b2),
-			    t3  =  b_a * (3 * a2 + 2 * b2) / (a2 + 2 * b2),
-			    t4  =  a_b * (2 * a2 + 3 * b2) / (2 * a2 + b2),
-			    t5  =  b_a * (a2 - 2 * b2)     / (a2 + 2 * b2),
-			    t6  = -a_b * (2 * a2 - b2)     / (2 * a2 + b2);
-
-		    return
-			    t0 * Matrix<double>.Build.DenseOfArray(new [,]
-			    {
-				    {  t1,   0, -t1,   0,  t1,   0, -t1,   0 },
-				    {   0,  t4, -nu, -t2,   0,  t6,  nu, -t2 },
-				    { -t1, -nu,  t3,   0, -t1,  nu,  t5,   0 },
-				    {   0, -t2,   0,  t2,   0, -t2,   0,  t2 },
-				    {  t1,   0, -t1,   0,  t1,   0, -t1,   0 },
-				    {   0,  t6,  nu, -t2,   0,  t4, -nu, -t2 },
-				    { -t1,  nu,  t5,   0, -t1, -nu,  t3,   0 },
-				    {   0, -t2,   0,  t2,   0, -t2,   0,  t2 }
-			    });
-	    }
-    }
+   }
 }

@@ -235,12 +235,12 @@ namespace SPM.Elements
 	        var (l, m) = Geometry.Angle.DirectionCosines();
 
 	        // Obtain the transformation matrix
-	        TransMatrix = Matrix<double>.Build.DenseOfArray(new [,]
+	        TransMatrix = new [,]
 	        {
 		        {l, m, 0, 0, 0, 0 },
 		        {0, 0, l, m, 0, 0 },
 		        {0, 0, 0, 0, l, m }
-	        });
+	        }.ToMatrix();
 
 	        return TransMatrix;
         }

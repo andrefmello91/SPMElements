@@ -88,6 +88,27 @@ namespace SPM.Elements
 		    }
 	    }
 
+	    /// <inheritdoc/>
+	    public override PrincipalStrainState ConcretePrincipalStrains
+	    {
+		    get
+		    {
+			    var eps = StrainState.Zero;
+
+			    for (int i = 0; i < 4; i++)
+				    eps += IntegrationPoints[i].Concrete.Strains;
+
+			    // Calculate average
+			    eps = 0.25 * eps;
+
+			    // Return principal
+			    return PrincipalStrainState.FromStrain(eps);
+		    }
+		}
+
+		/// <inheritdoc/>
+	    public override double CrackOpening => Membrane.CrackOpening(Reinforcement, ConcretePrincipalStrains);
+
 	    /// <summary>
 	    /// Nonlinear panel object.
 	    /// </summary>

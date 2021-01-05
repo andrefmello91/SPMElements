@@ -12,6 +12,7 @@ using Material.Concrete.Biaxial;
 using Material.Reinforcement.Biaxial;
 using MathNet.Numerics;
 using OnPlaneComponents;
+using RCMembrane;
 using SPM.Elements.PanelProperties;
 using UnitsNet;
 using UnitsNet.Units;
@@ -154,6 +155,16 @@ namespace SPM.Elements
         /// Get average <see cref="PrincipalStressState"/>.
         /// </summary>
         public PrincipalStressState AveragePrincipalStresses => PrincipalStressState.FromStress(AverageStresses);
+
+        /// <summary>
+        /// Get average concrete <see cref="PrincipalStrainState"/>.
+        /// </summary>
+        public virtual PrincipalStrainState ConcretePrincipalStrains { get; }
+
+        /// <summary>
+        /// Get the average crack opening in concrete, in mm.
+        /// </summary>
+        public virtual double CrackOpening { get; }
 
         /// <summary>
         /// Get the grip numbers of this.

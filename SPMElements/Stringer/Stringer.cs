@@ -143,6 +143,11 @@ namespace SPM.Elements
         public double MaxForce => LocalForces.AbsoluteMaximum();
 
         /// <summary>
+        /// Get crack openings in start, mid and end nodes.
+        /// </summary>
+        public virtual double[] CrackOpenings { get; }
+
+        /// <summary>
         /// Stringer object.
         /// </summary>
         /// <param name="objectId">The stringer <see cref="ObjectId"/>.</param>

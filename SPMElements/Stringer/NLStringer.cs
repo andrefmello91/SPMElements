@@ -40,6 +40,9 @@ namespace SPM.Elements
 		/// <inheritdoc/>
 		protected override Vector<double> LocalForces => new[] {-_N1, _N1 - _N3, _N3}.ToVector();
 
+		/// <inheritdoc/>
+		public override double[] CrackOpenings => Strains.Select(eps => CrackOpening(Reinforcement, eps)).ToArray();
+
 		/// <summary>
 		/// Nonlinear stringer object
 		/// </summary>
@@ -77,6 +80,22 @@ namespace SPM.Elements
 		{
 			Concrete = new UniaxialConcrete(concreteParameters, ConcreteArea, model);
 		}
+
+		/// <summary>
+		/// Calculate the crack spacing at <paramref name="reinforcement"/> (in mm), according to Kaklauskas (2019) expression.
+		/// <para>sm = 21 mm + 0.155 phi / rho</para>
+		/// </summary>
+		/// <param name="reinforcement">The <see cref="UniaxialReinforcement"/>.</param>
+		public static double CrackSpacing(UniaxialReinforcement reinforcement) =>
+			reinforcement is null || reinforcement.BarDiameter.ApproxZero() || reinforcement.Ratio.ApproxZero()
+				? 21
+				: 21 + 0.155 * reinforcement.BarDiameter / reinforcement.Ratio;
+
+		/// <summary>
+		/// Calculate the average crack opening, in mm.
+		/// </summary>
+		/// <param name="reinforcement">The <see cref="UniaxialReinforcement"/>.</param>
+		public static double CrackOpening(UniaxialReinforcement reinforcement, double strain) => strain.ApproxZero(1E-6) ? 0 : strain  * CrackSpacing(reinforcement);
 
 		/// <summary>
 		/// Calculate B Matrix.

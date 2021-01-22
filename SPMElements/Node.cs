@@ -7,6 +7,7 @@ using MathNet.Numerics;
 using UnitsNet.Units;
 using Extensions;
 using Extensions.AutoCAD;
+using Extensions.Number;
 
 namespace SPM.Elements
 {
@@ -104,6 +105,20 @@ namespace SPM.Elements
 
         /// <inheritdoc/>
         public override int[] DoFIndex => Indexes ?? GlobalIndexes(Number);
+
+        /// <summary>
+        /// Node object.
+        /// </summary>
+        /// <param name="objectId">The node <see cref="ObjectId"/>.</param>
+        /// <param name="number">The node number.</param>
+        /// <param name="position">The <seealso cref="Point3d"/> position.</param>
+        /// <param name="type">The <see cref="NodeType"/>.</param>
+        /// <param name="geometryUnit">The <see cref="LengthUnit"/> of <paramref name="position"/>.</param>
+        /// <param name="displacementUnit">The <see cref="LengthUnit"/> of <see cref="Displacement"/>.</param>
+        public Node(Point3d position, NodeType type, LengthUnit geometryUnit = LengthUnit.Millimeter, LengthUnit displacementUnit = LengthUnit.Millimeter)
+			: this (ObjectId.Null, 0, position, type, Force.Zero, Constraint.Free, geometryUnit, displacementUnit)
+        {
+        }
 
         /// <summary>
         /// Node object.
@@ -248,7 +263,7 @@ namespace SPM.Elements
         /// Returns true if both nodes positions are equal.
         /// </summary>
         /// <param name="other">The other <see cref="Node"/> object.</param>
-        public bool Equals(Node other) => !(other is null) && Position == other.Position;
+        public bool Equals(Node other) => !(other is null) && Position.Approx(other.Position, 1E-3.ConvertFromMillimeter(_geometryUnit));
 
 		/// <summary>
 		/// Returns true if <paramref name="other"/> is a <see cref="Node"/> and both positions are equal.

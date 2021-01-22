@@ -117,6 +117,15 @@ namespace SPM.Elements.StringerProperties
 			_height = _height.ToUnit(unit);
 		}
 
+		/// <summary>
+		/// Convert this <see cref="Vertices"/> object to another <see cref="LengthUnit"/>.
+		/// </summary>
+		/// <param name="toUnit">The desired <see cref="LengthUnit"/>.</param>
+		public StringerGeometry Convert(LengthUnit toUnit) =>
+			toUnit == Unit
+				? this
+				: new StringerGeometry(InitialPoint.Convert(Unit, toUnit), EndPoint.Convert(Unit, toUnit), Width.ConvertFromMillimeter(toUnit), Height.ConvertFromMillimeter(toUnit), toUnit);
+
 		public override string ToString()
 		{
 			return
@@ -131,13 +140,22 @@ namespace SPM.Elements.StringerProperties
 		/// <param name="other">The <see cref="StringerGeometry"/> to compare.</param>
 		public bool EqualsWidthAndHeight(StringerGeometry other) => Width.Approx(other.Width) && Height.Approx(other.Height);
 
-        /// <summary>
-        /// Returns true if <see cref="InitialPoint"/> and <seealso cref="EndPoint"/> of <paramref name="other"/> coincide.
-        /// </summary>
-        /// <param name="other">The <see cref="StringerGeometry"/> to compare.</param>
-        public bool Equals(StringerGeometry other) => InitialPoint == other.InitialPoint && EndPoint == other.EndPoint;
+		/// <summary>
+		/// Returns true if <see cref="InitialPoint"/> and <seealso cref="EndPoint"/> of <paramref name="other"/> coincide.
+		/// </summary>
+		/// <param name="other">The <see cref="StringerGeometry"/> to compare.</param>
+		public bool Equals(StringerGeometry other)
+		{
+			// Convert
+			var converted = other.Convert(Unit);
+			var tol       = 0.001.ConvertFromMillimeter(Unit);
 
-		public override bool Equals(object obj) => obj is StringerGeometry other && Equals(other);
+			return
+				InitialPoint.Approx(converted.InitialPoint, tol) && EndPoint.Approx(converted.EndPoint, tol) ||
+				InitialPoint.Approx(converted.EndPoint, tol)     && EndPoint.Approx(converted.InitialPoint, tol);
+		}
+
+        public override bool Equals(object obj) => obj is StringerGeometry other && Equals(other);
 
 		public override int GetHashCode() => (int) (Length * Area);
 

@@ -32,16 +32,50 @@ namespace SPM.Elements
     {
 		// Auxiliary fields
 		protected int[] Indexes;
+		private int? _number;
+		private ObjectId? _id;
+
+		/// <summary>
+		/// Event to run when <see cref="Number"/> changes.
+		/// </summary>
+		public EventHandler<ParameterChangedEventArgs<int>> NumberChanged;
+
+		/// <summary>
+		/// Event to run when <see cref="ObjectId"/> changes.
+		/// </summary>
+		public EventHandler<ParameterChangedEventArgs<ObjectId>> ObjectIdChanged;
 
 		/// <summary>
         /// Get or set the number of the element.
         /// </summary>
-	    public int Number { get; set; }
+	    public int Number
+		{ 
+			get => _number ?? 0;
+			set
+			{
+				var old = _number;
+				_number = value;
 
-        /// <summary>
-        /// Get or set the <see cref="Autodesk.AutoCAD.DatabaseServices.ObjectId"/> of element.
-        /// </summary>
-        public ObjectId ObjectId { get; set; }
+				if (old.HasValue)
+					RaiseIntEvent(NumberChanged, old.Value, value);
+			}
+		}
+
+		/// <summary>
+		/// Get or set the <see cref="Autodesk.AutoCAD.DatabaseServices.ObjectId"/> of element.
+		/// </summary>
+		public ObjectId ObjectId
+		{
+			get => _id ?? ObjectId.Null;
+			set
+			{
+				var old = _id;
+				_id     = value;
+
+				if (old.HasValue)
+					RaiseObjectIdEvent(ObjectIdChanged, old.Value, value);
+			}
+		}
 
 		/// <summary>
         /// Get the DoF index of the element.
@@ -51,7 +85,7 @@ namespace SPM.Elements
 		/// <summary>
 		/// Base object of SPM elements.
 		/// </summary>
-		public SPMElement(ObjectId objectId, int number)
+		protected SPMElement(ObjectId objectId, int number)
 		{
 			ObjectId = objectId;
 			Number   = number;
@@ -96,5 +130,47 @@ namespace SPM.Elements
 
 		    return ind;
 	    }
+
+        /// <summary>
+        /// Raise the <see cref="int"/> changed event.
+        /// </summary>
+        protected void RaiseIntEvent(EventHandler<ParameterChangedEventArgs<int>> eventHandler, int oldValue, int newValue)
+        {
+	        // Copy to a temporary variable to be thread-safe (MSDN).
+	        var tmp = eventHandler;
+	        tmp?.Invoke(this, new ParameterChangedEventArgs<int>(oldValue, newValue)); ;
+        }
+
+        /// <summary>
+        /// Raise the <see cref="ObjectId"/> changed event.
+        /// </summary>
+        protected void RaiseObjectIdEvent(EventHandler<ParameterChangedEventArgs<ObjectId>> eventHandler, ObjectId oldValue, ObjectId newValue)
+        {
+	        // Copy to a temporary variable to be thread-safe (MSDN).
+	        var tmp = eventHandler;
+	        tmp?.Invoke(this, new ParameterChangedEventArgs<ObjectId>(oldValue, newValue)); ;
+        }
     }
+
+	/// <summary>
+	/// Parameter changed class.
+	/// </summary>
+	public class ParameterChangedEventArgs<T> : EventArgs
+	{
+		/// <summary>
+		/// Get the old value of the parameter.
+		/// </summary>
+		public T OldValue { get; }
+
+		/// <summary>
+		/// Get the new value of the parameter.
+		/// </summary>
+		public T NewValue { get; }
+
+		public ParameterChangedEventArgs(T oldValue, T newValue)
+		{
+			OldValue = oldValue;
+			NewValue = newValue;
+		}
+	}
 }

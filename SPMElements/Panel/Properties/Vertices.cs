@@ -4,6 +4,7 @@ using System.Linq;
 using Autodesk.AutoCAD.Geometry;
 using Extensions;
 using Extensions.AutoCAD;
+using Extensions.Number;
 using UnitsNet.Units;
 
 namespace SPM.Elements.PanelProperties
@@ -125,7 +126,16 @@ namespace SPM.Elements.PanelProperties
 	        Unit = unit;
         }
 
-        /// <summary>
+		/// <summary>
+		/// Convert this <see cref="Vertices"/> object to another <see cref="LengthUnit"/>.
+		/// </summary>
+		/// <param name="toUnit">The desired <see cref="LengthUnit"/>.</param>
+		public Vertices Convert(LengthUnit toUnit) =>
+	        toUnit == Unit
+		        ? this
+		        : new Vertices(Vertex1.Convert(Unit, toUnit), Vertex2.Convert(Unit, toUnit), Vertex3.Convert(Unit, toUnit), Vertex4.Convert(Unit, toUnit), toUnit);
+
+		/// <summary>
         /// Calculate <see cref="Vertices"/> approximated center point.
         /// </summary>
         private Point3d CalculateCenterPoint()
@@ -162,11 +172,19 @@ namespace SPM.Elements.PanelProperties
 	        return (x, y);
         }
 
-        /// <summary>
-        /// Returns true if all vertices are equal.
-        /// </summary>
-        /// <param name="other">The other <see cref="Vertices"/> to compare.</param>
-        public bool Equals(Vertices other) => Vertex1 == other.Vertex1 && Vertex2 == other.Vertex2 && Vertex3 == other.Vertex3 && Vertex4 == other.Vertex4;
+		/// <summary>
+		/// Returns true if all vertices are equal.
+		/// </summary>
+		/// <param name="other">The other <see cref="Vertices"/> to compare.</param>
+		public bool Equals(Vertices other)
+		{
+			var converted = other.Convert(Unit);
+			var tol       = 0.001.ConvertFromMillimeter(Unit);
+
+			return
+				Vertex1.Approx(converted.Vertex1, tol) && Vertex2.Approx(converted.Vertex2, tol) &&
+				Vertex3.Approx(converted.Vertex3, tol) && Vertex4.Approx(converted.Vertex4, tol);
+		}
 
         public override bool Equals(object obj) => obj is Vertices other && Equals(other);
 

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Autodesk.AutoCAD.Geometry;
 using Extensions;
 using Extensions.Number;
@@ -61,11 +62,14 @@ namespace SPM.Elements.PanelProperties
 			get
 			{
 				// Calculate the angles between the edges
-				var ang2 = Edge2.Angle - Edge1.Angle;
-				var ang4 = Edge4.Angle - Edge3.Angle;
+				double[] angles =
+				{
+					Edge2.Angle - Edge1.Angle,
+					Edge4.Angle - Edge3.Angle
+                };
 
 				return
-					ang2.Approx(Constants.PiOver2) && ang4.Approx(Constants.PiOver2);
+					angles.All(angle => angle.Approx(Constants.PiOver2, 1E-3) || angle.Approx(Constants.Pi3Over2, 1E-3));
 			}
 		}
 

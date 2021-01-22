@@ -95,7 +95,8 @@ namespace SPM.Elements
 		/// Calculate the average crack opening, in mm.
 		/// </summary>
 		/// <param name="reinforcement">The <see cref="UniaxialReinforcement"/>.</param>
-		public static double CrackOpening(UniaxialReinforcement reinforcement, double strain) => strain.ApproxZero(1E-6) ? 0 : strain  * CrackSpacing(reinforcement);
+		/// <param name="strain">The strain.</param>
+		public static double CrackOpening(UniaxialReinforcement reinforcement, double strain) => strain <0 || strain.ApproxZero(1E-9) ? 0 : strain  * CrackSpacing(reinforcement);
 
 		/// <summary>
 		/// Calculate B Matrix.

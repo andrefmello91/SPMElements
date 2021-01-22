@@ -36,5 +36,20 @@ namespace SPM.Elements
 	        foreach (var panel in panels)
 		        panel.SetEdgeStringersDimensions(stringers);
         }
+
+        /// <summary>
+        /// Order this collection of <see cref="Node"/>'s by ascending Y then ascending X coordinates.
+        /// </summary>
+        public static IEnumerable<Node> Order(this IEnumerable<Node> nodes) => nodes.OrderBy(n => n.Position.Y).ThenBy(n => n.Position.X);
+
+        /// <summary>
+        /// Order this collection of <see cref="Stringer"/>'s by ascending Y then ascending X center point coordinates.
+        /// </summary>
+        public static IEnumerable<Stringer> Order(this IEnumerable<Stringer> stringers) => stringers.OrderBy(s => s.Geometry.CenterPoint.Y).ThenBy(s => s.Geometry.CenterPoint.X);
+
+        /// <summary>
+        /// Order this collection of <see cref="Panel"/>'s by ascending Y then ascending X center point coordinates.
+        /// </summary>
+        public static IEnumerable<Panel> Order(this IEnumerable<Panel> panels) => panels.OrderBy(p => p.Geometry.Vertices.CenterPoint.Y).ThenBy(p => p.Geometry.Vertices.CenterPoint.X);
     }
 }

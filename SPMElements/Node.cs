@@ -61,6 +61,24 @@ namespace SPM.Elements
     {
 		// Auxiliary fields
 		private LengthUnit _geometryUnit, _displacementUnit;
+		private Force _force;
+		private Constraint _constraint;
+		private Displacement _displacement;
+
+		/// <summary>
+		/// Event to run when <see cref="Constraint"/> changes.
+		/// </summary>
+		public EventHandler<ParameterChangedEventArgs<Constraint>> ConstraintChanged;
+
+		/// <summary>
+		/// Event to run when <see cref="Force"/> changes.
+		/// </summary>
+		public EventHandler<ParameterChangedEventArgs<Force>> ForceChanged;
+
+		/// <summary>
+		/// Event to run when <see cref="Displacement"/> changes.
+		/// </summary>
+		public EventHandler<ParameterChangedEventArgs<Displacement>> DisplacementChanged;
 
         /// <summary>
         /// Get the node type (<see cref="NodeType"/>).
@@ -74,23 +92,59 @@ namespace SPM.Elements
 		public Point3d Position { get; }
 
 		/// <summary>
-        /// Get/set applied <see cref="OnPlaneComponents.Force"/>.
-        /// </summary>
-		public Force Force { get; set; }
+		/// Get/set applied <see cref="OnPlaneComponents.Force"/>.
+		/// </summary>
+		public Force Force
+		{
+			get => _force;
+			set
+			{
+				var old = _force.Copy();
+				_force  = value;
 
-        /// <summary>
-        /// Get/set <see cref="Elements.Constraint"/> condition.
-        /// </summary>
-        public Constraint Constraint { get; set; }
+				if (old != value)
+					RaiseParameterEvent(ForceChanged, old, value);
+			}
+		}
+
+		/// <summary>
+		/// Get/set <see cref="Elements.Constraint"/> condition.
+		/// </summary>
+		public Constraint Constraint
+		{
+			get => _constraint;
+
+			set
+			{
+				var old     = _constraint;
+				_constraint = value;
+
+				if (old != value)
+					RaiseParameterEvent(ConstraintChanged, old, value);
+			}
+
+		}
 
 		/// <summary>
 		/// Get/set nodal <see cref="OnPlaneComponents.Displacement"/>
 		/// </summary>
-		public Displacement Displacement { get; private set; }
+		public Displacement Displacement
+		{
+			get => _displacement;
+			set
+			{
+				var old = _displacement.Copy();
+				value.ChangeUnit(_displacementUnit);
+				_displacement = value;
+
+				if (old != value)
+					RaiseParameterEvent(DisplacementChanged, old, value);
+			}
+		}
 
 		/// <summary>
-        /// Returns true if the node is free.
-        /// </summary>
+		/// Returns true if the node is free.
+		/// </summary>
 		public bool IsFree => Constraint is Constraint.Free;
 
 		/// <summary>
@@ -104,7 +158,7 @@ namespace SPM.Elements
         public bool ForcesNotZero => !Force.AreComponentsZero;
 
         /// <inheritdoc/>
-        public override int[] DoFIndex => Indexes ?? GlobalIndexes(Number);
+        public override int[] DoFIndex => Indexes ?? GetIndexes(Number);
 
         /// <summary>
         /// Node object.
@@ -116,7 +170,7 @@ namespace SPM.Elements
         /// <param name="geometryUnit">The <see cref="LengthUnit"/> of <paramref name="position"/>.</param>
         /// <param name="displacementUnit">The <see cref="LengthUnit"/> of <see cref="Displacement"/>.</param>
         public Node(Point3d position, NodeType type, LengthUnit geometryUnit = LengthUnit.Millimeter, LengthUnit displacementUnit = LengthUnit.Millimeter)
-			: this (ObjectId.Null, 0, position, type, Force.Zero, Constraint.Free, geometryUnit, displacementUnit)
+			: this (ObjectId.Null, 0, position, type, geometryUnit, displacementUnit)
         {
         }
 
@@ -160,11 +214,11 @@ namespace SPM.Elements
 	        Force = appliedForce;
 
 	        // Set units
-	        _geometryUnit = geometryUnit;
+	        _geometryUnit     = geometryUnit;
 	        _displacementUnit = displacementUnit;
 
 	        // Initiate displacements
-	        Displacement = Displacement.Zero;
+	        _displacement = Displacement.Zero;
         }
 
         /// <summary>
@@ -210,14 +264,7 @@ namespace SPM.Elements
         /// Set nodal displacements.
         /// </summary>
         /// <param name="displacement">The <see cref="Displacement"/> to set;.</param>
-        public void SetDisplacements(Displacement displacement)
-        {
-	        // Save to the node, in mm
-	        Displacement = displacement;
-
-			// Change unit
-			ChangeDisplacementUnit(_displacementUnit);
-        }
+        public void SetDisplacements(Displacement displacement) => Displacement = displacement;
 
         /// <summary>
         /// Change the unit of <see cref="Displacement"/>.
@@ -265,11 +312,14 @@ namespace SPM.Elements
         /// <param name="other">The other <see cref="Node"/> object.</param>
         public bool Equals(Node other) => !(other is null) && Position.Approx(other.Position, 1E-3.ConvertFromMillimeter(_geometryUnit));
 
-		/// <summary>
-		/// Returns true if <paramref name="other"/> is a <see cref="Node"/> and both positions are equal.
-		/// </summary>
-		/// <param name="other">The other <see cref="Node"/> object.</param>
-		public override bool Equals(object other) => other is Node otherNode && Equals(otherNode);
+        /// <inheritdoc"/>
+		public override bool Equals(SPMElement other) => other is Node node && Equals(node);
+
+        /// <summary>
+        /// Returns true if <paramref name="other"/> is a <see cref="Node"/> and both positions are equal.
+        /// </summary>
+        /// <param name="other">The other <see cref="Node"/> object.</param>
+        public override bool Equals(object other) => other is Node otherNode && Equals(otherNode);
 
 		public override int GetHashCode() => Position.GetHashCode();
 

@@ -174,9 +174,9 @@ namespace SPM.Elements
         /// <summary>
         /// Get the DoF index of panel <see cref="Grips"/>.
         /// </summary>
-        public override int[] DoFIndex => Indexes ?? GlobalIndexes(Grips);
+        public override int[] DoFIndex => Indexes ?? GetIndexes(Grips);
 
-		/// <summary>
+        /// <summary>
         /// Get absolute maximum panel force.
         /// </summary>
         public double MaxForce => Forces.AbsoluteMaximum();
@@ -667,11 +667,14 @@ namespace SPM.Elements
         /// <param name="other">The other <see cref="Panel"/> object to compare.</param>
 		public bool Equals(Panel other) => other != null && Geometry == other.Geometry;
 
-		/// <summary>
-		/// Returns true if <paramref name="obj"/> is <see cref="Panel"/> and <see cref="Geometry"/> is equal.
-		/// </summary>
-		/// <param name="obj">The other <see cref="object"/> to compare.</param>
-		public override bool Equals(object obj) => obj is Panel other && Equals(other);
+        /// <inheritdoc/>
+        public override bool Equals(SPMElement other) => other is Panel panel && Equals(panel);
+
+        /// <summary>
+        /// Returns true if <paramref name="obj"/> is <see cref="Panel"/> and <see cref="Geometry"/> is equal.
+        /// </summary>
+        /// <param name="obj">The other <see cref="object"/> to compare.</param>
+        public override bool Equals(object obj) => obj is Panel other && Equals(other);
 
 		public override int GetHashCode() => Geometry.GetHashCode();
 

@@ -1,4 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Linq;
 using Autodesk.AutoCAD.DatabaseServices;
 
 namespace SPM.Elements
@@ -28,12 +31,12 @@ namespace SPM.Elements
 	/// <summary>
     /// Base class of SPM elements.
     /// </summary>
-    public abstract class SPMElement
+    public abstract class SPMElement : IEquatable<SPMElement>
     {
 		// Auxiliary fields
 		protected int[] Indexes;
-		private int? _number;
-		private ObjectId? _id;
+		private int _number;
+		private ObjectId _id;
 
 		/// <summary>
 		/// Event to run when <see cref="Number"/> changes.
@@ -44,20 +47,20 @@ namespace SPM.Elements
 		/// Event to run when <see cref="ObjectId"/> changes.
 		/// </summary>
 		public EventHandler<ParameterChangedEventArgs<ObjectId>> ObjectIdChanged;
-
+		
 		/// <summary>
         /// Get or set the number of the element.
         /// </summary>
 	    public int Number
 		{ 
-			get => _number ?? 0;
+			get => _number;
 			set
 			{
 				var old = _number;
 				_number = value;
 
-				if (old.HasValue)
-					RaiseIntEvent(NumberChanged, old.Value, value);
+				if (old != value)
+					RaiseParameterEvent(NumberChanged, old, value);
 			}
 		}
 
@@ -66,14 +69,14 @@ namespace SPM.Elements
 		/// </summary>
 		public ObjectId ObjectId
 		{
-			get => _id ?? ObjectId.Null;
+			get => _id;
 			set
 			{
 				var old = _id;
 				_id     = value;
 
-				if (old.HasValue)
-					RaiseObjectIdEvent(ObjectIdChanged, old.Value, value);
+				if (old != value)
+					RaiseParameterEvent(ObjectIdChanged, old, value);
 			}
 		}
 
@@ -95,14 +98,9 @@ namespace SPM.Elements
         /// Get global indexes of a grip.
         /// </summary>
         /// <param name="gripNumber">The grip number.</param>
-        /// <returns></returns>
-        protected int[] GlobalIndexes(int gripNumber)
-	    {
-		    Indexes =
-			    new[]
-			    {
-				    2 * gripNumber - 2, 2 * gripNumber - 1
-			    };
+        protected int[] GetIndexes(int gripNumber)
+        {
+	        Indexes = GlobalIndexes(gripNumber).ToArray();
 
 		    return Indexes;
 	    }
@@ -111,45 +109,58 @@ namespace SPM.Elements
         /// Get global indexes of an element's grips
         /// </summary>
         /// <param name="gripNumbers">The grip numbers of the element.</param>
-        /// <returns></returns>
-        protected int[] GlobalIndexes(int[] gripNumbers)
+        protected int[] GetIndexes(IEnumerable<int> gripNumbers)
 	    {
-		    // Initialize the array
-		    int[] ind = new int[2 * gripNumbers.Length];
+		    Indexes = GlobalIndexes(gripNumbers).ToArray();
 
-		    // Get the indexes
-		    for (int i = 0; i < gripNumbers.Length; i++)
-		    {
-			    int j = 2 * i;
-
-			    ind[j] = 2 * gripNumbers[i] - 2;
-			    ind[j + 1] = 2 * gripNumbers[i] - 1;
-		    }
-
-		    Indexes = ind;
-
-		    return ind;
+		    return Indexes;
 	    }
 
         /// <summary>
-        /// Raise the <see cref="int"/> changed event.
+        /// Get global indexes of an element's grips
         /// </summary>
-        protected void RaiseIntEvent(EventHandler<ParameterChangedEventArgs<int>> eventHandler, int oldValue, int newValue)
+        /// <param name="gripNumbers">The grip numbers of the element.</param>
+        public static IEnumerable<int> GlobalIndexes(IEnumerable<int> gripNumbers)
+	    {
+		    // Initialize the array
+		    var count = gripNumbers.Count();
+
+		    // Get the indexes
+		    for (int i = 0; i < count; i++)
+		    {
+			    var n = 2 * gripNumbers.ElementAt(i);
+
+			    yield return n - 2;
+			    yield return n - 1;
+		    }
+	    }
+
+		/// <summary>
+		/// Get global indexes of an element's grips
+		/// </summary>
+		/// <param name="gripNumber">The grip number of the element.</param>
+		public static IEnumerable<int> GlobalIndexes(int gripNumber)
+	    {
+		    var n = 2 * gripNumber;
+
+		    yield return n - 2;
+		    yield return n - 1;
+	    }
+
+        /// <summary>
+        /// Raise the parameter changed event.
+        /// </summary>
+        protected void RaiseParameterEvent<T>(EventHandler<ParameterChangedEventArgs<T>> eventHandler, T oldValue, T newValue)
         {
 	        // Copy to a temporary variable to be thread-safe (MSDN).
 	        var tmp = eventHandler;
-	        tmp?.Invoke(this, new ParameterChangedEventArgs<int>(oldValue, newValue)); ;
+	        tmp?.Invoke(this, new ParameterChangedEventArgs<T>(oldValue, newValue)); ;
         }
 
         /// <summary>
-        /// Raise the <see cref="ObjectId"/> changed event.
+        /// Returns true if this elements is equal to <paramref name="other"/>.
         /// </summary>
-        protected void RaiseObjectIdEvent(EventHandler<ParameterChangedEventArgs<ObjectId>> eventHandler, ObjectId oldValue, ObjectId newValue)
-        {
-	        // Copy to a temporary variable to be thread-safe (MSDN).
-	        var tmp = eventHandler;
-	        tmp?.Invoke(this, new ParameterChangedEventArgs<ObjectId>(oldValue, newValue)); ;
-        }
+        public abstract bool Equals(SPMElement other);
     }
 
 	/// <summary>

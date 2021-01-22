@@ -34,6 +34,13 @@ namespace SPM.Elements
 
 		// Auxiliary fields
 		protected Matrix<double> TransMatrix, LocStiffness;
+		private UniaxialConcrete _concrete;
+		private UniaxialReinforcement _reinforcement;
+
+		/// <summary>
+		/// Event to run when <see cref="Constraint"/> changes.
+		/// </summary>
+		public EventHandler<ParameterChangedEventArgs<StringerGeometry>> GeometryChanged;
 
         /// <summary>
         /// Get the initial <see cref="Node"/> of this.
@@ -58,12 +65,12 @@ namespace SPM.Elements
         /// <summary>
         /// Get/set the <see cref="UniaxialConcrete"/> of this.
         /// </summary>
-        public UniaxialConcrete Concrete { get; protected set; }
+        public UniaxialConcrete Concrete { get; set; }
 
         /// <summary>
         /// Get the <see cref="UniaxialReinforcement"/> of this.
         /// </summary>
-        public UniaxialReinforcement Reinforcement { get; }
+        public UniaxialReinforcement Reinforcement { get; set; }
 
         /// <summary>
         /// Get local stiffness <see cref="Matrix"/>.
@@ -93,7 +100,7 @@ namespace SPM.Elements
         /// <summary>
         /// Get the DoF index of stringer <see cref="Grips"/>.
         /// </summary>
-        public override int[] DoFIndex => Indexes ?? GlobalIndexes(Grips);
+        public override int[] DoFIndex => Indexes ?? GetIndexes(Grips);
 
         /// <summary>
         /// Get global stiffness <see cref="Matrix"/>.
@@ -182,12 +189,12 @@ namespace SPM.Elements
         /// <param name="reinforcement">The <see cref="UniaxialReinforcement"/> of this stringer.</param>
         public Stringer(ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, Length width, Length height, Parameters concreteParameters, ConstitutiveModel model, UniaxialReinforcement reinforcement = null) : base(objectId, number)
         {
-	        Grip1         = grip1;
-	        Grip2         = grip2;
-	        Grip3         = grip3;
-	        Geometry      = new StringerGeometry(grip1.Position, grip3.Position, width, height);
-	        Reinforcement = reinforcement;
-	        Concrete      = new UniaxialConcrete(concreteParameters, Geometry.Area, model);
+	        Grip1          = grip1;
+	        Grip2          = grip2;
+	        Grip3          = grip3;
+	        Geometry       = new StringerGeometry(grip1.Position, grip3.Position, width, height);
+	        _reinforcement = reinforcement;
+	        _concrete      = new UniaxialConcrete(concreteParameters, Geometry.Area, model);
         }
 
         /// <summary>
@@ -223,12 +230,12 @@ namespace SPM.Elements
         /// <param name="reinforcement">The <see cref="UniaxialReinforcement"/> of this stringer.</param>
         public Stringer(ObjectId objectId, int number, IEnumerable<Node> nodes, Point3d grip1Position, Point3d grip3Position, Length width, Length height, Parameters concreteParameters, ConstitutiveModel model, UniaxialReinforcement reinforcement = null) : base(objectId, number)
         {
-	        Geometry      = new StringerGeometry(grip1Position, grip3Position, width, height);
-	        Grip1         = nodes.GetByPosition(grip1Position);
-	        Grip2         = nodes.GetByPosition(Geometry.CenterPoint);
-	        Grip3         = nodes.GetByPosition(grip3Position);
-	        Reinforcement = reinforcement;
-	        Concrete      = new UniaxialConcrete(concreteParameters, Geometry.Area, model);
+	        Geometry       = new StringerGeometry(grip1Position, grip3Position, width, height);
+	        Grip1          = nodes.GetByPosition(grip1Position);
+	        Grip2          = nodes.GetByPosition(Geometry.CenterPoint);
+	        Grip3          = nodes.GetByPosition(grip3Position);
+	        _reinforcement = reinforcement;
+	        _concrete      = new UniaxialConcrete(concreteParameters, Geometry.Area, model);
         }
 
         /// <summary>
@@ -370,13 +377,15 @@ namespace SPM.Elements
         /// Returns true if <see cref="Geometry"/> of <paramref name="other"/> is equal to this.
         /// </summary>
         /// <param name="other"></param>
-		public bool Equals(Stringer other) => other != null && Geometry == other.Geometry;
+		public bool Equals(Stringer other) => !(other is null) && Geometry == other.Geometry;
 
-		/// <summary>
-		/// Returns true if <paramref name="obj"/> is <see cref="Stringer"/> and <see cref="Geometry"/> of <paramref name="obj"/> is equal to this.
-		/// </summary>
-		/// <param name="other"></param>
-		public override bool Equals(object obj) => obj is Stringer other && Equals(other);
+        /// <inheritdoc/>
+        public override bool Equals(SPMElement other) => other is Stringer stringer && Equals(stringer);
+
+        /// <summary>
+        /// Returns true if <paramref name="obj"/> is <see cref="Stringer"/> and <see cref="Geometry"/> of <paramref name="obj"/> is equal to this.
+        /// </summary>
+        public override bool Equals(object obj) => obj is Stringer other && Equals(other);
 
 		public override int GetHashCode() => Geometry.GetHashCode();
 

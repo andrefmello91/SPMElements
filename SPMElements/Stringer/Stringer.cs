@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.Geometry;
+using Extensions;
 using Extensions.LinearAlgebra;
 using Extensions.Number;
 using MathNet.Numerics.LinearAlgebra;
@@ -34,13 +35,17 @@ namespace SPM.Elements
 
 		// Auxiliary fields
 		protected Matrix<double> TransMatrix, LocStiffness;
-		private UniaxialConcrete _concrete;
 		private UniaxialReinforcement _reinforcement;
 
-		/// <summary>
-		/// Event to run when <see cref="Constraint"/> changes.
-		/// </summary>
-		public EventHandler<ParameterChangedEventArgs<StringerGeometry>> GeometryChanged;
+        /// <summary>
+        /// Event to run when <see cref="Geometry"/> width or height changes.
+        /// </summary>
+        public EventHandler<ParameterChangedEventArgs<double>> GeometryChanged;
+
+        /// <summary>
+        /// Event to run when <see cref="Reinforcement"/> changes.
+        /// </summary>
+        public EventHandler<ParameterChangedEventArgs<UniaxialReinforcement>> ReinforcementChanged;
 
         /// <summary>
         /// Get the initial <see cref="Node"/> of this.
@@ -65,12 +70,24 @@ namespace SPM.Elements
         /// <summary>
         /// Get/set the <see cref="UniaxialConcrete"/> of this.
         /// </summary>
-        public UniaxialConcrete Concrete { get; set; }
+        public UniaxialConcrete Concrete { get; }
 
         /// <summary>
         /// Get the <see cref="UniaxialReinforcement"/> of this.
         /// </summary>
-        public UniaxialReinforcement Reinforcement { get; set; }
+        public UniaxialReinforcement Reinforcement
+        {
+	        get => _reinforcement;
+	        set
+	        {
+		        var old = _reinforcement.Copy();
+
+		        _reinforcement = value;
+
+                if (old != value)
+                    ReinforcementChanged?.Invoke(this, new ParameterChangedEventArgs<UniaxialReinforcement>(old, value));
+	        }
+        }
 
         /// <summary>
         /// Get local stiffness <see cref="Matrix"/>.
@@ -189,12 +206,12 @@ namespace SPM.Elements
         /// <param name="reinforcement">The <see cref="UniaxialReinforcement"/> of this stringer.</param>
         public Stringer(ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, Length width, Length height, Parameters concreteParameters, ConstitutiveModel model, UniaxialReinforcement reinforcement = null) : base(objectId, number)
         {
+	        Geometry       = GetGeometry(grip1.Position, grip3.Position, width, height);
 	        Grip1          = grip1;
 	        Grip2          = grip2;
 	        Grip3          = grip3;
-	        Geometry       = new StringerGeometry(grip1.Position, grip3.Position, width, height);
 	        _reinforcement = reinforcement;
-	        _concrete      = new UniaxialConcrete(concreteParameters, Geometry.Area, model);
+	        Concrete       = new UniaxialConcrete(concreteParameters, Geometry.Area, model);
         }
 
         /// <summary>
@@ -230,12 +247,22 @@ namespace SPM.Elements
         /// <param name="reinforcement">The <see cref="UniaxialReinforcement"/> of this stringer.</param>
         public Stringer(ObjectId objectId, int number, IEnumerable<Node> nodes, Point3d grip1Position, Point3d grip3Position, Length width, Length height, Parameters concreteParameters, ConstitutiveModel model, UniaxialReinforcement reinforcement = null) : base(objectId, number)
         {
-	        Geometry       = new StringerGeometry(grip1Position, grip3Position, width, height);
-	        Grip1          = nodes.GetByPosition(grip1Position);
+	        Geometry       = GetGeometry(grip1Position, grip3Position, width, height);
+            Grip1          = nodes.GetByPosition(grip1Position);
 	        Grip2          = nodes.GetByPosition(Geometry.CenterPoint);
 	        Grip3          = nodes.GetByPosition(grip3Position);
 	        _reinforcement = reinforcement;
-	        _concrete      = new UniaxialConcrete(concreteParameters, Geometry.Area, model);
+	        Concrete       = new UniaxialConcrete(concreteParameters, Geometry.Area, model);
+        }
+
+        /// <summary>
+        /// Get the initial <see cref="Geometry"/>.
+        /// </summary>
+        private StringerGeometry GetGeometry(Point3d initialPoint, Point3d endPoint, Length width, Length height)
+        {
+	        var geometry = new StringerGeometry(initialPoint, endPoint, width, height);
+	        geometry.GeometryChanged += On_GeometryChange;
+	        return geometry;
         }
 
         /// <summary>
@@ -402,6 +429,14 @@ namespace SPM.Elements
 			}
 
 			return msgstr;
+		}
+
+        /// <summary>
+        /// Execute <see cref="GeometryChanged"/> event.
+        /// </summary>
+		private void On_GeometryChange(object sender, ParameterChangedEventArgs<double> e)
+		{
+            GeometryChanged?.Invoke(this, new ParameterChangedEventArgs<double>(e.OldValue, e.NewValue));
 		}
 
 		/// <summary>

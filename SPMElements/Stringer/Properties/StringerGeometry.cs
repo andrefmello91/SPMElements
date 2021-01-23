@@ -18,6 +18,11 @@ namespace SPM.Elements.StringerProperties
 		private Length _length, _width, _height;
 
 		/// <summary>
+		/// Event to run when <see cref="Width"/> or <see cref="Height"/> changes.
+		/// </summary>
+		public EventHandler<ParameterChangedEventArgs<double>> GeometryChanged;
+
+		/// <summary>
 		/// Get the <see cref="LengthUnit"/> that this was constructed with.
 		/// </summary>
 		public LengthUnit Unit => _length.Unit;
@@ -48,14 +53,38 @@ namespace SPM.Elements.StringerProperties
 		public double Angle { get; }
 
 		/// <summary>
-		/// The stringer width, in mm.
+		/// Get/set the stringer width, in mm.
 		/// </summary>
-		public double Width => _width.Millimeters;
+		public double Width
+		{
+			get => _width.Millimeters;
+			set
+			{
+				var old = _width.Millimeters;
+
+				_width = UnitsNet.Length.FromMillimeters(value);
+
+				if (!old.Approx(value))
+					GeometryChanged?.Invoke(this, new ParameterChangedEventArgs<double>(old, value));
+			}
+		}
 
 		/// <summary>
-		/// The stringer height, in mm.
+		/// Get/set the stringer height, in mm.
 		/// </summary>
-		public double Height => _height.Millimeters;
+		public double Height
+		{
+			get => _height.Millimeters;
+			set
+			{
+				var old = _height.Millimeters;
+
+				_height = UnitsNet.Length.FromMillimeters(value);
+
+				if (!old.Approx(value))
+					GeometryChanged?.Invoke(this, new ParameterChangedEventArgs<double>(old, value));
+			}
+		}
 
 		/// <summary>
 		/// Get cross-section are of this, in mm2.
@@ -101,6 +130,7 @@ namespace SPM.Elements.StringerProperties
 			// Set values
 			_width  = width;
 			_height = height;
+			GeometryChanged = null;
 		}
 
 		/// <summary>

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using MathNet.Numerics.LinearAlgebra;
 using OnPlaneComponents;
 using Autodesk.AutoCAD.DatabaseServices;
@@ -8,6 +9,7 @@ using UnitsNet.Units;
 using Extensions;
 using Extensions.AutoCAD;
 using Extensions.Number;
+using static SPM.Elements.Extensions;
 
 namespace SPM.Elements
 {
@@ -57,33 +59,25 @@ namespace SPM.Elements
 		XY
     }
 
-    public class Node : SPMElement, IEquatable<Node>
+    public class Node : ISPMElement, IEquatable<Node>
     {
 		// Auxiliary fields
 		private LengthUnit _geometryUnit, _displacementUnit;
-		private Force _force;
-		private Constraint _constraint;
-		private Displacement _displacement;
+		private int _number;
+
+		/// <inheritdoc/>
+		public int Number { get; set; }
+
+		/// <inheritdoc/>
+		public ObjectId ObjectId { get; set; }
+
+		/// <inheritdoc/>
+		public int[] DoFIndex => GlobalIndexes(Number).ToArray();
 
 		/// <summary>
-		/// Event to run when <see cref="Constraint"/> changes.
+		/// Get the node type (<see cref="NodeType"/>).
 		/// </summary>
-		public EventHandler<ParameterChangedEventArgs<Constraint>> ConstraintChanged;
-
-		/// <summary>
-		/// Event to run when <see cref="Force"/> changes.
-		/// </summary>
-		public EventHandler<ParameterChangedEventArgs<Force>> ForceChanged;
-
-		/// <summary>
-		/// Event to run when <see cref="Displacement"/> changes.
-		/// </summary>
-		public EventHandler<ParameterChangedEventArgs<Displacement>> DisplacementChanged;
-
-        /// <summary>
-        /// Get the node type (<see cref="NodeType"/>).
-        /// </summary>
-        public NodeType Type { get; }
+		public NodeType Type { get; }
 
 		/// <summary>
         /// Get the position of the node.
@@ -94,53 +88,17 @@ namespace SPM.Elements
 		/// <summary>
 		/// Get/set applied <see cref="OnPlaneComponents.Force"/>.
 		/// </summary>
-		public Force Force
-		{
-			get => _force;
-			set
-			{
-				var old = _force.Copy();
-				_force  = value;
-
-				if (old != value)
-					RaiseParameterEvent(ForceChanged, old, value);
-			}
-		}
+		public Force Force { get; set; }
 
 		/// <summary>
 		/// Get/set <see cref="Elements.Constraint"/> condition.
 		/// </summary>
-		public Constraint Constraint
-		{
-			get => _constraint;
-
-			set
-			{
-				var old     = _constraint;
-				_constraint = value;
-
-				if (old != value)
-					RaiseParameterEvent(ConstraintChanged, old, value);
-			}
-
-		}
+		public Constraint Constraint { get; set; }
 
 		/// <summary>
 		/// Get/set nodal <see cref="OnPlaneComponents.Displacement"/>
 		/// </summary>
-		public Displacement Displacement
-		{
-			get => _displacement;
-			set
-			{
-				var old = _displacement.Copy();
-				value.ChangeUnit(_displacementUnit);
-				_displacement = value;
-
-				if (old != value)
-					RaiseParameterEvent(DisplacementChanged, old, value);
-			}
-		}
+		public Displacement Displacement { get; set; }
 
 		/// <summary>
 		/// Returns true if the node is free.
@@ -156,9 +114,6 @@ namespace SPM.Elements
         /// Returns true if <see cref="Force"/> is not zero.
         /// </summary>
         public bool ForcesNotZero => !Force.AreComponentsZero;
-
-        /// <inheritdoc/>
-        public override int[] DoFIndex => Indexes ?? GetIndexes(Number);
 
         /// <summary>
         /// Node object.
@@ -199,10 +154,14 @@ namespace SPM.Elements
         /// <param name="constraint"> The <see cref="Elements.Constraint"/> condition of the node.</param>
         /// <param name="geometryUnit">The <see cref="LengthUnit"/> of <paramref name="position"/>.</param>
         /// <param name="displacementUnit">The <see cref="LengthUnit"/> of <see cref="Displacement"/>.</param>
-        public Node(ObjectId objectId, int number, Point3d position, NodeType type, Force appliedForce, Constraint constraint = Constraint.Free, LengthUnit geometryUnit = LengthUnit.Millimeter, LengthUnit displacementUnit = LengthUnit.Millimeter) : base(objectId, number)
+        public Node(ObjectId objectId, int number, Point3d position, NodeType type, Force appliedForce, Constraint constraint = Constraint.Free, LengthUnit geometryUnit = LengthUnit.Millimeter, LengthUnit displacementUnit = LengthUnit.Millimeter)
         {
 	        // Get the position
 	        Position = position;
+
+			// Get ids
+			ObjectId = objectId;
+	        Number   = number;
 
 	        // Get type
 	        Type = type;
@@ -218,7 +177,7 @@ namespace SPM.Elements
 	        _displacementUnit = displacementUnit;
 
 	        // Initiate displacements
-	        _displacement = Displacement.Zero;
+	        Displacement = Displacement.Zero;
         }
 
         /// <summary>
@@ -311,9 +270,6 @@ namespace SPM.Elements
         /// </summary>
         /// <param name="other">The other <see cref="Node"/> object.</param>
         public bool Equals(Node other) => !(other is null) && Position.Approx(other.Position, 1E-3.ConvertFromMillimeter(_geometryUnit));
-
-        /// <inheritdoc"/>
-		public override bool Equals(SPMElement other) => other is Node node && Equals(node);
 
         /// <summary>
         /// Returns true if <paramref name="other"/> is a <see cref="Node"/> and both positions are equal.

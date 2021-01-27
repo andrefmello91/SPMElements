@@ -109,7 +109,7 @@
     <Compile Include="Panel\Panel.cs" />
     <Compile Include="Panel\Properties\Vertices.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="SPMElement.cs" />
+    <Compile Include="ISPMElement.cs" />
     <Compile Include="Stringer\NLStringer.cs" />
     <Compile Include="Stringer\Stringer.cs" />
     <Compile Include="Stringer\Properties\StringerGeometry.cs" />

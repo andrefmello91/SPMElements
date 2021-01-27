@@ -20,11 +20,11 @@ namespace SPM.Elements
 	    public static Node GetByPosition(this IEnumerable<Node> nodes, Point3d position) => nodes.First(node => position.Approx(node.Position));
 
         /// <summary>
-        /// Return the <see cref="SPMElement"/> of an <see cref="Array"/>, in given <paramref name="number"/>.
+        /// Return the <see cref="ISPMElement"/> of an <see cref="Array"/>, in given <paramref name="number"/>.
         /// </summary>
-        /// <param name="elements">The collection of <see cref="SPMElement"/>'s.</param>
+        /// <param name="elements">The collection of <see cref="ISPMElement"/>'s.</param>
         /// <param name="number">The number of the element wanted.</param>
-        public static SPMElement GetByNumber(this IEnumerable<SPMElement> elements, int number) => elements.First(element => number == element.Number);
+        public static ISPMElement GetByNumber(this IEnumerable<ISPMElement> elements, int number) => elements.First(element => number == element.Number);
 
         /// <summary>
         /// Set stringer dimensions on edges of each panel.
@@ -51,5 +51,37 @@ namespace SPM.Elements
         /// Order this collection of <see cref="Panel"/>'s by ascending Y then ascending X center point coordinates.
         /// </summary>
         public static IEnumerable<Panel> Order(this IEnumerable<Panel> panels) => panels.OrderBy(p => p.Geometry.Vertices.CenterPoint.Y).ThenBy(p => p.Geometry.Vertices.CenterPoint.X);
+
+        /// <summary>
+        /// Get global indexes of an element's grips
+        /// </summary>
+        /// <param name="gripNumbers">The grip numbers of the element.</param>
+        public static IEnumerable<int> GlobalIndexes(IEnumerable<int> gripNumbers)
+        {
+	        // Initialize the array
+	        var count = gripNumbers.Count();
+
+	        // Get the indexes
+	        for (int i = 0; i < count; i++)
+	        {
+		        var n = 2 * gripNumbers.ElementAt(i);
+
+		        yield return n - 2;
+		        yield return n - 1;
+	        }
+        }
+
+        /// <summary>
+        /// Get global indexes of an element's grips
+        /// </summary>
+        /// <param name="gripNumber">The grip number of the element.</param>
+        public static IEnumerable<int> GlobalIndexes(int gripNumber)
+        {
+	        var n = 2 * gripNumber;
+
+	        yield return n - 2;
+	        yield return n - 1;
+        }
+
     }
 }

@@ -16,19 +16,29 @@ using RCMembrane;
 using SPM.Elements.PanelProperties;
 using UnitsNet;
 using UnitsNet.Units;
+using static SPM.Elements.Extensions;
 
 namespace SPM.Elements
 {
 	/// <summary>
     /// Base panel class with linear properties.
     /// </summary>
-	public class Panel : SPMElement, IEquatable<Panel>
+	public class Panel : ISPMElement, IEquatable<Panel>
 	{
 		// Auxiliary fields
 		private Matrix<double> _transMatrix, _localStiffness;
 		private Vector<double> _localForces;
 		protected Vector<double> GlobalForces;
 
+		/// <inheritdoc/>
+		public int Number { get; set; }
+
+		/// <inheritdoc/>
+		public ObjectId ObjectId { get; set; }
+
+		/// <inheritdoc/>
+		public int[] DoFIndex => GlobalIndexes(Grips).ToArray();
+        
         /// <summary>
         /// Get <see cref="PanelGeometry"/> of this.
         /// </summary>
@@ -172,11 +182,6 @@ namespace SPM.Elements
         public int[] Grips => new[] { Grip1.Number, Grip2.Number, Grip3.Number, Grip4.Number };
 
         /// <summary>
-        /// Get the DoF index of panel <see cref="Grips"/>.
-        /// </summary>
-        public override int[] DoFIndex => Indexes ?? GetIndexes(Grips);
-
-        /// <summary>
         /// Get absolute maximum panel force.
         /// </summary>
         public double MaxForce => Forces.AbsoluteMaximum();
@@ -196,9 +201,12 @@ namespace SPM.Elements
         /// <param name="model">The concrete <see cref="ConstitutiveModel"/>.</param>
         /// <param name="reinforcement">The <see cref="WebReinforcement"/>.</param>
         public Panel(ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, Node grip4, Vertices vertices, Length width, Parameters concreteParameters, ConstitutiveModel model, WebReinforcement reinforcement = null)
-			: base(objectId, number)
-		{
-			Grip1 = grip1;
+        {
+	        // Get ids
+	        ObjectId = objectId;
+	        Number   = number;
+
+            Grip1 = grip1;
 			Grip2 = grip2;
 			Grip3 = grip3;
 			Grip4 = grip4;
@@ -281,9 +289,12 @@ namespace SPM.Elements
         /// <param name="model">The concrete <see cref="ConstitutiveModel"/>.</param>
         /// <param name="reinforcement">The <see cref="WebReinforcement"/>.</param>
         public Panel(ObjectId objectId, int number, IEnumerable<Node> nodes, Vertices vertices, Length width, Parameters concreteParameters, ConstitutiveModel model, WebReinforcement reinforcement = null)
-	        : base(objectId, number)
         {
-	        Geometry = new PanelGeometry(vertices, width);
+	        // Get ids
+	        ObjectId = objectId;
+	        Number   = number;
+
+            Geometry = new PanelGeometry(vertices, width);
 
 	        Grip1 = nodes.GetByPosition(Geometry.Edge1.CenterPoint);
 	        Grip2 = nodes.GetByPosition(Geometry.Edge2.CenterPoint);
@@ -666,9 +677,6 @@ namespace SPM.Elements
         /// </summary>
         /// <param name="other">The other <see cref="Panel"/> object to compare.</param>
 		public bool Equals(Panel other) => other != null && Geometry == other.Geometry;
-
-        /// <inheritdoc/>
-        public override bool Equals(SPMElement other) => other is Panel panel && Equals(panel);
 
         /// <summary>
         /// Returns true if <paramref name="obj"/> is <see cref="Panel"/> and <see cref="Geometry"/> is equal.

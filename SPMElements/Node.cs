@@ -60,7 +60,7 @@ namespace SPM.Elements
 	/// <summary>
 	/// Node class.
 	/// </summary>
-    public class Node : ISPMElement, IEquatable<Node>
+    public class Node : INumberedElement, IEquatable<Node>
     {
 		/// <inheritdoc/>
 		public int Number { get; set; }

@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Autodesk.AutoCAD.DatabaseServices;
-using Autodesk.AutoCAD.Geometry;
 using Extensions.LinearAlgebra;
 using Extensions.Number;
 using Material.Concrete;
@@ -11,21 +9,22 @@ using Material.Reinforcement;
 using Material.Reinforcement.Uniaxial;
 using MathNet.Numerics.LinearAlgebra;
 using MathNet.Numerics.LinearAlgebra.Double;
+using OnPlaneComponents;
 using UnitsNet;
 using UnitsNet.Units;
 
 namespace SPM.Elements
 {
+	/// <summary>
+	/// Nonlinear stringer class.
+	/// </summary>
 	public class NLStringer : Stringer
 	{
 		// Auxiliary fields
 		private Matrix<double> _BMatrix;
 		private double _N1, _N3;
 
-		/// <summary>
-		/// Get concrete area.
-		/// </summary>
-		private double ConcreteArea => Geometry.Area - (Reinforcement?.Area ?? 0);
+		protected override double ConcreteArea => Geometry.Area - (Reinforcement?.Area ?? 0);
 
 		/// <summary>
 		/// Get B <see cref="Matrix"/> to transform displacements in strains.
@@ -38,17 +37,18 @@ namespace SPM.Elements
 		private Vector<double> Strains => BMatrix * LocalDisplacements;
 
 		/// <inheritdoc/>
-		protected override Vector<double> LocalForces => new[] {-_N1, _N1 - _N3, _N3}.ToVector();
+		public override Vector<double> LocalForces => new[] { -_N1, _N1 - _N3, _N3 }.ToVector();
 
 		/// <inheritdoc/>
 		public override double[] CrackOpenings => Strains.Select(eps => CrackOpening(Reinforcement, eps)).ToArray();
 
-		/// <summary>
-		/// Nonlinear stringer object
-		/// </summary>
-		/// <inheritdoc/>
-		public NLStringer(ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, double width, double height, Parameters concreteParameters, ConstitutiveModel model, UniaxialReinforcement reinforcement = null, LengthUnit unit = LengthUnit.Millimeter)
-			: this(objectId, number, grip1, grip2, grip3, Length.From(width, unit), Length.From(height, unit), concreteParameters, model, reinforcement)
+		/// <param name="width">The stringer width, in <paramref name="unit"/> considered.</param>
+		/// <param name="height">The stringer height, in <paramref name="unit"/> considered.</param>
+		/// <param name="unit">The <see cref="LengthUnit"/> of <paramref name="width"/> and <paramref name="height"/>.
+		/// <para>Default: <seealso cref="LengthUnit.Millimeter"/>.</para></param>
+		/// <inheritdoc cref="NLStringer(Node, Node, Node, Length, Length, Parameters, ConstitutiveModel, UniaxialReinforcement)"/>
+		public NLStringer(Node grip1, Node grip2, Node grip3, double width, double height, Parameters concreteParameters, ConstitutiveModel model, UniaxialReinforcement reinforcement = null, LengthUnit unit = LengthUnit.Millimeter)
+			: this(grip1, grip2, grip3, Length.From(width, unit), Length.From(height, unit), concreteParameters, model, reinforcement)
 		{
 		}
 
@@ -56,29 +56,23 @@ namespace SPM.Elements
 		/// Nonlinear stringer object
 		/// </summary>
 		/// <inheritdoc/>
-		public NLStringer(ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, Length width, Length height, Parameters concreteParameters, ConstitutiveModel model, UniaxialReinforcement reinforcement = null)
-			: base(objectId, number, grip1, grip2, grip3, width, height, concreteParameters, model, reinforcement)
-		{
-			Concrete = new UniaxialConcrete(concreteParameters, ConcreteArea, model);
-		}
-
-		/// <summary>
-		/// Linear stringer object.
-		/// </summary>
-		/// <inheritdoc/>
-		public NLStringer(ObjectId objectId, int number, IEnumerable<Node> nodes, Point3d grip1Position, Point3d grip3Position, double width, double height, Parameters concreteParameters, ConstitutiveModel model, UniaxialReinforcement reinforcement = null, LengthUnit unit = LengthUnit.Millimeter)
-			: this(objectId, number, nodes, grip1Position, grip3Position, Length.From(width, unit), Length.From(height, unit), concreteParameters, model, reinforcement)
+		public NLStringer(Node grip1, Node grip2, Node grip3, Length width, Length height, Parameters concreteParameters, ConstitutiveModel model, UniaxialReinforcement reinforcement = null)
+			: base(grip1, grip2, grip3, width, height, concreteParameters, model, reinforcement)
 		{
 		}
 
-		/// <summary>
-		/// Linear stringer object.
-		/// </summary>
+		/// <inheritdoc cref="NLStringer(Node, Node, Node, Length, Length, Parameters, ConstitutiveModel, UniaxialReinforcement)"/>
 		/// <inheritdoc/>
-		public NLStringer(ObjectId objectId, int number, IEnumerable<Node> nodes, Point3d grip1Position, Point3d grip3Position, Length width, Length height, Parameters concreteParameters, ConstitutiveModel model, UniaxialReinforcement reinforcement = null)
-			: base(objectId, number, nodes, grip1Position, grip3Position, width, height, concreteParameters, model, reinforcement)
+		public NLStringer(IEnumerable<Node> nodes, Point grip1Position, Point grip3Position, double width, double height, Parameters concreteParameters, ConstitutiveModel model, UniaxialReinforcement reinforcement = null, LengthUnit unit = LengthUnit.Millimeter)
+			: this(nodes, grip1Position, grip3Position, Length.From(width, unit), Length.From(height, unit), concreteParameters, model, reinforcement)
 		{
-			Concrete = new UniaxialConcrete(concreteParameters, ConcreteArea, model);
+		}
+
+		/// <inheritdoc cref="NLStringer(Node, Node, Node, Length, Length, Parameters, ConstitutiveModel, UniaxialReinforcement)"/>
+		/// <inheritdoc/>
+		public NLStringer(IEnumerable<Node> nodes, Point grip1Position, Point grip3Position, Length width, Length height, Parameters concreteParameters, ConstitutiveModel model, UniaxialReinforcement reinforcement = null)
+			: base(nodes, grip1Position, grip3Position, width, height, concreteParameters, model, reinforcement)
+		{
 		}
 
 		/// <summary>
@@ -113,8 +107,7 @@ namespace SPM.Elements
 			return _BMatrix;
 		}
 
-		/// <inheritdoc/>
-		public override void Analysis(Vector<double> globalDisplacements = null, int numStrainSteps = 5)
+		public override void Analysis(Vector<double> globalDisplacements = null)
 		{
 			// Set displacements
 			if (globalDisplacements != null)

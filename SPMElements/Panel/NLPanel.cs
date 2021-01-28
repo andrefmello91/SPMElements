@@ -6,8 +6,8 @@ using Autodesk.AutoCAD.Geometry;
 using Extensions.LinearAlgebra;
 using Material.Concrete;
 using Material.Reinforcement.Biaxial;
-using MathNet.Numerics.LinearAlgebra;
 using MathNet.Numerics.LinearAlgebra.Double;
+
 using OnPlaneComponents;
 using RCMembrane;
 using SPM.Elements.PanelProperties;
@@ -19,7 +19,7 @@ namespace SPM.Elements
     public class NLPanel : Panel
     {
 		// Auxiliary fields
-		private Matrix<double> _BA;
+		private Matrix _BA;
 
         /// <summary>
         /// Get <see cref="Membrane"/> integration points.
@@ -29,28 +29,28 @@ namespace SPM.Elements
         /// <summary>
         /// Get panel strain <see cref="Vector"/>.
         /// </summary>
-        public Vector<double> StrainVector => (_BA ?? CalculateBA()) * Displacements;
+        public Vector StrainVector => (_BA ?? CalculateBA()) * Displacements;
 
         /// <summary>
         /// Get/set panel concrete stress <see cref="Vector"/>.
         /// </summary>
-	    public Vector<double> ConcreteStresses { get; private set; }
+	    public Vector ConcreteStresses { get; private set; }
 
         /// <summary>
         /// Get/set panel reinforcement stress <see cref="Vector"/>.
         /// </summary>
-	    public Vector<double> ReinforcementStresses { get; private set; }
+	    public Vector ReinforcementStresses { get; private set; }
 
         /// <summary>
         /// Get panel stress <see cref="Vector"/>.
         /// </summary>
-	    public Vector<double> Stresses => ConcreteStresses + ReinforcementStresses;
+	    public Vector Stresses => ConcreteStresses + ReinforcementStresses;
 
         /// <inheritdoc/>
-        public override Vector<double> Forces => GlobalForces;
+        public override Vector Forces => GlobalForces;
 
         /// <inheritdoc/>
-        public override Matrix<double> GlobalStiffness => InitialStiffness();
+        public override Matrix GlobalStiffness => InitialStiffness();
 
 	    /// <inheritdoc/>
 	    public override PrincipalStressState ConcretePrincipalStresses
@@ -196,7 +196,7 @@ namespace SPM.Elements
         /// Set displacements and calculate forces.
         /// </summary>
         /// <param name="globalDisplacements">The global displacement <see cref="Vector"/>.</param>
-        public override void Analysis(Vector<double> globalDisplacements = null)
+        public override void Analysis(Vector globalDisplacements = null)
         {
 	        // Set displacements
 	        if (globalDisplacements != null)
@@ -210,7 +210,7 @@ namespace SPM.Elements
         /// <summary>
         /// Calculate BA matrix.
         /// </summary>
-        private Matrix<double> CalculateBA()
+        private Matrix CalculateBA()
 	    {
 		    var (a, b, c, d) = Geometry.Dimensions;
 
@@ -271,7 +271,7 @@ namespace SPM.Elements
         /// <summary>
         /// Calculate Q matrix.
         /// </summary>
-	    private Matrix<double> CalculateQ()
+	    private Matrix CalculateQ()
 	    {
 		    // Get dimensions
 		    var (a, b, c, d) = Geometry.Dimensions;
@@ -310,7 +310,7 @@ namespace SPM.Elements
         /// <summary>
         /// Calculate P matrices for concrete and steel
         /// </summary>
-        private (Matrix<double> Pc, Matrix<double> Ps) CalculateP()
+        private (Matrix Pc, Matrix Ps) CalculateP()
 	    {
 		    // Get dimensions
 		    double[]
@@ -321,8 +321,8 @@ namespace SPM.Elements
 		    var t = Geometry.Width;
 
 		    // Create P matrices
-		    var Pc = Matrix<double>.Build.Dense(8, 12);
-		    var Ps = Matrix<double>.Build.Dense(8, 12);
+		    var Pc = Matrix.Build.Dense(8, 12);
+		    var Ps = Matrix.Build.Dense(8, 12);
 
 			// Calculate the components of Pc
 			Pc[0, 0] = Pc[1, 2] = t * (y[1] - y[0]);
@@ -378,8 +378,8 @@ namespace SPM.Elements
 		    }
 
 			// Update vectors
-			ConcreteStresses = Vector<double>.Build.Dense(12);
-		    ReinforcementStresses = Vector<double>.Build.Dense(12);
+			ConcreteStresses = Vector.Build.Dense(12);
+		    ReinforcementStresses = Vector.Build.Dense(12);
 
 		    for (int i = 0; i < 4; i++)
 		    {
@@ -411,7 +411,7 @@ namespace SPM.Elements
 		    var t            = Geometry.Width;
 
 		    // Get stresses
-			Vector<double>
+			Vector
 				sigC = ConcreteStresses,
 				sigS = ReinforcementStresses,
 				sig  = Stresses;
@@ -479,12 +479,12 @@ namespace SPM.Elements
 		/// <summary>
 		/// Calculate initial stiffness <see cref="Matrix"/>.
 		/// </summary>
-		private Matrix<double> InitialStiffness()
+		private Matrix InitialStiffness()
 		{
 			var (Dc, Ds) = InitialMaterialStiffness();
 			var (Pc, Ps) = CalculateP();
 
-			Matrix<double>
+			Matrix
 				BA = CalculateBA(),
 				Q  = CalculateQ();
 
@@ -500,10 +500,10 @@ namespace SPM.Elements
 		/// <summary>
 		/// Calculate initial material stiffness matrices.
 		/// </summary>
-		private (Matrix<double> Dc, Matrix<double> Ds) InitialMaterialStiffness()
+		private (Matrix Dc, Matrix Ds) InitialMaterialStiffness()
 	    {
-		    var Dc = Matrix<double>.Build.Dense(12, 12);
-		    var Ds = Matrix<double>.Build.Dense(12, 12);
+		    var Dc = Matrix.Build.Dense(12, 12);
+		    var Ds = Matrix.Build.Dense(12, 12);
 
 		    for (int i = 0; i < 4; i++)
 		    {

@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Autodesk.AutoCAD.DatabaseServices;
-using Autodesk.AutoCAD.Geometry;
 using Extensions;
 using Extensions.LinearAlgebra;
 using Extensions.Number;
@@ -10,6 +8,7 @@ using MathNet.Numerics.LinearAlgebra;
 using MathNet.Numerics.LinearAlgebra.Double;
 using Material.Reinforcement.Uniaxial;
 using Material.Concrete.Uniaxial;
+using OnPlaneComponents;
 using SPM.Elements.StringerProperties;
 using UnitsNet;
 using UnitsNet.Units;
@@ -22,7 +21,7 @@ namespace SPM.Elements
 	/// <summary>
     /// Stringer base class with linear properties.
     /// </summary>
-	public class Stringer : ISPMElement, IEquatable<Stringer>
+	public class Stringer : IFiniteElement, IEquatable<Stringer>, IComparable<Stringer>
     {
 		/// <summary>
         /// Type of forces that stringer can be loaded.
@@ -40,9 +39,6 @@ namespace SPM.Elements
 
 		/// <inheritdoc/>
 		public int Number { get; set; }
-
-		/// <inheritdoc/>
-		public ObjectId ObjectId { get; set; }
 
 		/// <inheritdoc/>
 		public int[] DoFIndex => GlobalIndexes(Grips).ToArray();
@@ -78,40 +74,37 @@ namespace SPM.Elements
         public UniaxialReinforcement Reinforcement { get; set; }
 
         /// <summary>
-        /// Get local stiffness <see cref="Matrix"/>.
+        /// Get concrete area.
         /// </summary>
-        public virtual Matrix<double> LocalStiffness => LocStiffness ?? CalculateStiffness();
+        protected virtual double ConcreteArea => Geometry.Area;
 
-        /// <summary>
-        /// Get/set local force <see cref="Vector"/>.
-        /// </summary>
-        protected virtual Vector<double> LocalForces { get; set; }
-
-        /// <summary>
-        /// Get/set global displacement <see cref="Vector"/>.
-        /// </summary>
-        public Vector<double> Displacements { get; protected set; }
-
-        /// <summary>
-        /// Get the grip numbers of this.
-        /// </summary>
+        /// <inheritdoc/>
         public int[] Grips => new[] { Grip1.Number, Grip2.Number, Grip3.Number };
 
-        /// <summary>
-        /// Get the transformation <see cref="Matrix"/>.
-        /// </summary>
+        /// <inheritdoc/>
+        public Vector<double> LocalDisplacements => TransformationMatrix * Displacements;
+
+        /// <inheritdoc/>
+        public Vector<double> Displacements { get; protected set; }
+
+        /// <inheritdoc/>
+        public virtual Vector<double> LocalForces { get; set; }
+
+        /// <inheritdoc/>
+        public Vector<double> Forces => TransformationMatrix.Transpose() * LocalForces;
+
+        /// <inheritdoc/>
+        public double MaxForce => LocalForces.AbsoluteMaximum();
+
+        /// <inheritdoc/>
         public Matrix<double> TransformationMatrix => TransMatrix ?? CalculateTransformationMatrix();
 
-        /// <summary>
-        /// Get global stiffness <see cref="Matrix"/>.
-        /// </summary>
-		public Matrix<double> GlobalStiffness => TransformationMatrix.Transpose() * LocalStiffness * TransformationMatrix;
+        /// <inheritdoc/>
+        public virtual Matrix<double> LocalStiffness => LocStiffness ?? CalculateStiffness();
 
-		/// <summary>
-		/// Get local displacement <see cref="Vector"/>.
-		/// </summary>
-		public Vector<double> LocalDisplacements => TransformationMatrix * Displacements;
-
+        /// <inheritdoc/>
+        public Matrix<double> Stiffness => TransformationMatrix.Transpose() * LocalStiffness * TransformationMatrix;
+        
 		/// <summary>
         /// Get normal forces acting in the stringer, in N.
         /// </summary>
@@ -139,16 +132,6 @@ namespace SPM.Elements
 			}
 		}
 
-		/// <summary>
-        /// Get stringer global force <see cref="Vector"/>.
-        /// </summary>
-        public Vector<double> Forces => TransformationMatrix.Transpose() * LocalForces;
-
-        /// <summary>
-        /// Get absolute maximum stringer force.
-        /// </summary>
-        public double MaxForce => LocalForces.AbsoluteMaximum();
-
         /// <summary>
         /// Get crack openings in start, mid and end nodes.
         /// </summary>
@@ -162,79 +145,94 @@ namespace SPM.Elements
         /// <param name="grip3">The final <see cref="Node"/> of the <see cref="Stringer"/>.</param>
         /// <param name="width">The stringer width, in <paramref name="unit"/> considered.</param>
         /// <param name="height">The stringer height, in <paramref name="unit"/> considered.</param>
-        /// <param name="concreteParameters">The concrete parameters <see cref="Parameters"/>.</param>
+        /// <param name="concreteParameters">The concrete <see cref="Parameters"/>.</param>
         /// <param name="model">The concrete <see cref="ConstitutiveModel"/>.</param>
         /// <param name="reinforcement">The <see cref="UniaxialReinforcement"/> of this stringer.</param>
         /// <param name="unit">The <see cref="LengthUnit"/> of <paramref name="width"/> and <paramref name="height"/>.
         /// <para>Default: <seealso cref="LengthUnit.Millimeter"/>.</para></param>
         public Stringer(Node grip1, Node grip2, Node grip3, double width, double height, Parameters concreteParameters, ConstitutiveModel model, UniaxialReinforcement reinforcement = null, LengthUnit unit = LengthUnit.Millimeter)
-			: this (ObjectId.Null, 0, grip1, grip2, grip3, Length.From(width, unit), Length.From(height, unit), concreteParameters, model, reinforcement)
+			: this (grip1, grip2, grip3, Length.From(width, unit), Length.From(height, unit), concreteParameters, model, reinforcement)
         {
         }
 
-        /// <inheritdoc cref="Stringer(Node, Node, Node, double, double, Parameters, ConstitutiveModel, UniaxialReinforcement, LengthUnit)"/>
-        /// <param name="objectId">The stringer <see cref="ObjectId"/>.</param>
-        /// <param name="number">The stringer number.</param>
-        public Stringer(ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, double width, double height, Parameters concreteParameters, ConstitutiveModel model, UniaxialReinforcement reinforcement = null, LengthUnit unit = LengthUnit.Millimeter)
-			: this (objectId, number, grip1, grip2, grip3, Length.From(width, unit), Length.From(height, unit), concreteParameters, model, reinforcement)
-        {
-        }
-
-        /// <inheritdoc cref="Stringer(ObjectId, int, Node, Node, Node, double, double, Parameters, ConstitutiveModel, UniaxialReinforcement, LengthUnit)"/>
         /// <param name="width">The stringer width.</param>
         /// <param name="height">The stringer height.</param>
-        public Stringer(ObjectId objectId, int number, Node grip1, Node grip2, Node grip3, Length width, Length height, Parameters concreteParameters, ConstitutiveModel model, UniaxialReinforcement reinforcement = null)
+        /// <inheritdoc cref="Stringer(Node, Node, Node, double, double, Parameters, ConstitutiveModel, UniaxialReinforcement, LengthUnit)"/>
+        public Stringer(Node grip1, Node grip2, Node grip3, Length width, Length height, Parameters concreteParameters, ConstitutiveModel model, UniaxialReinforcement reinforcement = null)
         {
-	        // Get ids
-	        ObjectId = objectId;
-	        Number   = number;
-
-            Geometry = GetGeometry(grip1.Position, grip3.Position, width, height);
+            Geometry       = new StringerGeometry(grip1.Position, grip3.Position, width, height);
 	        Grip1          = grip1;
 	        Grip2          = grip2;
 	        Grip3          = grip3;
 	        Reinforcement  = reinforcement;
-	        Concrete       = new UniaxialConcrete(concreteParameters, Geometry.Area, model);
+	        Concrete       = new UniaxialConcrete(concreteParameters, ConcreteArea, model);
         }
 
-        /// <inheritdoc cref="Stringer(Node, Node, Node, double, double, Parameters, ConstitutiveModel, UniaxialReinforcement, LengthUnit)"/>
         /// <param name="nodes">The collection containing all <see cref="Node"/>'s of SPM model.</param>
         /// <param name="grip1Position">The position of initial <see cref="Node"/> of the <see cref="Stringer"/>.</param>
         /// <param name="grip3Position">The position of final <see cref="Node"/> of the <see cref="Stringer"/>.</param>
-        public Stringer(IEnumerable<Node> nodes, Point3d grip1Position, Point3d grip3Position, double width, double height, Parameters concreteParameters, ConstitutiveModel model, UniaxialReinforcement reinforcement = null, LengthUnit unit = LengthUnit.Millimeter)
-	        : this(ObjectId.Null, 0, nodes, grip1Position, grip3Position, Length.From(width, unit), Length.From(height, unit), concreteParameters, model, reinforcement)
+        /// <inheritdoc cref="Stringer(Node, Node, Node, double, double, Parameters, ConstitutiveModel, UniaxialReinforcement, LengthUnit)"/>
+        public Stringer(IEnumerable<Node> nodes, Point grip1Position, Point grip3Position, double width, double height, Parameters concreteParameters, ConstitutiveModel model, UniaxialReinforcement reinforcement = null, LengthUnit unit = LengthUnit.Millimeter)
+	        : this(nodes, grip1Position, grip3Position, Length.From(width, unit), Length.From(height, unit), concreteParameters, model, reinforcement)
         {
         }
 
-        /// <inheritdoc cref="Stringer(IEnumerable{Node}, Point3d, Point3d, double, double, Parameters, ConstitutiveModel, UniaxialReinforcement, LengthUnit)"/>
-        /// <param name="objectId">The stringer <see cref="ObjectId"/>.</param>
-        /// <param name="number">The stringer number.</param>
-        public Stringer(ObjectId objectId, int number, IEnumerable<Node> nodes, Point3d grip1Position, Point3d grip3Position, double width, double height, Parameters concreteParameters, ConstitutiveModel model, UniaxialReinforcement reinforcement = null, LengthUnit unit = LengthUnit.Millimeter)
-	        : this(objectId, number, nodes, grip1Position, grip3Position, Length.From(width, unit), Length.From(height, unit), concreteParameters, model, reinforcement)
+        /// <inheritdoc cref="Stringer(Node, Node, Node, Length, Length, Parameters, ConstitutiveModel, UniaxialReinforcement)"/>
+        /// <inheritdoc cref="Stringer(IEnumerable{Node}, Point, Point, double, double, Parameters, ConstitutiveModel, UniaxialReinforcement, LengthUnit)"/>
+        public Stringer(IEnumerable<Node> nodes, Point grip1Position, Point grip3Position, Length width, Length height, Parameters concreteParameters, ConstitutiveModel model, UniaxialReinforcement reinforcement = null)
         {
-        }
-
-        /// <inheritdoc cref="Stringer(ObjectId, int, IEnumerable{Node}, Point3d, Point3d, double, double, Parameters, ConstitutiveModel, UniaxialReinforcement, LengthUnit)"/>
-        /// <param name="width">The stringer width.</param>
-        /// <param name="height">The stringer height.</param>
-        public Stringer(ObjectId objectId, int number, IEnumerable<Node> nodes, Point3d grip1Position, Point3d grip3Position, Length width, Length height, Parameters concreteParameters, ConstitutiveModel model, UniaxialReinforcement reinforcement = null)
-        {
-	        // Get ids
-	        ObjectId = objectId;
-	        Number   = number;
-
-            Geometry = GetGeometry(grip1Position, grip3Position, width, height);
+            Geometry       = new StringerGeometry(grip1Position, grip3Position, width, height);
             Grip1          = nodes.GetByPosition(grip1Position);
 	        Grip2          = nodes.GetByPosition(Geometry.CenterPoint);
 	        Grip3          = nodes.GetByPosition(grip3Position);
 	        Reinforcement  = reinforcement;
-	        Concrete       = new UniaxialConcrete(concreteParameters, Geometry.Area, model);
+	        Concrete       = new UniaxialConcrete(concreteParameters, ConcreteArea, model);
         }
 
         /// <summary>
-        /// Get the initial <see cref="Geometry"/>.
+        /// Read the stringer based on <see cref="AnalysisType"/>.
         /// </summary>
-        private StringerGeometry GetGeometry(Point3d initialPoint, Point3d endPoint, Length width, Length height) => new StringerGeometry(initialPoint, endPoint, width, height);
+        /// <param name="analysisType">Type of analysis to perform (<see cref="AnalysisType"/>).</param>
+        /// <param name="number">The stringer number.</param>
+        /// <inheritdoc cref="Stringer(IEnumerable{Node}, Point, Point, double, double, Parameters, ConstitutiveModel, UniaxialReinforcement, LengthUnit)"/>
+        public static Stringer Read(AnalysisType analysisType, int number, IEnumerable<Node> nodes, Point grip1Position, Point grip3Position, double width, double height, Parameters concreteParameters, ConstitutiveModel model, UniaxialReinforcement reinforcement = null, LengthUnit unit = LengthUnit.Millimeter) =>
+	        Read(analysisType, number, nodes, grip1Position, grip3Position, Length.From(width, unit), Length.From(height, unit), concreteParameters, model, reinforcement);
+
+        /// <inheritdoc cref="Read"/>
+        /// <inheritdoc cref="Stringer(IEnumerable{Node}, Point, Point, Length, Length, Parameters, ConstitutiveModel, UniaxialReinforcement)"/>
+        public static Stringer Read(AnalysisType analysisType, int number, IEnumerable<Node> nodes, Point grip1Position, Point grip3Position, Length width, Length height, Parameters concreteParameters, ConstitutiveModel model, UniaxialReinforcement reinforcement = null) =>
+	        analysisType is AnalysisType.Linear
+		        ? new   Stringer(nodes, grip1Position, grip3Position, width, height, concreteParameters, model, reinforcement) { Number = number }
+		        : new NLStringer(nodes, grip1Position, grip3Position, width, height, concreteParameters, model, reinforcement) { Number = number };
+
+        public void SetDisplacements(Vector<double> globalDisplacementVector)
+        {
+	        var u = globalDisplacementVector;
+	        int[] ind = DoFIndex;
+
+	        // Get the displacements
+	        var us = Vector<double>.Build.Dense(6);
+	        for (int i = 0; i < ind.Length; i++)
+	        {
+		        // Global index
+		        int j = ind[i];
+
+		        // Set values
+		        us[i] = u[j];
+	        }
+
+	        // Set
+	        Displacements = us;
+        }
+
+        public virtual void Analysis(Vector<double> globalDisplacements = null)
+        {
+	        // Set displacements
+	        if (globalDisplacements != null)
+		        SetDisplacements(globalDisplacements);
+
+	        LocalForces = CalculateForces();
+        }
 
         /// <summary>
         /// Calculate the transformation matrix.
@@ -255,28 +253,6 @@ namespace SPM.Elements
 	        return TransMatrix;
         }
 
-        /// <summary>
-        /// Set Stringer displacements from global displacement vector.
-        /// </summary>
-        public void SetDisplacements(Vector<double> globalDisplacementVector)
-        {
-	        var u = globalDisplacementVector;
-	        int[] ind = DoFIndex;
-
-	        // Get the displacements
-	        var us = Vector<double>.Build.Dense(6);
-	        for (int i = 0; i < ind.Length; i++)
-	        {
-		        // Global index
-		        int j = ind[i];
-
-		        // Set values
-		        us[i] = u[j];
-	        }
-
-	        // Set
-	        Displacements = us;
-        }
 
         /// <summary>
         /// Calculate local stiffness <see cref="Matrix"/>.
@@ -318,39 +294,6 @@ namespace SPM.Elements
         }
 
         /// <summary>
-        /// Do analysis of stringer.
-        /// </summary>
-        /// <param name="globalDisplacements">The global displacement vector.</param>
-        /// <param name="numStrainSteps">The number of strain increments (for nonlinear analysis) (default: 5).</param>
-        public virtual void Analysis(Vector<double> globalDisplacements = null, int numStrainSteps = 5)
-		{
-			// Set displacements
-			if (globalDisplacements != null)
-				SetDisplacements(globalDisplacements);
-
-			LocalForces = CalculateForces();
-		}
-
-        /// <summary>
-        /// Read the stringer based on <see cref="AnalysisType"/>.
-        /// </summary>
-        /// <inheritdoc cref="Stringer(ObjectId, int, IEnumerable{Node}, Point3d, Point3d, double, double, Parameters, ConstitutiveModel, UniaxialReinforcement, LengthUnit)"/>
-        /// <param name="analysisType">Type of analysis to perform (<see cref="AnalysisType"/>).</param>
-        /// <param name="geometryUnit">The <see cref="LengthUnit"/> of <paramref name="width"/> and <paramref name="height"/>.<para>Default: <seealso cref="LengthUnit.Millimeter"/>.</para></param>
-		public static Stringer Read(AnalysisType analysisType, ObjectId objectId, int number, IEnumerable<Node> nodes, Point3d grip1Position, Point3d grip3Position, double width, double height, Parameters concreteParameters, ConstitutiveModel model, UniaxialReinforcement reinforcement = null, LengthUnit geometryUnit = LengthUnit.Millimeter) => 
-	        analysisType is AnalysisType.Linear 
-		        ? new Stringer(objectId, number, nodes, grip1Position, grip3Position, width, height, concreteParameters, model, reinforcement, geometryUnit) 
-		        : new NLStringer(objectId, number, nodes, grip1Position, grip3Position, width, height, concreteParameters, model, reinforcement, geometryUnit);
-
-        /// <inheritdoc cref="Read(AnalysisType, ObjectId, int, IEnumerable{Node}, Point3d, Point3d, double, double, Parameters, ConstitutiveModel, UniaxialReinforcement, LengthUnit)"/>
-        /// <param name="width">The stringer width.</param>
-        /// <param name="height">The stringer height.</param>
-		public static Stringer Read(AnalysisType analysisType, ObjectId objectId, int number, Node initialNode, Node centerNode, Node finalNode, double width, double height, Parameters concreteParameters, ConstitutiveModel model, UniaxialReinforcement reinforcement = null, LengthUnit geometryUnit = LengthUnit.Millimeter) => 
-	        analysisType is AnalysisType.Linear 
-		        ? new Stringer(objectId, number, initialNode, centerNode, finalNode, width, height, concreteParameters, model, reinforcement, geometryUnit) 
-		        : new NLStringer(objectId, number, initialNode, centerNode, finalNode, width, height, concreteParameters, model, reinforcement, geometryUnit);
-
-        /// <summary>
         /// Returns true if <see cref="Geometry"/> of <paramref name="other"/> is equal to this.
         /// </summary>
         /// <param name="other"></param>
@@ -362,6 +305,8 @@ namespace SPM.Elements
         public override bool Equals(object obj) => obj is Stringer other && Equals(other);
 
 		public override int GetHashCode() => Geometry.GetHashCode();
+
+		public int CompareTo(Stringer other) => other is null ? 1 : Geometry.CompareTo(other.Geometry);
 
 		public override string ToString()
 		{

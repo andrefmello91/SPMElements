@@ -6,7 +6,7 @@ using Autodesk.AutoCAD.Geometry;
 using Extensions.LinearAlgebra;
 using Extensions.Number;
 using MathNet.Numerics.LinearAlgebra;
-using MathNet.Numerics.LinearAlgebra.Double;
+
 using Material.Concrete;
 using Material.Concrete.Biaxial;
 using Material.Reinforcement.Biaxial;
@@ -23,12 +23,12 @@ namespace SPM.Elements
 	/// <summary>
     /// Base panel class with linear properties.
     /// </summary>
-	public class Panel : ISPMElement, IEquatable<Panel>
+	public class Panel : INumberedElement, IEquatable<Panel>
 	{
 		// Auxiliary fields
 		private Matrix<double> _transMatrix, _localStiffness;
-		private Vector<double> _localForces;
-		protected Vector<double> GlobalForces;
+		private Vector _localForces;
+		protected Vector GlobalForces;
 
 		/// <inheritdoc/>
 		public int Number { get; set; }
@@ -96,17 +96,17 @@ namespace SPM.Elements
         /// <summary>
         /// Get/set global displacement <see cref="Vector"/>.
         /// </summary>
-        public Vector<double> Displacements { get; protected set; }
+        public Vector Displacements { get; protected set; }
 
         /// <summary>
         /// Get local force <see cref="Vector"/>.
         /// </summary>
-        private Vector<double> LocalForces => _localForces ?? CalculateLocalForces();
+        private Vector LocalForces => _localForces ?? CalculateLocalForces();
 
         /// <summary>
         /// Get global force <see cref="Vector"/>.
         /// </summary>
-        public virtual Vector<double> Forces => GlobalForces ?? CalculateGlobalForces();
+        public virtual Vector Forces => GlobalForces ?? CalculateGlobalForces();
 
         /// <summary>
         /// Get average <see cref="StressState"/>.
@@ -357,13 +357,13 @@ namespace SPM.Elements
         /// <summary>
         /// Set panel displacements from global displacement vector.
         /// </summary>
-        protected void SetDisplacements(Vector<double> globalDisplacementVector)
+        protected void SetDisplacements(Vector globalDisplacementVector)
         {
 	        var u = globalDisplacementVector;
 	        var ind = DoFIndex;
 
 	        // Get the displacements
-	        var up = Vector<double>.Build.Dense(8);
+	        var up = Vector.Build.Dense(8);
 	        for (var i = 0; i < ind.Length; i++)
 	        {
 		        // Indexers
@@ -569,7 +569,7 @@ namespace SPM.Elements
         /// <summary>
         /// Calculate panel local forces.
         /// </summary>
-        private Vector<double> CalculateLocalForces()
+        private Vector CalculateLocalForces()
         {
             // Get the parameters
             var up = Displacements;
@@ -591,7 +591,7 @@ namespace SPM.Elements
         /// <summary>
         /// Calculate panel global forces.
         /// </summary>
-        private Vector<double> CalculateGlobalForces()
+        private Vector CalculateGlobalForces()
         {
 	        GlobalForces = TransformationMatrix.Transpose() * LocalForces;
 
@@ -602,7 +602,7 @@ namespace SPM.Elements
         /// Set displacements and calculate forces.
         /// </summary>
         /// <param name="globalDisplacements">The global displacement <see cref="Vector"/>.</param>
-        public virtual void Analysis(Vector<double> globalDisplacements = null)
+        public virtual void Analysis(Vector globalDisplacements = null)
         {
             // Set displacements
             if (globalDisplacements != null)

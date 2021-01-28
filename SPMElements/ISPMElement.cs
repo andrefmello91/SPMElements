@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
-using Autodesk.AutoCAD.DatabaseServices;
 using Extensions;
 
 namespace SPM.Elements
@@ -38,11 +37,6 @@ namespace SPM.Elements
         /// Get or set the number of the element.
         /// </summary>
 	    int Number { get; set ; }
-
-		/// <summary>
-		/// Get or set the <see cref="Autodesk.AutoCAD.DatabaseServices.ObjectId"/> of the element.
-		/// </summary>
-		ObjectId ObjectId { get; set; }
 
 		/// <summary>
         /// Get the DoF index of the element.

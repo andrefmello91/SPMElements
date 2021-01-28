@@ -2,8 +2,6 @@
 using System.Linq;
 using MathNet.Numerics.LinearAlgebra;
 using OnPlaneComponents;
-using Autodesk.AutoCAD.DatabaseServices;
-using Autodesk.AutoCAD.Geometry;
 using MathNet.Numerics;
 using UnitsNet.Units;
 using Extensions;
@@ -59,17 +57,13 @@ namespace SPM.Elements
 		XY
     }
 
+	/// <summary>
+	/// Node class.
+	/// </summary>
     public class Node : ISPMElement, IEquatable<Node>
     {
-		// Auxiliary fields
-		private LengthUnit _geometryUnit, _displacementUnit;
-		private int _number;
-
 		/// <inheritdoc/>
 		public int Number { get; set; }
-
-		/// <inheritdoc/>
-		public ObjectId ObjectId { get; set; }
 
 		/// <inheritdoc/>
 		public int[] DoFIndex => GlobalIndexes(Number).ToArray();
@@ -81,24 +75,51 @@ namespace SPM.Elements
 
 		/// <summary>
         /// Get the position of the node.
-        /// <para>See: <see cref="Point3d"/>.</para>
+        /// <para>See: <see cref="Point"/>.</para>
         /// </summary>
-		public Point3d Position { get; }
+		public Point Position { get; private set; }
+
+		/// <summary>
+		/// Get/set the <see cref="LengthUnit"/> of <see cref="Position"/>.
+		/// </summary>
+		public LengthUnit GeometryUnit
+		{
+			get => Position.Unit;
+			set => Position = Position.Convert(value);
+		}
+
+		/// <summary>
+		/// Get/set the <see cref="LengthUnit"/> of <see cref="Displacement"/>.
+		/// </summary>
+		public LengthUnit DisplacementUnit
+		{
+			get => Displacement.Unit;
+			set => Displacement = Displacement.Convert(value);
+		}
+
+		/// <summary>
+		/// Get/set the <see cref="UnitsNet.Units.ForceUnit"/> of <see cref="Force"/>.
+		/// </summary>
+		public ForceUnit ForceUnit
+		{
+			get => Force.Unit;
+			set => Force = Force.Convert(value);
+		}
 
 		/// <summary>
 		/// Get/set applied <see cref="OnPlaneComponents.Force"/>.
 		/// </summary>
-		public Force Force { get; set; }
+		public Force Force { get; set; } = Force.Zero;
 
 		/// <summary>
 		/// Get/set <see cref="Elements.Constraint"/> condition.
 		/// </summary>
-		public Constraint Constraint { get; set; }
+		public Constraint Constraint { get; set; } = Constraint.Free;
 
 		/// <summary>
 		/// Get/set nodal <see cref="OnPlaneComponents.Displacement"/>
 		/// </summary>
-		public Displacement Displacement { get; set; }
+		public Displacement Displacement { get; set; } = Displacement.Zero;
 
 		/// <summary>
 		/// Returns true if the node is free.
@@ -118,80 +139,32 @@ namespace SPM.Elements
         /// <summary>
         /// Node object.
         /// </summary>
-        /// <param name="objectId">The node <see cref="ObjectId"/>.</param>
-        /// <param name="number">The node number.</param>
-        /// <param name="position">The <seealso cref="Point3d"/> position.</param>
+        /// <param name="position">The <seealso cref="Point"/> position.</param>
         /// <param name="type">The <see cref="NodeType"/>.</param>
-        /// <param name="geometryUnit">The <see cref="LengthUnit"/> of <paramref name="position"/>.</param>
         /// <param name="displacementUnit">The <see cref="LengthUnit"/> of <see cref="Displacement"/>.</param>
-        public Node(Point3d position, NodeType type, LengthUnit geometryUnit = LengthUnit.Millimeter, LengthUnit displacementUnit = LengthUnit.Millimeter)
-			: this (ObjectId.Null, 0, position, type, geometryUnit, displacementUnit)
-        {
-        }
-
-        /// <summary>
-        /// Node object.
-        /// </summary>
-        /// <param name="objectId">The node <see cref="ObjectId"/>.</param>
-        /// <param name="number">The node number.</param>
-        /// <param name="position">The <seealso cref="Point3d"/> position.</param>
-        /// <param name="type">The <see cref="NodeType"/>.</param>
-        /// <param name="geometryUnit">The <see cref="LengthUnit"/> of <paramref name="position"/>.</param>
-        /// <param name="displacementUnit">The <see cref="LengthUnit"/> of <see cref="Displacement"/>.</param>
-        public Node(ObjectId objectId, int number, Point3d position, NodeType type, LengthUnit geometryUnit = LengthUnit.Millimeter, LengthUnit displacementUnit = LengthUnit.Millimeter)
-			: this (objectId, number, position, type, Force.Zero, Constraint.Free, geometryUnit, displacementUnit)
-        {
-        }
-
-        /// <summary>
-        /// Node object.
-        /// </summary>
-        /// <param name="objectId">The node <see cref="ObjectId"/>.</param>
-        /// <param name="number">The node number.</param>
-        /// <param name="position">The <seealso cref="Point3d"/> position.</param>
-        /// <param name="type">The <see cref="NodeType"/>.</param>
-        /// <param name="appliedForce">The applied <see cref="OnPlaneComponents.Force"/> on the node.</param>
-        /// <param name="constraint"> The <see cref="Elements.Constraint"/> condition of the node.</param>
-        /// <param name="geometryUnit">The <see cref="LengthUnit"/> of <paramref name="position"/>.</param>
-        /// <param name="displacementUnit">The <see cref="LengthUnit"/> of <see cref="Displacement"/>.</param>
-        public Node(ObjectId objectId, int number, Point3d position, NodeType type, Force appliedForce, Constraint constraint = Constraint.Free, LengthUnit geometryUnit = LengthUnit.Millimeter, LengthUnit displacementUnit = LengthUnit.Millimeter)
+        public Node(Point position, NodeType type, LengthUnit displacementUnit = LengthUnit.Millimeter)
         {
 	        // Get the position
 	        Position = position;
 
-			// Get ids
-			ObjectId = objectId;
-	        Number   = number;
-
 	        // Get type
 	        Type = type;
 
-	        // Get support conditions
-	        Constraint = constraint;
-
-	        // Get forces
-	        Force = appliedForce;
-
 	        // Set units
-	        _geometryUnit     = geometryUnit;
-	        _displacementUnit = displacementUnit;
-
-	        // Initiate displacements
-	        Displacement = Displacement.Zero;
+	        DisplacementUnit = displacementUnit;
         }
 
         /// <summary>
         /// Return the distance to another <see cref="Node"/>.
-        /// <para>See: <seealso cref="Point3d.DistanceTo"/></para>
         /// </summary>
         /// <param name="otherNode">The other <see cref="Node"/> object.</param>
-        public double GetDistance(Node otherNode) => otherNode != null ? Position.DistanceTo(otherNode.Position) : 0;
+        public double GetDistance(Node otherNode) => !(otherNode is null) ? Position.GetDistance(otherNode.Position) : 0;
 
         /// <summary>
         /// Return the angle, related to horizontal axis, of a line that connects this to <paramref name="otherNode"/> (in radians).
         /// </summary>
-        /// <param name="otherNode">The other <see cref="Node"/> object.</param>
-        public double GetAngle(Node otherNode) => otherNode != null ? Position.AngleTo(otherNode.Position) : 0;
+        /// <inheritdoc cref="GetDistance"/>
+        public double GetAngle(Node otherNode) => !(otherNode is null) ? Position.GetAngle(otherNode.Position) : 0;
 
 		/// <summary>
         /// Set nodal displacements.
@@ -213,30 +186,11 @@ namespace SPM.Elements
 		        uy = u[j];
 
 	        // Save to the node, in mm
-	        Displacement = new Displacement(ux, uy);
-
-			// Change unit
-			ChangeDisplacementUnit(_displacementUnit);
+			var disp = new Displacement(ux, uy).Convert(DisplacementUnit);
+			Displacement = disp;
         }
 
-        /// <summary>
-        /// Set nodal displacements.
-        /// </summary>
-        /// <param name="displacement">The <see cref="Displacement"/> to set;.</param>
-        public void SetDisplacements(Displacement displacement) => Displacement = displacement;
-
-        /// <summary>
-        /// Change the unit of <see cref="Displacement"/>.
-        /// </summary>
-        /// <param name="displacementUnit">The <see cref="LengthUnit"/> to convert.</param>
-        public void ChangeDisplacementUnit(LengthUnit displacementUnit)
-        {
-	        Displacement.ChangeUnit(displacementUnit);
-	        _displacementUnit = displacementUnit;
-        }
-
-
-        public override string ToString()
+		public override string ToString()
         {
 	        string msgstr =
 		        $"Node {Number}\n" +
@@ -266,16 +220,16 @@ namespace SPM.Elements
         }
 
 		/// <summary>
-        /// Returns true if both nodes positions are equal.
-        /// </summary>
-        /// <param name="other">The other <see cref="Node"/> object.</param>
-        public bool Equals(Node other) => !(other is null) && Position.Approx(other.Position, 1E-3.ConvertFromMillimeter(_geometryUnit));
+		/// Returns true if both nodes positions are equal.
+		/// </summary>
+		/// <param name="other">The other <see cref="Node"/> object.</param>
+		public bool Equals(Node other) => !(other is null) && Position == other.Position;
 
-        /// <summary>
-        /// Returns true if <paramref name="other"/> is a <see cref="Node"/> and both positions are equal.
-        /// </summary>
-        /// <param name="other">The other <see cref="Node"/> object.</param>
-        public override bool Equals(object other) => other is Node otherNode && Equals(otherNode);
+		/// <summary>
+		/// Returns true if <paramref name="other"/> is a <see cref="Node"/> and both positions are equal.
+		/// </summary>
+		/// <param name="other">The other <see cref="Node"/> object.</param>
+		public override bool Equals(object other) => other is Node otherNode && Equals(otherNode);
 
 		public override int GetHashCode() => Position.GetHashCode();
 

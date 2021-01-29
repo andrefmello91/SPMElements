@@ -1,62 +1,67 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Autodesk.AutoCAD.Geometry;
-using Extensions;
 using Extensions.Number;
 using MathNet.Numerics;
+using OnPlaneComponents;
 using UnitsNet;
 using UnitsNet.Units;
 
 namespace SPM.Elements.PanelProperties
 {
 	/// <summary>
-    /// Panel geometry struct.
-    /// </summary>
-    public struct PanelGeometry : IEquatable<PanelGeometry>
-    {
-		// Auxiliary fields
-		private Length _width;
+	///     Panel geometry struct.
+	/// </summary>
+	public struct PanelGeometry : IEquatable<PanelGeometry>, IComparable<PanelGeometry>
+	{
 		private (double a, double b, double c, double d)? _dimensions;
 
-		/// <summary>
-        /// Get the <see cref="LengthUnit"/> that this was constructed with.
-        /// </summary>
-        public LengthUnit Unit => _width.Unit;
-
-        /// <summary>
-        /// Get vertices of panel.
-        /// </summary>
-        public Vertices Vertices { get; }
-
-        /// <summary>
-        /// Get <see cref="Edge"/> 1 (base edge).
-        /// </summary>
-        public Edge Edge1 { get; }
-
-        /// <summary>
-        /// Get <see cref="Edge"/> 2 (right edge).
-        /// </summary>
-        public Edge Edge2 { get; }
-
-        /// <summary>
-        /// Get <see cref="Edge"/> 3 (top edge).
-        /// </summary>
-        public Edge Edge3 { get; }
-
-        /// <summary>
-        /// Get <see cref="Edge"/> 4 (left edge).
-        /// </summary>
-        public Edge Edge4 { get; }
+		// Auxiliary fields
+		private Length _width;
 
 		/// <summary>
-        /// Get panel width, in mm.
-        /// </summary>
-        public double Width => _width.Millimeters;
+		///     Get panel dimensions (a, b, c, d), in mm.
+		/// </summary>
+		public (double a, double b, double c, double d) Dimensions => _dimensions ?? CalculateDimensions();
 
 		/// <summary>
-        /// Returns true if this geometry is rectangular.
-        /// </summary>
+		///     Get <see cref="Edge" /> 1 (base edge).
+		/// </summary>
+		public Edge Edge1 { get; }
+
+		/// <summary>
+		///     Get <see cref="Edge" /> 2 (right edge).
+		/// </summary>
+		public Edge Edge2 { get; }
+
+		/// <summary>
+		///     Get <see cref="Edge" /> 3 (top edge).
+		/// </summary>
+		public Edge Edge3 { get; }
+
+		/// <summary>
+		///     Get <see cref="Edge" /> 4 (left edge).
+		/// </summary>
+		public Edge Edge4 { get; }
+
+		/// <summary>
+		///     Get edges' lengths as an array.
+		/// </summary>
+		public double[] EdgeLengths => Edges.Select(e => e.Length).ToArray();
+
+		/// <summary>
+		///     Get edges as an array.
+		/// </summary>
+		public Edge[] Edges => new [] { Edge1, Edge2, Edge3, Edge4 };
+
+		/// <summary>
+		///     Get grip positions as an array.
+		/// </summary>
+		public Point[] GripPositions => Edges.Select(e => e.CenterPoint).ToArray();
+
+		/// <summary>
+		///     Returns true if this geometry is rectangular.
+		/// </summary>
 		public bool Rectangular
 		{
 			get
@@ -66,125 +71,99 @@ namespace SPM.Elements.PanelProperties
 				{
 					Edge2.Angle - Edge1.Angle,
 					Edge4.Angle - Edge3.Angle
-                };
+				};
 
 				return
-					angles.All(angle => angle.Approx(Constants.PiOver2, 1E-3) || angle.Approx(Constants.Pi3Over2, 1E-3));
+					angles.All(angle =>
+						angle.Approx(Constants.PiOver2, 1E-3) || angle.Approx(Constants.Pi3Over2, 1E-3));
 			}
 		}
 
 		/// <summary>
-		/// Get panel dimensions (a, b, c, d), in mm.
+		///     Get edges' stringer dimensions as an array.
+		///     <para>See: <see cref="Edge.SetStringerDimension(Length)" /></para>
 		/// </summary>
-		public (double a, double b, double c, double d) Dimensions => _dimensions ?? CalculateDimensions();
+		public double[] StringerDimensions => Edges.Select(e => e.StringerDimension).ToArray();
 
 		/// <summary>
-        /// Get edges' lengths as an array.
-        /// </summary>
-		public double[] EdgeLengths => new [] { Edge1.Length, Edge2.Length, Edge3.Length, Edge4.Length };
+		///     Get the <see cref="LengthUnit" /> that this was constructed with.
+		/// </summary>
+		public LengthUnit Unit => _width.Unit;
 
 		/// <summary>
-        /// Get grip positions as an array.
-        /// </summary>
-		public Point3d[] GripPositions => new [] { Edge1.CenterPoint, Edge2.CenterPoint, Edge3.CenterPoint, Edge4.CenterPoint };
+		///     Get vertices of panel.
+		/// </summary>
+		public Vertices Vertices { get; }
 
 		/// <summary>
-        /// Get edges' stringer dimensions as an array.
-        /// <para>See: <see cref="Edge.SetStringerDimension"/></para>
-        /// </summary>
-		public double[] StringerDimensions => new [] { Edge1.StringerDimension, Edge2.StringerDimension, Edge3.StringerDimension, Edge4.StringerDimension };
+		///     Get panel width, in mm.
+		/// </summary>
+		public double Width => _width.Millimeters;
 
-        /// <summary>
-        /// Panel geometry constructor.
-        /// </summary>
-        /// <param name="vertex1">The base left vertex.</param>
-        /// <param name="vertex2">The base right vertex.</param>
-        /// <param name="vertex3">The upper right vertex.</param>
-        /// <param name="vertex4">The upper left vertex.</param>
-        /// <param name="width">Panel width, in <paramref name="geometryUnit"/>.</param>
-        /// <param name="geometryUnit">The <see cref="LengthUnit"/> of <paramref name="width"/> and vertices' coordinates.</param>
-        public PanelGeometry(Point3d vertex1, Point3d vertex2, Point3d vertex3, Point3d vertex4, double width, LengthUnit geometryUnit = LengthUnit.Millimeter) 
-			: this (new Vertices(vertex1, vertex2, vertex3, vertex4), width, geometryUnit)
+		/// <summary>
+		///     Panel geometry constructor.
+		/// </summary>
+		/// <param name="vertices">The collection of vertices, in any order.</param>
+		/// <param name="width">Panel width, in <paramref name="unit" />.</param>
+		/// <param name="unit">
+		///     The <see cref="LengthUnit" /> of <paramref name="width" /> and <paramref name="vertices" />'
+		///     coordinates.
+		/// </param>
+		public PanelGeometry(IEnumerable<Point> vertices, double width, LengthUnit unit = LengthUnit.Millimeter)
+			: this (new Vertices(vertices), width, unit)
 		{
 		}
 
-        /// <summary>
-        /// Panel geometry constructor.
-        /// </summary>
-        /// <param name="vertex1">The base left vertex.</param>
-        /// <param name="vertex2">The base right vertex.</param>
-        /// <param name="vertex3">The upper right vertex.</param>
-        /// <param name="vertex4">The upper left vertex.</param>
-        /// <param name="width">Panel width.</param>
-        public PanelGeometry(Point3d vertex1, Point3d vertex2, Point3d vertex3, Point3d vertex4, Length width) 
-			: this (new Vertices(vertex1, vertex2, vertex3, vertex4, width.Unit), width)
-		{
-		}
-
-        /// <summary>
-        /// Panel geometry constructor.
-        /// </summary>
-        /// <param name="vertices">The collection of vertices, in any order.</param>
-        /// <param name="width">Panel width, in <paramref name="geometryUnit"/>.</param>
-        /// <param name="geometryUnit">The <see cref="LengthUnit"/> of <paramref name="width"/> and <paramref name="vertices"/>' coordinates.</param>
-        public PanelGeometry(IEnumerable<Point3d> vertices, double width, LengthUnit geometryUnit = LengthUnit.Millimeter) 
-			: this (new Vertices(vertices), width, geometryUnit)
-		{
-		}
-
-        /// <summary>
-        /// Panel geometry constructor.
-        /// </summary>
-        /// <param name="vertices">The collection of vertices, in any order.</param>
-        /// <param name="width">Panel width.</param>
-        public PanelGeometry(IEnumerable<Point3d> vertices, Length width) 
+		/// <param name="width">Panel width.</param>
+		/// <inheritdoc cref="PanelGeometry(IEnumerable{Point}, double, LengthUnit)" />
+		public PanelGeometry(IEnumerable<Point> vertices, Length width)
 			: this (new Vertices(vertices, width.Unit), width)
 		{
 		}
 
-        /// <summary>
-        /// Panel geometry constructor.
-        /// </summary>
-        /// <param name="vertices">Panel <see cref="Vertices"/> object.</param>
-        /// <param name="width">Panel width, in <paramref name="geometryUnit"/>.</param>
-        /// <param name="geometryUnit">The <see cref="LengthUnit"/> of <paramref name="width"/> and <paramref name="vertices"/>' coordinates.</param>
-        public PanelGeometry(Vertices vertices, double width, LengthUnit geometryUnit = LengthUnit.Millimeter)
-			: this (vertices, Length.From(width, geometryUnit))
+		/// <param name="vertices">Panel <see cref="PanelProperties.Vertices" /> object.</param>
+		/// <inheritdoc cref="PanelGeometry(IEnumerable{Point}, double, LengthUnit)" />
+		public PanelGeometry(Vertices vertices, double width, LengthUnit unit = LengthUnit.Millimeter)
+			: this (vertices, Length.From(width, unit))
 		{
 		}
 
-        /// <summary>
-        /// Panel geometry constructor.
-        /// </summary>
-        /// <param name="vertices">Panel <see cref="PanelProperties.Vertices"/> object.</param>
-        /// <param name="width">Panel width.</param>
-        public PanelGeometry(Vertices vertices, Length width)
+		/// <param name="width">Panel width.</param>
+		/// <inheritdoc cref="PanelGeometry(Vertices, double, LengthUnit)" />
+		public PanelGeometry(Vertices vertices, Length width)
 		{
 			Vertices = vertices;
 			_width   = width;
 
 			// Get edges
-			Edge1 = new Edge(vertices.Vertex1, vertices.Vertex2, width.Unit);
-			Edge2 = new Edge(vertices.Vertex2, vertices.Vertex3, width.Unit);
-			Edge3 = new Edge(vertices.Vertex3, vertices.Vertex4, width.Unit);
-			Edge4 = new Edge(vertices.Vertex4, vertices.Vertex1, width.Unit);
+			Edge1 = new Edge(vertices.Vertex1, vertices.Vertex2);
+			Edge2 = new Edge(vertices.Vertex2, vertices.Vertex3);
+			Edge3 = new Edge(vertices.Vertex3, vertices.Vertex4);
+			Edge4 = new Edge(vertices.Vertex4, vertices.Vertex1);
 
 			_dimensions = null;
 		}
 
 		/// <summary>
-		/// Change the <see cref="LengthUnit"/> of this.
+		///     Change the <see cref="LengthUnit" /> of this.
 		/// </summary>
-		/// <param name="unit">The <see cref="LengthUnit"/> to convert.</param>
+		/// <param name="unit">The <see cref="LengthUnit" /> to convert.</param>
 		public void ChangeUnit(LengthUnit unit)
 		{
-			if (Unit != unit)
-				_width = _width.ToUnit(unit);
+			if (Unit == unit)
+				return;
+
+			_width = _width.ToUnit(unit);
+
+			Vertices.ChangeUnit(unit);
+
+			foreach (var edge in Edges)
+				edge.ChangeUnit(unit);
 		}
 
 		/// <summary>
-        /// Calculate panel dimensions (a, b, c, d).
-        /// </summary>
+		///     Calculate panel dimensions (a, b, c, d).
+		/// </summary>
 		private (double a, double b, double c, double d) CalculateDimensions()
 		{
 			var x = Vertices.XCoordinates;
@@ -202,32 +181,30 @@ namespace SPM.Elements.PanelProperties
 			return _dimensions.Value;
 		}
 
-        /// <summary>
-        /// Returns true if all <see cref="Vertices"/> are equal.
-        /// </summary>
-        /// <param name="other">The other <see cref="PanelGeometry"/> to compare.</param>
-        public bool Equals(PanelGeometry other) => Vertices == other.Vertices;
+		public int CompareTo(PanelGeometry other) => Vertices.CompareTo(other.Vertices);
 
-        public override bool Equals(object obj) => obj is PanelGeometry other && Equals(other);
+		/// <summary>
+		///     Returns true if all <see cref="Vertices" /> are equal.
+		/// </summary>
+		/// <param name="other">The other <see cref="PanelGeometry" /> to compare.</param>
+		public bool Equals(PanelGeometry other) => Vertices == other.Vertices;
 
-        public override int GetHashCode() => Vertices.GetHashCode();
+		public override string ToString() =>
+			$"{Vertices}\n" +
+			$"Width = {_width}";
 
-        public override string ToString()
-        {
-	        return
-		        $"{Vertices}\n" +
-		        $"Width = {_width}";
-        }
+		public override bool Equals(object obj) => obj is PanelGeometry other && Equals(other);
 
-        /// <summary>
-        /// Returns true if arguments are equal.
-        /// </summary>
-        public static bool operator == (PanelGeometry left, PanelGeometry right) => left.Equals(right);
+		public override int GetHashCode() => Vertices.GetHashCode();
 
-        /// <summary>
-        /// Returns true if arguments are different.
-        /// </summary>
-        public static bool operator != (PanelGeometry left, PanelGeometry right) => !left.Equals(right);
+		/// <summary>
+		///     Returns true if arguments are equal.
+		/// </summary>
+		public static bool operator == (PanelGeometry left, PanelGeometry right) => left.Equals(right);
 
-    }
+		/// <summary>
+		///     Returns true if arguments are different.
+		/// </summary>
+		public static bool operator != (PanelGeometry left, PanelGeometry right) => !left.Equals(right);
+	}
 }

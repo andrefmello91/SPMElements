@@ -50,7 +50,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Extensions.cs" />
-    <Compile Include="Node.cs" />
+    <Compile Include="Node\Constraint.cs" />
+    <Compile Include="Node\Node.cs" />
+    <Compile Include="Node\NodeType.cs" />
     <Compile Include="Panel\Properties\Edge.cs" />
     <Compile Include="Panel\Properties\Geometry.cs" />
     <Compile Include="Panel\NLPanel.cs" />

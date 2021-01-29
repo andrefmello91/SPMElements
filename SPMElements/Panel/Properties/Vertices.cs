@@ -1,212 +1,164 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Autodesk.AutoCAD.Geometry;
-using Extensions;
-using Extensions.AutoCAD;
-using Extensions.Number;
+using OnPlaneComponents;
 using UnitsNet.Units;
 
 namespace SPM.Elements.PanelProperties
 {
-    /// <summary>
-    /// Panel vertices struct.
-    /// </summary>
-    public struct Vertices : IEquatable<Vertices>
-    {
-		// Auxiliary
-		private Point3d? _centerPoint;
-		private double[] _xCoordinates, _yCoordinates;
-
+	/// <summary>
+	///     Panel vertices struct.
+	/// </summary>
+	public struct Vertices : IEquatable<Vertices>, IComparable<Vertices>
+	{
 		/// <summary>
-		/// Get the <see cref="LengthUnit"/> of vertices' coordinates.
+		///     Get <see cref="Vertices" /> approximated center point.
 		/// </summary>
-		public LengthUnit Unit { get ; private set; }
+		public Point CenterPoint { get; }
 
 		/// <summary>
-		/// Get vertex 1 (base left vertex).
+		///     Get the <see cref="LengthUnit" /> of vertices' coordinates.
 		/// </summary>
-		public Point3d Vertex1 { get ; private set; }
-
-		/// <summary>
-		/// Get vertex 2 (base right vertex).
-		/// </summary>
-		public Point3d Vertex2 { get ; private set; }
-
-		/// <summary>
-		/// Get vertex 3 (top right vertex).
-		/// </summary>
-		public Point3d Vertex3 { get ; private set; }
-
-		/// <summary>
-		/// Get vertex 4 (top left vertex).
-		/// </summary>
-		public Point3d Vertex4 { get ; private set; }
-
-		/// <summary>
-		/// Get <see cref="Vertices"/> approximated center point.
-		/// </summary>
-		public Point3d CenterPoint => _centerPoint ?? CalculateCenterPoint();
-
-		/// <summary>
-		/// Get X coordinates (in mm) of vertices as an array.
-		/// </summary>
-		public double[] XCoordinates => _xCoordinates ?? VertexCoordinates().x;
-
-		/// <summary>
-		/// Get Y coordinates (in mm) of vertices as an array.
-		/// </summary>
-		public double[] YCoordinates => _yCoordinates ?? VertexCoordinates().y;
-
-        /// <summary>
-        /// Panel vertices object.
-        /// </summary>
-        /// <param name="vertex1">The base left vertex.</param>
-        /// <param name="vertex2">The base right vertex.</param>
-        /// <param name="vertex3">The upper right vertex.</param>
-        /// <param name="vertex4">The upper left vertex.</param>
-        /// <param name="geometryUnit">The <see cref="LengthUnit"/> of vertices' coordinates.</param>
-        public Vertices(Point3d vertex1, Point3d vertex2, Point3d vertex3, Point3d vertex4, LengthUnit geometryUnit = LengthUnit.Millimeter)
-        {
-	        Unit = geometryUnit;
-
-	        Vertex1 = vertex1;
-	        Vertex2 = vertex2;
-	        Vertex3 = vertex3;
-	        Vertex4 = vertex4;
-
-	        _centerPoint  = null;
-	        _xCoordinates = _yCoordinates = null;
-        }
-
-        /// <summary>
-        /// Panel vertices object.
-        /// </summary>
-        /// <param name="vertices">The array of vertices, in any order.</param>
-        /// <param name="geometryUnit">The <see cref="LengthUnit"/> of <paramref name="vertices"/>' coordinates.</param>
-        public Vertices(IEnumerable<Point3d> vertices, LengthUnit geometryUnit = LengthUnit.Millimeter)
-        {
-	        // Order points
-	        var verts = vertices.Order().ToArray();
-
-            if (verts.Length != 4)
-				throw new NotImplementedException();
-
-			Unit = geometryUnit;
-
-            // Set in necessary order (invert 3 and 4)
-            Vertex1 = verts[0];
-            Vertex2 = verts[1];
-            Vertex3 = verts[3];
-            Vertex4 = verts[2];
-
-            _centerPoint  = null;
-            _xCoordinates = _yCoordinates = null;
-        }
-
-        /// <summary>
-        /// Get vertices as an array.
-        /// </summary>
-        public Point3d[] AsArray() => new [] {Vertex1, Vertex2, Vertex3, Vertex4};
-
-        /// <summary>
-        /// Change the <see cref="LengthUnit"/> of vertices' coordinates.
-        /// </summary>
-        /// <param name="unit">The <see cref="LengthUnit"/> to convert.</param>
-        public void ChangeUnit(LengthUnit unit)
-        {
-	        if (Unit == unit)
-		        return;
-
-	        Vertex1 = Vertex1.Convert(Unit, unit);
-	        Vertex2 = Vertex2.Convert(Unit, unit);
-	        Vertex3 = Vertex3.Convert(Unit, unit);
-	        Vertex4 = Vertex4.Convert(Unit, unit);
-
-	        Unit = unit;
-        }
-
-		/// <summary>
-		/// Convert this <see cref="Vertices"/> object to another <see cref="LengthUnit"/>.
-		/// </summary>
-		/// <param name="toUnit">The desired <see cref="LengthUnit"/>.</param>
-		public Vertices Convert(LengthUnit toUnit) =>
-	        toUnit == Unit
-		        ? this
-		        : new Vertices(Vertex1.Convert(Unit, toUnit), Vertex2.Convert(Unit, toUnit), Vertex3.Convert(Unit, toUnit), Vertex4.Convert(Unit, toUnit), toUnit);
-
-		/// <summary>
-        /// Calculate <see cref="Vertices"/> approximated center point.
-        /// </summary>
-        private Point3d CalculateCenterPoint()
-        {
-	        // Calculate the approximated center point
-	        var Pt1 = Vertex1.MidPoint(Vertex3);
-	        var Pt2 = Vertex2.MidPoint(Vertex4);
-
-	        _centerPoint = Pt1.MidPoint(Pt2);
-
-	        return _centerPoint.Value;
-        }
-
-		/// <summary>
-        /// Get X and Y vertices coordinates;
-        /// </summary>
-        /// <returns></returns>
-        private (double[] x, double[] y) VertexCoordinates()
-        {
-	        var vertices = AsArray();
-	        double[] 
-		        x = new double[4],
-		        y = new double[4];
-
-	        for (int i = 0; i < 4; i++)
-	        {
-		        x[i] = vertices[i].Convert(Unit).X;
-		        y[i] = vertices[i].Convert(Unit).Y;
-	        }
-
-	        _xCoordinates = x;
-	        _yCoordinates = y;
-
-	        return (x, y);
-        }
-
-		/// <summary>
-		/// Returns true if all vertices are equal.
-		/// </summary>
-		/// <param name="other">The other <see cref="Vertices"/> to compare.</param>
-		public bool Equals(Vertices other)
+		public LengthUnit Unit
 		{
-			var converted = other.Convert(Unit);
-			var tol       = 0.001.ConvertFromMillimeter(Unit);
-
-			return
-				Vertex1.Approx(converted.Vertex1, tol) && Vertex2.Approx(converted.Vertex2, tol) &&
-				Vertex3.Approx(converted.Vertex3, tol) && Vertex4.Approx(converted.Vertex4, tol);
+			get => Vertex1.Unit;
+			set => ChangeUnit(value);
 		}
 
-        public override bool Equals(object obj) => obj is Vertices other && Equals(other);
+		/// <summary>
+		///     Get vertex 1 (base left vertex).
+		/// </summary>
+		public Point Vertex1 { get ; private set; }
 
-        public override int GetHashCode() => (int)AsArray().Sum(point => point.X * point.Y);
+		/// <summary>
+		///     Get vertex 2 (base right vertex).
+		/// </summary>
+		public Point Vertex2 { get ; private set; }
 
-        public override string ToString()
-        {
-	        return
-		        $"Vertex 1: ({Vertex1.X:0.00}, {Vertex1.Y:0.00})\n" +
-		        $"Vertex 2: ({Vertex2.X:0.00}, {Vertex2.Y:0.00})\n" +
-		        $"Vertex 3: ({Vertex3.X:0.00}, {Vertex3.Y:0.00})\n" +
-		        $"Vertex 4: ({Vertex4.X:0.00}, {Vertex4.Y:0.00})";
-        }
+		/// <summary>
+		///     Get vertex 3 (top right vertex).
+		/// </summary>
+		public Point Vertex3 { get ; private set; }
 
-        /// <summary>
-        /// Returns true if arguments are equal.
-        /// </summary>
-        public static bool operator == (Vertices left, Vertices right) => left.Equals(right);
+		/// <summary>
+		///     Get vertex 4 (top left vertex).
+		/// </summary>
+		public Point Vertex4 { get ; private set; }
 
-        /// <summary>
-        /// Returns true if arguments are different.
-        /// </summary>
-        public static bool operator != (Vertices left, Vertices right) => !left.Equals(right);
-    }
+		/// <summary>
+		///     Get X coordinates (in mm) of vertices as an array.
+		/// </summary>
+		public double[] XCoordinates => AsArray().Select(v => v.Convert(LengthUnit.Millimeter).X).ToArray();
+
+		/// <summary>
+		///     Get Y coordinates (in mm) of vertices as an array.
+		/// </summary>
+		public double[] YCoordinates => AsArray().Select(v => v.Convert(LengthUnit.Millimeter).Y).ToArray();
+
+		/// <summary>
+		///     Panel vertices object.
+		/// </summary>
+		/// <param name="vertex1">The base left vertex.</param>
+		/// <param name="vertex2">The base right vertex.</param>
+		/// <param name="vertex3">The upper right vertex.</param>
+		/// <param name="vertex4">The upper left vertex.</param>
+		public Vertices(Point vertex1, Point vertex2, Point vertex3, Point vertex4)
+		{
+			Vertex1 = vertex1;
+			Vertex2 = vertex2;
+			Vertex3 = vertex3;
+			Vertex4 = vertex4;
+
+			CenterPoint = CalculateCenterPoint(Vertex1, Vertex2, Vertex3, Vertex4);
+		}
+
+		/// <param name="vertices">The collection of the four <see cref="Point" /> vertices.</param>
+		/// <inheritdoc cref="Vertices(Point, Point, Point, Point)" />
+		public Vertices(IEnumerable<Point> vertices)
+		{
+			if (vertices.Count() != 4)
+				throw new NotImplementedException();
+
+			// Order points
+			var verts = vertices.ToList();
+			verts.Sort();
+
+			// Set in necessary order (invert 3 and 4)
+			this = new Vertices(verts[0], verts[1], verts[3], verts[2]);
+		}
+
+		/// <summary>
+		///     Calculate <see cref="Vertices" /> approximated center point.
+		/// </summary>
+		/// <inheritdoc cref="Vertices(Point, Point, Point, Point)" />
+		public static Point CalculateCenterPoint(Point vertex1, Point vertex2, Point vertex3, Point vertex4)
+		{
+			// Calculate the approximated center point
+			var pt1 = vertex1.MidPoint(vertex3);
+			var pt2 = vertex2.MidPoint(vertex4);
+
+			return pt1.MidPoint(pt2);
+		}
+
+		/// <summary>
+		///     Get vertices as an array.
+		/// </summary>
+		public Point[] AsArray() => new [] {Vertex1, Vertex2, Vertex3, Vertex4};
+
+		/// <summary>
+		///     Change the <see cref="LengthUnit" /> of vertices' coordinates.
+		/// </summary>
+		/// <param name="unit">The <see cref="LengthUnit" /> to convert.</param>
+		public void ChangeUnit(LengthUnit unit)
+		{
+			if (Unit == unit)
+				return;
+
+			Vertex1 = Vertex1.Convert(unit);
+			Vertex2 = Vertex2.Convert(unit);
+			Vertex3 = Vertex3.Convert(unit);
+			Vertex4 = Vertex4.Convert(unit);
+
+			Unit = unit;
+		}
+
+		/// <summary>
+		///     Convert this <see cref="Vertices" /> object to another <see cref="LengthUnit" />.
+		/// </summary>
+		/// <param name="unit">The desired <see cref="LengthUnit" />.</param>
+		public Vertices Convert(LengthUnit unit) =>
+			unit == Unit
+				? this
+				: new Vertices(Vertex1.Convert(unit), Vertex2.Convert(unit), Vertex3.Convert(unit),
+					Vertex4.Convert(unit));
+
+		public int CompareTo(Vertices other) => CenterPoint.CompareTo(other.CenterPoint);
+
+		/// <summary>
+		///     Returns true if all vertices are equal.
+		/// </summary>
+		/// <param name="other">The other <see cref="Vertices" /> to compare.</param>
+		public bool Equals(Vertices other) => Vertex1 == other.Vertex1 && Vertex2 == other.Vertex2 &&
+		                                      Vertex3 == other.Vertex3 && Vertex4 == other.Vertex4;
+
+		public override bool Equals(object obj) => obj is Vertices other && Equals(other);
+
+		public override int GetHashCode() => (int) AsArray().Sum(point => point.X * point.Y);
+
+		public override string ToString() =>
+			$"Vertex 1: ({Vertex1.X:0.00}, {Vertex1.Y:0.00})\n" +
+			$"Vertex 2: ({Vertex2.X:0.00}, {Vertex2.Y:0.00})\n" +
+			$"Vertex 3: ({Vertex3.X:0.00}, {Vertex3.Y:0.00})\n" +
+			$"Vertex 4: ({Vertex4.X:0.00}, {Vertex4.Y:0.00})";
+
+		/// <summary>
+		///     Returns true if arguments are equal.
+		/// </summary>
+		public static bool operator == (Vertices left, Vertices right) => left.Equals(right);
+
+		/// <summary>
+		///     Returns true if arguments are different.
+		/// </summary>
+		public static bool operator != (Vertices left, Vertices right) => !left.Equals(right);
+	}
 }

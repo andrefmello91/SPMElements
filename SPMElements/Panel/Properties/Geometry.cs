@@ -14,10 +14,16 @@ namespace SPM.Elements.PanelProperties
 	/// </summary>
 	public struct PanelGeometry : IEquatable<PanelGeometry>, IComparable<PanelGeometry>
 	{
+		#region Fields
+
 		private (double a, double b, double c, double d)? _dimensions;
 
 		// Auxiliary fields
 		private Length _width;
+
+		#endregion
+
+		#region Properties
 
 		/// <summary>
 		///     Get panel dimensions (a, b, c, d), in mm.
@@ -100,6 +106,10 @@ namespace SPM.Elements.PanelProperties
 		/// </summary>
 		public double Width => _width.Millimeters;
 
+		#endregion
+
+		#region Constructors
+
 		/// <summary>
 		///     Panel geometry constructor.
 		/// </summary>
@@ -117,7 +127,7 @@ namespace SPM.Elements.PanelProperties
 		/// <param name="width">Panel width.</param>
 		/// <inheritdoc cref="PanelGeometry(IEnumerable{Point}, double, LengthUnit)" />
 		public PanelGeometry(IEnumerable<Point> vertices, Length width)
-			: this (new Vertices(vertices, width.Unit), width)
+			: this (new Vertices(vertices), width)
 		{
 		}
 
@@ -133,7 +143,7 @@ namespace SPM.Elements.PanelProperties
 		public PanelGeometry(Vertices vertices, Length width)
 		{
 			Vertices = vertices;
-			_width   = width;
+			_width   = width.ToUnit(vertices.Unit);
 
 			// Get edges
 			Edge1 = new Edge(vertices.Vertex1, vertices.Vertex2);
@@ -143,6 +153,10 @@ namespace SPM.Elements.PanelProperties
 
 			_dimensions = null;
 		}
+
+		#endregion
+
+		#region  Methods
 
 		/// <summary>
 		///     Change the <see cref="LengthUnit" /> of this.
@@ -197,6 +211,10 @@ namespace SPM.Elements.PanelProperties
 
 		public override int GetHashCode() => Vertices.GetHashCode();
 
+		#endregion
+
+		#region Operators
+
 		/// <summary>
 		///     Returns true if arguments are equal.
 		/// </summary>
@@ -206,5 +224,7 @@ namespace SPM.Elements.PanelProperties
 		///     Returns true if arguments are different.
 		/// </summary>
 		public static bool operator != (PanelGeometry left, PanelGeometry right) => !left.Equals(right);
+
+		#endregion
 	}
 }

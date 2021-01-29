@@ -181,14 +181,20 @@ namespace SPM.Elements
 		}
 
 		/// <inheritdoc cref="Stringer(Node, Node, Node, Length, Length, Parameters, ConstitutiveModel, UniaxialReinforcement)" />
-		/// <inheritdoc
-		///     cref="Stringer(IEnumerable{Node}, Point, Point, double, double, Parameters, ConstitutiveModel, UniaxialReinforcement, LengthUnit)" />
+		/// <inheritdoc cref="Stringer(IEnumerable{Node}, Point, Point, double, double, Parameters, ConstitutiveModel, UniaxialReinforcement, LengthUnit)" />
 		public Stringer(IEnumerable<Node> nodes, Point grip1Position, Point grip3Position, Length width, Length height, Parameters concreteParameters, ConstitutiveModel model, UniaxialReinforcement reinforcement = null)
+			: this (nodes, new StringerGeometry(grip1Position, grip3Position, width, height), concreteParameters, model, reinforcement)
 		{
-			Geometry       = new StringerGeometry(grip1Position, grip3Position, width, height);
-			Grip1          = nodes.GetByPosition(grip1Position);
+		}
+
+		/// <param name="geometry">The <see cref="StringerGeometry"/> of this element.</param>
+		/// <inheritdoc cref="Stringer(IEnumerable{Node}, Point, Point,Length, Length, Parameters, ConstitutiveModel, UniaxialReinforcement)" />
+		public Stringer(IEnumerable<Node> nodes, StringerGeometry geometry, Parameters concreteParameters, ConstitutiveModel model, UniaxialReinforcement reinforcement = null)
+		{
+			Geometry       = geometry;
+			Grip1          = nodes.GetByPosition(Geometry.InitialPoint);
 			Grip2          = nodes.GetByPosition(Geometry.CenterPoint);
-			Grip3          = nodes.GetByPosition(grip3Position);
+			Grip3          = nodes.GetByPosition(Geometry.InitialPoint);
 			Reinforcement  = reinforcement;
 			Concrete       = new UniaxialConcrete(concreteParameters, ConcreteArea, model);
 		}
@@ -202,18 +208,11 @@ namespace SPM.Elements
 		/// </summary>
 		/// <param name="analysisType">Type of analysis to perform (<see cref="AnalysisType" />).</param>
 		/// <param name="number">The stringer number.</param>
-		/// <inheritdoc
-		///     cref="Stringer(IEnumerable{Node}, Point, Point, double, double, Parameters, ConstitutiveModel, UniaxialReinforcement, LengthUnit)" />
-		public static Stringer Read(AnalysisType analysisType, int number, IEnumerable<Node> nodes, Point grip1Position, Point grip3Position, double width, double height, Parameters concreteParameters, ConstitutiveModel model, UniaxialReinforcement reinforcement = null, LengthUnit unit = LengthUnit.Millimeter) =>
-			Read(analysisType, number, nodes, grip1Position, grip3Position, Length.From(width, unit), Length.From(height, unit), concreteParameters, model, reinforcement);
-
-		/// <inheritdoc cref="Read" />
-		/// <inheritdoc
-		///     cref="Stringer(IEnumerable{Node}, Point, Point, Length, Length, Parameters, ConstitutiveModel, UniaxialReinforcement)" />
-		public static Stringer Read(AnalysisType analysisType, int number, IEnumerable<Node> nodes, Point grip1Position, Point grip3Position, Length width, Length height, Parameters concreteParameters, ConstitutiveModel model, UniaxialReinforcement reinforcement = null) =>
+		/// <inheritdoc cref="Stringer(IEnumerable{Node}, StringerGeometry, Parameters, ConstitutiveModel, UniaxialReinforcement)" />
+		public static Stringer Read(AnalysisType analysisType, int number, IEnumerable<Node> nodes, StringerGeometry geometry, Parameters concreteParameters, ConstitutiveModel model, UniaxialReinforcement reinforcement = null) =>
 			analysisType is AnalysisType.Linear
-				? new   Stringer(nodes, grip1Position, grip3Position, width, height, concreteParameters, model, reinforcement) { Number = number }
-				: new NLStringer(nodes, grip1Position, grip3Position, width, height, concreteParameters, model, reinforcement) { Number = number };
+				? new   Stringer(nodes, geometry, concreteParameters, model, reinforcement) { Number = number }
+				: new NLStringer(nodes, geometry, concreteParameters, model, reinforcement) { Number = number };
 
 		public void SetDisplacements(Vector<double> globalDisplacementVector)
 		{

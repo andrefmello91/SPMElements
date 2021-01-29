@@ -115,14 +115,6 @@ namespace SPM.Elements
 		///     Nonlinear panel object.
 		/// </summary>
 		/// <inheritdoc />
-		public NLPanel(Node grip1, Node grip2, Node grip3, Node grip4, Vertices vertices, Length width, Parameters concreteParameters, ConstitutiveModel model, WebReinforcement reinforcement = null)
-			: base(grip1, grip2, grip3, grip4, vertices, width, concreteParameters, model, reinforcement) =>
-			IntegrationPoints = IntPoints().ToArray();
-
-		/// <summary>
-		///     Nonlinear panel object.
-		/// </summary>
-		/// <inheritdoc />
 		public NLPanel(Node grip1, Node grip2, Node grip3, Node grip4, Vertices vertices, double width, Parameters concreteParameters, ConstitutiveModel model, WebReinforcement reinforcement = null, LengthUnit unit = LengthUnit.Millimeter)
 			: this(grip1, grip2, grip3, grip4, vertices, Length.From(width, unit), concreteParameters, model, reinforcement)
 		{
@@ -132,8 +124,8 @@ namespace SPM.Elements
 		///     Nonlinear panel object.
 		/// </summary>
 		/// <inheritdoc />
-		public NLPanel(Node grip1, Node grip2, Node grip3, Node grip4, IEnumerable<Point> vertices, Length width, Parameters concreteParameters, ConstitutiveModel model, WebReinforcement reinforcement = null)
-			: this(grip1, grip2, grip3, grip4, new Vertices(vertices), width, concreteParameters, model, reinforcement)
+		public NLPanel(Node grip1, Node grip2, Node grip3, Node grip4, Vertices vertices, Length width, Parameters concreteParameters, ConstitutiveModel model, WebReinforcement reinforcement = null)
+			: this(grip1, grip2, grip3, grip4, new PanelGeometry(vertices, width), concreteParameters, model, reinforcement)
 		{
 		}
 
@@ -141,18 +133,8 @@ namespace SPM.Elements
 		///     Nonlinear panel object.
 		/// </summary>
 		/// <inheritdoc />
-		public NLPanel(Node grip1, Node grip2, Node grip3, Node grip4, IEnumerable<Point> vertices, double width, Parameters concreteParameters, ConstitutiveModel model, WebReinforcement reinforcement = null, LengthUnit unit = LengthUnit.Millimeter)
-			: this(grip1, grip2, grip3, grip4, new Vertices(vertices), Length.From(width, unit), concreteParameters, model, reinforcement)
-		{
-		}
-
-		/// <summary>
-		///     Nonlinear panel object.
-		/// </summary>
-		/// <inheritdoc />
-		public NLPanel(IEnumerable<Node> nodes, Vertices vertices, Length width, Parameters concreteParameters, ConstitutiveModel model, WebReinforcement reinforcement = null)
-			: base(nodes, vertices, width, concreteParameters, model, reinforcement) =>
-			IntegrationPoints = IntPoints().ToArray();
+		public NLPanel(Node grip1, Node grip2, Node grip3, Node grip4, PanelGeometry geometry, Parameters concreteParameters, ConstitutiveModel model, WebReinforcement reinforcement = null)
+			: base(grip1, grip2, grip3, grip4, geometry, concreteParameters, model, reinforcement) => IntegrationPoints = IntPoints().ToArray();
 
 		/// <summary>
 		///     Nonlinear panel object.
@@ -167,8 +149,8 @@ namespace SPM.Elements
 		///     Nonlinear panel object.
 		/// </summary>
 		/// <inheritdoc />
-		public NLPanel(IEnumerable<Node> nodes, IEnumerable<Point> vertices, Length width, Parameters concreteParameters, ConstitutiveModel model, WebReinforcement reinforcement = null)
-			: this(nodes, new Vertices(vertices), width, concreteParameters, model, reinforcement)
+		public NLPanel(IEnumerable<Node> nodes, Vertices vertices, Length width, Parameters concreteParameters, ConstitutiveModel model, WebReinforcement reinforcement = null)
+			: this(nodes, new PanelGeometry(vertices, width), concreteParameters, model, reinforcement)
 		{
 		}
 
@@ -176,10 +158,9 @@ namespace SPM.Elements
 		///     Nonlinear panel object.
 		/// </summary>
 		/// <inheritdoc />
-		public NLPanel(IEnumerable<Node> nodes, IEnumerable<Point> vertices, double width, Parameters concreteParameters, ConstitutiveModel model, WebReinforcement reinforcement = null, LengthUnit unit = LengthUnit.Millimeter)
-			: this(nodes, new Vertices(vertices), Length.From(width, unit), concreteParameters, model, reinforcement)
-		{
-		}
+		public NLPanel(IEnumerable<Node> nodes, PanelGeometry geometry, Parameters concreteParameters, ConstitutiveModel model, WebReinforcement reinforcement = null)
+			: base(nodes, geometry, concreteParameters, model, reinforcement) => IntegrationPoints = IntPoints().ToArray();
+
 
 		#endregion
 

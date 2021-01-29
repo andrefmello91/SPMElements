@@ -12,6 +12,8 @@ namespace SPM.Elements
 	/// </summary>
 	public class Node : INumberedElement, IEquatable<Node>
 	{
+		#region Properties
+
 		public int[] DoFIndex => GlobalIndexes(Number).ToArray();
 
 		public int Number { get; set; }
@@ -37,7 +39,7 @@ namespace SPM.Elements
 		public LengthUnit DisplacementUnit
 		{
 			get => Displacement.Unit;
-			set => Displacement = Displacement.Convert(value);
+			set => Displacement.ChangeUnit(value);
 		}
 
 		/// <summary>
@@ -56,7 +58,7 @@ namespace SPM.Elements
 		public ForceUnit ForceUnit
 		{
 			get => Force.Unit;
-			set => Force = Force.Convert(value);
+			set => Force.ChangeUnit(value);
 		}
 
 		/// <summary>
@@ -65,7 +67,7 @@ namespace SPM.Elements
 		public LengthUnit GeometryUnit
 		{
 			get => Position.Unit;
-			set => Position = Position.Convert(value);
+			set => Position.ChangeUnit(value);
 		}
 
 		/// <summary>
@@ -77,12 +79,16 @@ namespace SPM.Elements
 		///     Get the position of the node.
 		///     <para>See: <see cref="Point" />.</para>
 		/// </summary>
-		public Point Position { get; private set; }
+		public Point Position { get; }
 
 		/// <summary>
 		///     Get the node type (<see cref="NodeType" />).
 		/// </summary>
 		public NodeType Type { get; }
+
+		#endregion
+
+		#region Constructors
 
 		/// <summary>
 		///     Node object.
@@ -102,12 +108,15 @@ namespace SPM.Elements
 			DisplacementUnit = displacementUnit;
 		}
 
+		#endregion
+
+		#region  Methods
+
 		/// <summary>
 		///     Return the distance to another <see cref="Node" />.
 		/// </summary>
 		/// <param name="otherNode">The other <see cref="Node" /> object.</param>
-		public double GetDistance(Node otherNode) =>
-			!(otherNode is null) ? Position.GetDistance(otherNode.Position) : 0;
+		public double GetDistance(Node otherNode) => !(otherNode is null) ? Position.GetDistance(otherNode.Position) : 0;
 
 		/// <summary>
 		///     Return the angle, related to horizontal axis, of a line that connects this to <paramref name="otherNode" /> (in
@@ -183,6 +192,10 @@ namespace SPM.Elements
 
 		public override int GetHashCode() => Position.GetHashCode();
 
+		#endregion
+
+		#region Operators
+
 		/// <summary>
 		///     Returns true if both nodes positions are equal.
 		/// </summary>
@@ -192,5 +205,7 @@ namespace SPM.Elements
 		///     Returns true if both nodes positions are different.
 		/// </summary>
 		public static bool operator != (Node left, Node right) => !(left is null) && !left.Equals(right);
+
+		#endregion
 	}
 }

@@ -7,6 +7,7 @@ using Material.Reinforcement.Uniaxial;
 using MathNet.Numerics.LinearAlgebra;
 using MathNet.Numerics.LinearAlgebra.Double;
 using OnPlaneComponents;
+using SPM.Elements.StringerProperties;
 using UnitsNet;
 using UnitsNet.Units;
 
@@ -81,6 +82,13 @@ namespace SPM.Elements
 		/// <inheritdoc />
 		public NLStringer(IEnumerable<Node> nodes, Point grip1Position, Point grip3Position, Length width, Length height, Parameters concreteParameters, ConstitutiveModel model, UniaxialReinforcement reinforcement = null)
 			: base(nodes, grip1Position, grip3Position, width, height, concreteParameters, model, reinforcement)
+		{
+		}
+
+		/// <inheritdoc cref="NLStringer(Node, Node, Node, Length, Length, Parameters, ConstitutiveModel, UniaxialReinforcement)" />
+		/// <inheritdoc />
+		public NLStringer(IEnumerable<Node> nodes, StringerGeometry geometry, Parameters concreteParameters, ConstitutiveModel model, UniaxialReinforcement reinforcement = null)
+			: base(nodes, geometry, concreteParameters, model, reinforcement)
 		{
 		}
 

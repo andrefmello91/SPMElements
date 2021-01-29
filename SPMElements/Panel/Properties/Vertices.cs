@@ -9,12 +9,9 @@ namespace SPM.Elements.PanelProperties
 	/// <summary>
 	///     Panel vertices struct.
 	/// </summary>
-	public struct Vertices : IEquatable<Vertices>, IComparable<Vertices>
+	public struct Vertices : IUnitConvertible<Vertices, LengthUnit>, IEquatable<Vertices>, IComparable<Vertices>
 	{
-		/// <summary>
-		///     Get <see cref="Vertices" /> approximated center point.
-		/// </summary>
-		public Point CenterPoint { get; }
+		#region Properties
 
 		/// <summary>
 		///     Get the <see cref="LengthUnit" /> of vertices' coordinates.
@@ -24,6 +21,11 @@ namespace SPM.Elements.PanelProperties
 			get => Vertex1.Unit;
 			set => ChangeUnit(value);
 		}
+
+		/// <summary>
+		///     Get <see cref="Vertices" /> approximated center point.
+		/// </summary>
+		public Point CenterPoint { get; }
 
 		/// <summary>
 		///     Get vertex 1 (base left vertex).
@@ -55,6 +57,10 @@ namespace SPM.Elements.PanelProperties
 		/// </summary>
 		public double[] YCoordinates => AsArray().Select(v => v.Convert(LengthUnit.Millimeter).Y).ToArray();
 
+		#endregion
+
+		#region Constructors
+
 		/// <summary>
 		///     Panel vertices object.
 		/// </summary>
@@ -65,9 +71,9 @@ namespace SPM.Elements.PanelProperties
 		public Vertices(Point vertex1, Point vertex2, Point vertex3, Point vertex4)
 		{
 			Vertex1 = vertex1;
-			Vertex2 = vertex2;
-			Vertex3 = vertex3;
-			Vertex4 = vertex4;
+			Vertex2 = vertex2.Convert(vertex1.Unit);
+			Vertex3 = vertex3.Convert(vertex1.Unit);
+			Vertex4 = vertex4.Convert(vertex1.Unit);
 
 			CenterPoint = CalculateCenterPoint(Vertex1, Vertex2, Vertex3, Vertex4);
 		}
@@ -86,6 +92,10 @@ namespace SPM.Elements.PanelProperties
 			// Set in necessary order (invert 3 and 4)
 			this = new Vertices(verts[0], verts[1], verts[3], verts[2]);
 		}
+
+		#endregion
+
+		#region  Methods
 
 		/// <summary>
 		///     Calculate <see cref="Vertices" /> approximated center point.
@@ -132,6 +142,8 @@ namespace SPM.Elements.PanelProperties
 				: new Vertices(Vertex1.Convert(unit), Vertex2.Convert(unit), Vertex3.Convert(unit),
 					Vertex4.Convert(unit));
 
+		public Vertices Copy() => new Vertices(AsArray());
+
 		public int CompareTo(Vertices other) => CenterPoint.CompareTo(other.CenterPoint);
 
 		/// <summary>
@@ -151,6 +163,10 @@ namespace SPM.Elements.PanelProperties
 			$"Vertex 3: ({Vertex3.X:0.00}, {Vertex3.Y:0.00})\n" +
 			$"Vertex 4: ({Vertex4.X:0.00}, {Vertex4.Y:0.00})";
 
+		#endregion
+
+		#region Operators
+
 		/// <summary>
 		///     Returns true if arguments are equal.
 		/// </summary>
@@ -160,5 +176,7 @@ namespace SPM.Elements.PanelProperties
 		///     Returns true if arguments are different.
 		/// </summary>
 		public static bool operator != (Vertices left, Vertices right) => !left.Equals(right);
+
+		#endregion
 	}
 }

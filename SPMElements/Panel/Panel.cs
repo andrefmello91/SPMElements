@@ -185,39 +185,46 @@ namespace SPM.Elements
 		/// <inheritdoc
 		///     cref="Panel(Node, Node, Node, Node, Vertices, double, Parameters, ConstitutiveModel, WebReinforcement, LengthUnit)" />
 		public Panel(Node grip1, Node grip2, Node grip3, Node grip4, Vertices vertices, Length width, Parameters concreteParameters, ConstitutiveModel model, WebReinforcement reinforcement = null)
+			: this(grip1, grip2, grip3, grip4, new PanelGeometry(vertices, width), concreteParameters, model, reinforcement)
+		{
+		}
+
+		/// <param name="geometry">The <seealso cref="PanelGeometry"/>.</param>
+		/// <inheritdoc
+		///     cref="Panel(Node, Node, Node, Node, Vertices, double, Parameters, ConstitutiveModel, WebReinforcement, LengthUnit)" />
+		public Panel(Node grip1, Node grip2, Node grip3, Node grip4, PanelGeometry geometry, Parameters concreteParameters, ConstitutiveModel model, WebReinforcement reinforcement = null)
 		{
 			Grip1 = grip1;
 			Grip2 = grip2;
 			Grip3 = grip3;
 			Grip4 = grip4;
 
-			Geometry = new PanelGeometry(vertices, width);
+			Geometry = geometry;
 
 			Concrete = new BiaxialConcrete(concreteParameters, model);
 
 			Reinforcement = reinforcement;
 		}
 
-
-		/// <param name="vertices">The collection of <see cref="Point" /> panel vertices.</param>
-		/// <inheritdoc cref="Panel(Node, Node, Node, Node, Vertices, Length, Parameters, ConstitutiveModel, WebReinforcement)" />
-		public Panel(Node grip1, Node grip2, Node grip3, Node grip4, IEnumerable<Point> vertices, Length width, Parameters concreteParameters, ConstitutiveModel model, WebReinforcement reinforcement = null)
-			: this(grip1, grip2, grip3, grip4, new Vertices(vertices), width, concreteParameters, model, reinforcement)
-		{
-		}
-
 		/// <param name="width">Panel width, in <paramref name="unit" />.</param>
-		/// <inheritdoc cref="Panel(Node, Node, Node, Node, Vertices, Length, Parameters, ConstitutiveModel, WebReinforcement)" />
-		public Panel(Node grip1, Node grip2, Node grip3, Node grip4, IEnumerable<Point> vertices, double width, Parameters concreteParameters, ConstitutiveModel model, WebReinforcement reinforcement = null, LengthUnit unit = LengthUnit.Millimeter)
-			: this(grip1, grip2, grip3, grip4, new Vertices(vertices), Length.From(width, unit), concreteParameters, model, reinforcement)
+		/// <inheritdoc cref="Panel(IEnumerable{Node}, Vertices, Length, Parameters, ConstitutiveModel, WebReinforcement)" />
+		public Panel(IEnumerable<Node> nodes, Vertices vertices, double width, Parameters concreteParameters, ConstitutiveModel model, WebReinforcement reinforcement = null, LengthUnit unit = LengthUnit.Millimeter)
+			: this(nodes, vertices, Length.From(width, unit), concreteParameters, model, reinforcement)
 		{
 		}
 
 		/// <param name="nodes">The collection containing all <see cref="Node" />'s of SPM model.</param>
 		/// <inheritdoc cref="Panel(Node, Node, Node, Node, Vertices, Length, Parameters, ConstitutiveModel, WebReinforcement)" />
 		public Panel(IEnumerable<Node> nodes, Vertices vertices, Length width, Parameters concreteParameters, ConstitutiveModel model, WebReinforcement reinforcement = null)
+			: this(nodes, new PanelGeometry(vertices, width), concreteParameters, model, reinforcement)
 		{
-			Geometry = new PanelGeometry(vertices, width);
+		}
+
+		/// <inheritdoc cref="Panel(IEnumerable{Node},Vertices, Length, Parameters, ConstitutiveModel, WebReinforcement)" />
+		/// <inheritdoc cref="Panel(Node, Node, Node, Node, PanelGeometry, Parameters, ConstitutiveModel, WebReinforcement)" />
+		public Panel(IEnumerable<Node> nodes, PanelGeometry geometry, Parameters concreteParameters, ConstitutiveModel model, WebReinforcement reinforcement = null)
+		{
+			Geometry = geometry;
 
 			Grip1 = nodes.GetByPosition(Geometry.Edge1.CenterPoint);
 			Grip2 = nodes.GetByPosition(Geometry.Edge2.CenterPoint);
@@ -229,26 +236,6 @@ namespace SPM.Elements
 			Reinforcement = reinforcement;
 		}
 
-		/// <param name="width">Panel width, in <paramref name="unit" />.</param>
-		/// <inheritdoc cref="Panel(IEnumerable{Node}, Vertices, Length, Parameters, ConstitutiveModel, WebReinforcement)" />
-		public Panel(IEnumerable<Node> nodes, Vertices vertices, double width, Parameters concreteParameters, ConstitutiveModel model, WebReinforcement reinforcement = null, LengthUnit unit = LengthUnit.Millimeter)
-			: this (nodes, vertices, Length.From(width, unit), concreteParameters, model, reinforcement)
-		{
-		}
-
-		/// <param name="vertices">The collection of <see cref="Point" /> panel vertices.</param>
-		/// <inheritdoc cref="Panel(IEnumerable{Node}, Vertices, Length, Parameters, ConstitutiveModel, WebReinforcement)" />
-		public Panel(IEnumerable<Node> nodes, IEnumerable<Point> vertices, Length width, Parameters concreteParameters, ConstitutiveModel model, WebReinforcement reinforcement = null)
-			: this(nodes, new Vertices(vertices), width, concreteParameters, model, reinforcement)
-		{
-		}
-
-		/// <param name="width">Panel width, in <paramref name="unit" />.</param>
-		/// <inheritdoc cref="Panel(IEnumerable{Node}, Vertices, Length, Parameters, ConstitutiveModel, WebReinforcement)" />
-		public Panel(IEnumerable<Node> nodes, IEnumerable<Point> vertices, double width, Parameters concreteParameters, ConstitutiveModel model, WebReinforcement reinforcement = null, LengthUnit unit = LengthUnit.Millimeter)
-			: this (nodes, new Vertices(vertices), Length.From(width, unit), concreteParameters, model, reinforcement)
-		{
-		}
 
 		#endregion
 
@@ -261,11 +248,11 @@ namespace SPM.Elements
 		/// <param name="analysisType">The <see cref="AnalysisType" />.</param>
 		/// <param name="number">The panel number.</param>
 		/// <inheritdoc
-		///     cref="Panel(IEnumerable{Node}, Vertices, double, Parameters, ConstitutiveModel, WebReinforcement, LengthUnit)" />
-		public static Panel Read(AnalysisType analysisType, int number, IEnumerable<Node> nodes, IEnumerable<Point> vertices, double width, Parameters concreteParameters, ConstitutiveModel model, WebReinforcement reinforcement = null, LengthUnit unit = LengthUnit.Millimeter) =>
+		///     cref="Panel(IEnumerable{Node}, PanelGeometry, Parameters, ConstitutiveModel, WebReinforcement)" />
+		public static Panel Read(AnalysisType analysisType, int number, IEnumerable<Node> nodes, PanelGeometry geometry, Parameters concreteParameters, ConstitutiveModel model, WebReinforcement reinforcement = null) =>
 			analysisType is AnalysisType.Linear
-				? new   Panel(nodes, vertices, width, concreteParameters, model, reinforcement, unit) {Number = number}
-				: new NLPanel(nodes, vertices, width, concreteParameters, model, reinforcement, unit) {Number = number};
+				? new   Panel(nodes, geometry, concreteParameters, model, reinforcement) {Number = number}
+				: new NLPanel(nodes, geometry, concreteParameters, model, reinforcement) {Number = number};
 
 		/// <summary>
 		///     Set panel displacements from global displacement vector.

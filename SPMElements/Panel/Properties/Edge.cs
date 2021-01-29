@@ -8,7 +8,7 @@ namespace SPM.Elements.PanelProperties
 	/// <summary>
 	///     Panel edge struct.
 	/// </summary>
-	public struct Edge : IEquatable<Edge>, IComparable<Edge>
+	public struct Edge : IUnitConvertible<Edge, LengthUnit>, IEquatable<Edge>, IComparable<Edge>
 	{
 		// Auxiliary fields
 		private Length _length, _stringerDimension;
@@ -60,7 +60,7 @@ namespace SPM.Elements.PanelProperties
 		public Edge(Point initialVertex, Point finalVertex)
 		{
 			InitialVertex      = initialVertex;
-			FinalVertex        = finalVertex;
+			FinalVertex        = finalVertex.Convert(initialVertex.Unit);
 			CenterPoint        = initialVertex.MidPoint(finalVertex);
 			_length            = UnitsNet.Length.From(initialVertex.GetDistance(finalVertex), initialVertex.Unit);
 			Angle              = initialVertex.GetAngle(finalVertex);
@@ -83,6 +83,10 @@ namespace SPM.Elements.PanelProperties
 			_length            = _length.ToUnit(unit);
 			_stringerDimension = _stringerDimension.ToUnit(unit);
 		}
+
+		public Edge Convert(LengthUnit unit) => new Edge(InitialVertex.Convert(unit), FinalVertex.Convert(unit));
+
+		public Edge Copy() => throw new NotImplementedException();
 
 		/// <summary>
 		///     Set stringer dimension in this edge.

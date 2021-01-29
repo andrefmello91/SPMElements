@@ -9,7 +9,7 @@ namespace SPM.Elements.StringerProperties
 	/// <summary>
 	///     Stringer geometry struct.
 	/// </summary>
-	public struct StringerGeometry : IEquatable<StringerGeometry>, IComparable<StringerGeometry>
+	public struct StringerGeometry : IUnitConvertible<StringerGeometry, LengthUnit>, IEquatable<StringerGeometry>, IComparable<StringerGeometry>
 	{
 		#region Fields
 
@@ -19,6 +19,15 @@ namespace SPM.Elements.StringerProperties
 		#endregion
 
 		#region Properties
+
+		/// <summary>
+		///     Get/set the <see cref="LengthUnit" /> that this was constructed with.
+		/// </summary>
+		public LengthUnit Unit
+		{
+			get => InitialPoint.Unit;
+			set => ChangeUnit(value);
+		}
 
 		/// <summary>
 		///     The stringer angle, in radians.
@@ -63,15 +72,6 @@ namespace SPM.Elements.StringerProperties
 		///     The stringer length, in mm.
 		/// </summary>
 		public double Length => _length.Millimeters;
-
-		/// <summary>
-		///     Get/set the <see cref="LengthUnit" /> that this was constructed with.
-		/// </summary>
-		public LengthUnit Unit
-		{
-			get => InitialPoint.Unit;
-			set => ChangeUnit(value);
-		}
 
 		/// <summary>
 		///     Get/set the stringer width, in mm.
@@ -149,11 +149,13 @@ namespace SPM.Elements.StringerProperties
 				? this
 				: new StringerGeometry(InitialPoint.Convert(unit), EndPoint.Convert(unit), Width.ConvertFromMillimeter(unit), Height.ConvertFromMillimeter(unit), unit);
 
+		public StringerGeometry Copy() => new StringerGeometry(InitialPoint, EndPoint, _width, _height);
+
 		/// <summary>
 		///     Change the <see cref="LengthUnit" /> of this.
 		/// </summary>
 		/// <param name="unit">The <see cref="LengthUnit" /> to convert.</param>
-		private void ChangeUnit(LengthUnit unit)
+		public void ChangeUnit(LengthUnit unit)
 		{
 			if (Unit == unit)
 				return;

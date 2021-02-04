@@ -1,8 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Extensions.LinearAlgebra;
-using Extensions.Number;
+using Extensions;
 using Material.Concrete;
 using Material.Concrete.Uniaxial;
 using Material.Reinforcement.Uniaxial;

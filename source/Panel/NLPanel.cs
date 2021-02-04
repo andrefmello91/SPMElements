@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using Extensions.LinearAlgebra;
+using Extensions;
 using Material.Concrete;
 using Material.Reinforcement.Biaxial;
 using MathNet.Numerics.LinearAlgebra;

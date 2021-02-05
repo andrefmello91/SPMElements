@@ -62,13 +62,13 @@ namespace SPM.Elements
 		Vector<double> LocalDisplacements { get; }
 
 		/// <summary>
-		/// Get/set global displacement <see cref="Vector"/>.
+		/// Get the global displacement <see cref="Vector"/>.
 		/// </summary>
 		/// <inheritdoc cref="LocalDisplacements"/>
 		Vector<double> Displacements { get; }
 
 		/// <summary>
-		/// Get/set local force <see cref="Vector"/>.
+		/// Get the local force <see cref="Vector"/>.
 		/// </summary>
 		/// <remarks>
 		///		Components in <see cref="ForceUnit.Newton"/>.
@@ -76,7 +76,7 @@ namespace SPM.Elements
 		Vector<double> LocalForces { get; }
 
 		/// <summary>
-		/// Get stringer global force <see cref="Vector"/>.
+		/// Get the global force <see cref="Vector"/>.
 		/// </summary>
 		/// <inheritdoc cref="LocalForces"/>
 		Vector<double> Forces { get; }

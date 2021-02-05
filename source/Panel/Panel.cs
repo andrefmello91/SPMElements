@@ -13,6 +13,9 @@ using SPM.Elements.PanelProperties;
 using UnitsNet;
 using UnitsNet.Units;
 using static SPM.Elements.Extensions;
+using Force = UnitsNet.Force;
+
+#nullable enable
 
 namespace SPM.Elements
 {
@@ -21,6 +24,15 @@ namespace SPM.Elements
 	/// </summary>
 	public class Panel : IFiniteElement, IEquatable<Panel>
 	{
+		#region Fields
+
+		private Vector<double> _localForces;
+
+		private Matrix<double> _transMatrix, _localStiffness;
+		protected Vector<double> GlobalForces;
+
+		#endregion
+
 		#region Properties
 
 		public int Number { get; set; }
@@ -47,10 +59,10 @@ namespace SPM.Elements
 
 		public int[] Grips => new[] { Grip1.Number, Grip2.Number, Grip3.Number, Grip4.Number };
 
-		public double MaxForce => Forces.AbsoluteMaximum();
+		public Force MaxForce => Force.FromNewtons(Forces.AbsoluteMaximum());
 
 		/// <summary>
-		///     Get average <see cref="PrincipalStressState" />.
+		///     Get average <see cref="OnPlaneComponents.PrincipalStressState" />.
 		/// </summary>
 		public PrincipalStressState AveragePrincipalStresses => PrincipalStressState.FromStress(AverageStresses);
 
@@ -62,10 +74,10 @@ namespace SPM.Elements
 			get
 			{
 				// Get the dimensions as a vector
-				var lsV = Geometry.EdgeLengths.ToVector();
+				var lsV = Geometry.EdgeLengths.Select(l => l.Value).ToVector();
 
 				// Calculate the shear stresses
-				var tau = LocalForces / (lsV * Geometry.Width);
+				var tau = LocalForces / (lsV * Geometry.Width.Millimeters);
 
 				// Calculate the average stress
 				var tauAvg = (-tau[0] + tau[1] - tau[2] + tau[3]) / 4;
@@ -91,17 +103,17 @@ namespace SPM.Elements
 		{
 			get
 			{
-				double sig2;
+				Pressure sig2;
 
 				// Get shear stress
 				var tau = AverageStresses.TauXY;
 
 				// Get steel strengths
-				double
-					fyx = Reinforcement?.DirectionX?.Steel?.YieldStress ?? 0,
-					fyy = Reinforcement?.DirectionY?.Steel?.YieldStress ?? 0;
+				Pressure
+					fyx = Reinforcement?.DirectionX?.Steel?.YieldStress ?? Pressure.Zero,
+					fyy = Reinforcement?.DirectionY?.Steel?.YieldStress ?? Pressure.Zero;
 
-				if (fyx.Approx(fyy))
+				if (fyx.Approx(fyy, StressState.Tolerance))
 				{
 					sig2 = -2 * tau.Abs();
 				}
@@ -113,19 +125,19 @@ namespace SPM.Elements
 					sig2 = -tau.Abs() * (rLambda + 1 / rLambda);
 				}
 
-				var theta1 = tau >= 0 ? Constants.PiOver4 : -Constants.PiOver4;
+				var theta1 = tau >= Pressure.Zero ? Constants.PiOver4 : -Constants.PiOver4;
 
-				return new PrincipalStressState(0, sig2, theta1);
+				return new PrincipalStressState(Pressure.Zero, sig2, theta1);
 			}
 		}
 
 		/// <summary>
-		///     Get the average crack opening in concrete, in mm.
+		///     Get the average crack opening in concrete.
 		/// </summary>
-		public virtual double CrackOpening { get; }
+		public virtual Length CrackOpening { get; }
 
 		/// <summary>
-		///     Get <see cref="PanelGeometry" /> of this.
+		///     Get <see cref="PanelGeometry" /> of this element.
 		/// </summary>
 		public PanelGeometry Geometry { get; }
 
@@ -152,7 +164,7 @@ namespace SPM.Elements
 		/// <summary>
 		///     Get <see cref="WebReinforcement" /> of this.
 		/// </summary>
-		public WebReinforcement Reinforcement { get; }
+		public WebReinforcement? Reinforcement { get; }
 
 		#endregion
 
@@ -166,7 +178,7 @@ namespace SPM.Elements
 		/// <param name="grip3">The center <see cref="Node" /> of top edge</param>
 		/// <param name="grip4">The center <see cref="Node" /> of left edge</param>
 		/// <param name="vertices">Panel <see cref="Vertices" /> object.</param>
-		/// <param name="width">Panel width, in <paramref name="unit" />.</param>
+		/// <param name="width">Panel width.</param>
 		/// <param name="concreteParameters">The concrete parameters <see cref="Parameters" />.</param>
 		/// <param name="model">The concrete <see cref="ConstitutiveModel" />.</param>
 		/// <param name="reinforcement">The <see cref="WebReinforcement" />.</param>
@@ -174,24 +186,23 @@ namespace SPM.Elements
 		///     The <see cref="LengthUnit" /> of <paramref name="width" /> and <paramref name="vertices" />'
 		///     coordinates.
 		/// </param>
-		public Panel(Node grip1, Node grip2, Node grip3, Node grip4, Vertices vertices, double width, Parameters concreteParameters, ConstitutiveModel model, WebReinforcement reinforcement = null, LengthUnit unit = LengthUnit.Millimeter)
+		public Panel(Node grip1, Node grip2, Node grip3, Node grip4, Vertices vertices, double width, Parameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, WebReinforcement? reinforcement = null, LengthUnit unit = LengthUnit.Millimeter)
 			: this(grip1, grip2, grip3, grip4, vertices, Length.From(width, unit), concreteParameters, model, reinforcement)
 		{
 		}
 
 
-		/// <param name="width">Panel width.</param>
 		/// <inheritdoc
 		///     cref="Panel(Node, Node, Node, Node, Vertices, double, Parameters, ConstitutiveModel, WebReinforcement, LengthUnit)" />
-		public Panel(Node grip1, Node grip2, Node grip3, Node grip4, Vertices vertices, Length width, Parameters concreteParameters, ConstitutiveModel model, WebReinforcement reinforcement = null)
+		public Panel(Node grip1, Node grip2, Node grip3, Node grip4, Vertices vertices, Length width, Parameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, WebReinforcement? reinforcement = null)
 			: this(grip1, grip2, grip3, grip4, new PanelGeometry(vertices, width), concreteParameters, model, reinforcement)
 		{
 		}
 
-		/// <param name="geometry">The <seealso cref="PanelGeometry"/>.</param>
+		/// <param name="geometry">The <seealso cref="PanelGeometry" />.</param>
 		/// <inheritdoc
 		///     cref="Panel(Node, Node, Node, Node, Vertices, double, Parameters, ConstitutiveModel, WebReinforcement, LengthUnit)" />
-		public Panel(Node grip1, Node grip2, Node grip3, Node grip4, PanelGeometry geometry, Parameters concreteParameters, ConstitutiveModel model, WebReinforcement reinforcement = null)
+		public Panel(Node grip1, Node grip2, Node grip3, Node grip4, PanelGeometry geometry, Parameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, WebReinforcement? reinforcement = null)
 		{
 			Grip1 = grip1;
 			Grip2 = grip2;
@@ -205,23 +216,23 @@ namespace SPM.Elements
 			Reinforcement = reinforcement;
 		}
 
-		/// <param name="width">Panel width, in <paramref name="unit" />.</param>
-		/// <inheritdoc cref="Panel(IEnumerable{Node}, Vertices, Length, Parameters, ConstitutiveModel, WebReinforcement)" />
-		public Panel(IEnumerable<Node> nodes, Vertices vertices, double width, Parameters concreteParameters, ConstitutiveModel model, WebReinforcement reinforcement = null, LengthUnit unit = LengthUnit.Millimeter)
+		/// <inheritdoc
+		///     cref="Panel(System.Collections.Generic.IEnumerable{SPM.Elements.Node}, Vertices, Length, Parameters, ConstitutiveModel, WebReinforcement)" />
+		public Panel(IEnumerable<Node> nodes, Vertices vertices, double width, Parameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, WebReinforcement? reinforcement = null, LengthUnit unit = LengthUnit.Millimeter)
 			: this(nodes, vertices, Length.From(width, unit), concreteParameters, model, reinforcement)
 		{
 		}
 
 		/// <param name="nodes">The collection containing all <see cref="Node" />'s of SPM model.</param>
 		/// <inheritdoc cref="Panel(Node, Node, Node, Node, Vertices, Length, Parameters, ConstitutiveModel, WebReinforcement)" />
-		public Panel(IEnumerable<Node> nodes, Vertices vertices, Length width, Parameters concreteParameters, ConstitutiveModel model, WebReinforcement reinforcement = null)
+		public Panel(IEnumerable<Node> nodes, Vertices vertices, Length width, Parameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, WebReinforcement? reinforcement = null)
 			: this(nodes, new PanelGeometry(vertices, width), concreteParameters, model, reinforcement)
 		{
 		}
 
 		/// <inheritdoc cref="Panel(IEnumerable{Node},Vertices, Length, Parameters, ConstitutiveModel, WebReinforcement)" />
 		/// <inheritdoc cref="Panel(Node, Node, Node, Node, PanelGeometry, Parameters, ConstitutiveModel, WebReinforcement)" />
-		public Panel(IEnumerable<Node> nodes, PanelGeometry geometry, Parameters concreteParameters, ConstitutiveModel model, WebReinforcement reinforcement = null)
+		public Panel(IEnumerable<Node> nodes, PanelGeometry geometry, Parameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, WebReinforcement? reinforcement = null)
 		{
 			Geometry = geometry;
 
@@ -234,7 +245,6 @@ namespace SPM.Elements
 
 			Reinforcement = reinforcement;
 		}
-
 
 		#endregion
 
@@ -287,7 +297,7 @@ namespace SPM.Elements
 				return;
 
 			// Initiate the Stringer dimensions
-			var hs = new double[4];
+			var hs = new Length[4];
 
 			// Analyze panel grips
 			for (var i = 0; i < 4; i++)
@@ -304,7 +314,7 @@ namespace SPM.Elements
 		///     Set displacements and calculate forces.
 		/// </summary>
 		/// <param name="globalDisplacements">The global displacement <see cref="Vector" />.</param>
-		public virtual void Analysis(Vector<double> globalDisplacements = null)
+		public virtual void Analysis(Vector<double>? globalDisplacements = null)
 		{
 			// Set displacements
 			if (globalDisplacements != null)
@@ -354,9 +364,9 @@ namespace SPM.Elements
 		{
 			// Get the dimensions
 			double
-				w = Geometry.Width,
-				a = Geometry.Dimensions.a,
-				b = Geometry.Dimensions.b;
+				w = Geometry.Width.Millimeters,
+				a = Geometry.Dimensions.a.Millimeters,
+				b = Geometry.Dimensions.b.Millimeters;
 
 			// Calculate the parameters of the stiffness matrix
 			double
@@ -364,7 +374,7 @@ namespace SPM.Elements
 				b_a = b / a;
 
 			// Calculate Gc
-			var Gc = Concrete.Ec / 2.4;
+			var Gc = Concrete.Parameters.TransverseModule.Megapascals;
 
 			// Calculate the stiffness matrix
 			return
@@ -385,19 +395,20 @@ namespace SPM.Elements
 		{
 			// Get the dimensions
 			double[]
-				x = Geometry.Vertices.XCoordinates,
-				y = Geometry.Vertices.YCoordinates;
+				x = Geometry.Vertices.XCoordinates.Select(cx => cx.Millimeters).ToArray(),
+				y = Geometry.Vertices.YCoordinates.Select(cy => cy.Millimeters).ToArray();
 
-			var (a, b, c, d) = Geometry.Dimensions;
+			var (a, b, c, d) = Geometry.DimensionsInMillimeters();
+
 			double
-				w = Geometry.Width,
-				l1 = Geometry.Edge1.Length,
-				l2 = Geometry.Edge2.Length,
-				l3 = Geometry.Edge3.Length,
-				l4 = Geometry.Edge4.Length;
+				w  = Geometry.Width.Millimeters,
+				l1 = Geometry.Edge1.Length.Millimeters,
+				l2 = Geometry.Edge2.Length.Millimeters,
+				l3 = Geometry.Edge3.Length.Millimeters,
+				l4 = Geometry.Edge4.Length.Millimeters;
 
 			// Calculate Gc
-			var Gc = Concrete.Ec / 2.4;
+			var Gc = Concrete.Parameters.TransverseModule.Megapascals;
 
 			// Equilibrium parameters
 			double
@@ -512,13 +523,13 @@ namespace SPM.Elements
 		///     Returns true if <paramref name="other" />'s <see cref="Geometry" /> is equal.
 		/// </summary>
 		/// <param name="other">The other <see cref="Panel" /> object to compare.</param>
-		public bool Equals(Panel other) => other != null && Geometry == other.Geometry;
+		public bool Equals(Panel? other) => !(other is null) && Geometry == other.Geometry;
 
 		/// <summary>
 		///     Returns true if <paramref name="obj" /> is <see cref="Panel" /> and <see cref="Geometry" /> is equal.
 		/// </summary>
 		/// <param name="obj">The other <see cref="object" /> to compare.</param>
-		public override bool Equals(object obj) => obj is Panel other && Equals(other);
+		public override bool Equals(object? obj) => obj is Panel other && Equals(other);
 
 		public override int GetHashCode() => Geometry.GetHashCode();
 
@@ -543,21 +554,13 @@ namespace SPM.Elements
 		///     Returns true if arguments are equal.
 		///     <para>See:<seealso cref="Equals(Panel)" />.</para>
 		/// </summary>
-		public static bool operator == (Panel left, Panel right) => left != null && left.Equals(right);
+		public static bool operator == (Panel left, Panel right) => !(left is null) && left.Equals(right);
 
 		/// <summary>
 		///     Returns true if arguments are different.
 		///     <para>See:<seealso cref="Equals(Panel)" />.</para>
 		/// </summary>
-		public static bool operator != (Panel left, Panel right) => left != null && !left.Equals(right);
-
-		#endregion
-
-		#region Auxiliary fields
-
-		private Matrix<double> _transMatrix, _localStiffness;
-		private Vector<double> _localForces;
-		protected Vector<double> GlobalForces;
+		public static bool operator != (Panel left, Panel right) => !(left is null) && !left.Equals(right);
 
 		#endregion
 	}

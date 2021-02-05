@@ -193,6 +193,11 @@ namespace SPM.Elements.PanelProperties
 			Dimensions = CalculateDimensions(Vertices);
 		}
 
+		/// <summary>
+		///     Return <see cref="Dimensions" /> in <see cref="LengthUnit.Millimeter" />.
+		/// </summary>
+		public (double a, double b, double c, double d) DimensionsInMillimeters() => (Dimensions.a.Millimeters, Dimensions.b.Millimeters, Dimensions.c.Millimeters, Dimensions.d.Millimeters);
+
 		public PanelGeometry Convert(LengthUnit unit) => new PanelGeometry(Vertices.Convert(unit), Width.ToUnit(unit));
 
 		public bool Approaches(PanelGeometry other, Length tolerance) => Vertices.Approaches(other.Vertices, tolerance);

@@ -2,8 +2,12 @@
 using System.Linq;
 using MathNet.Numerics.LinearAlgebra;
 using OnPlaneComponents;
+using UnitsNet;
 using UnitsNet.Units;
 using static SPM.Elements.Extensions;
+using Force = OnPlaneComponents.Force;
+
+#nullable enable
 
 namespace SPM.Elements
 {
@@ -29,11 +33,6 @@ namespace SPM.Elements
 		public Displacement Displacement { get; set; } = Displacement.Zero;
 
 		/// <summary>
-		///     Returns true if <see cref="Displacement" /> is not zero.
-		/// </summary>
-		public bool DisplacementsNotZero => !Displacement.AreComponentsZero;
-
-		/// <summary>
 		///     Get/set the <see cref="LengthUnit" /> of <see cref="Displacement" />.
 		/// </summary>
 		public LengthUnit DisplacementUnit
@@ -46,11 +45,6 @@ namespace SPM.Elements
 		///     Get/set applied <see cref="OnPlaneComponents.Force" />.
 		/// </summary>
 		public Force Force { get; set; } = Force.Zero;
-
-		/// <summary>
-		///     Returns true if <see cref="Force" /> is not zero.
-		/// </summary>
-		public bool ForcesNotZero => !Force.AreComponentsZero;
 
 		/// <summary>
 		///     Get/set the <see cref="UnitsNet.Units.ForceUnit" /> of <see cref="Force" />.
@@ -116,7 +110,7 @@ namespace SPM.Elements
 		///     Return the distance to another <see cref="Node" />.
 		/// </summary>
 		/// <param name="otherNode">The other <see cref="Node" /> object.</param>
-		public double GetDistance(Node otherNode) => !(otherNode is null) ? Position.GetDistance(otherNode.Position) : 0;
+		public Length GetDistance(Node? otherNode) => !(otherNode is null) ? Position.GetDistance(otherNode.Position) : Length.Zero;
 
 		/// <summary>
 		///     Return the angle, related to horizontal axis, of a line that connects this to <paramref name="otherNode" /> (in
@@ -162,7 +156,7 @@ namespace SPM.Elements
 				$"Position: ({Position.X:0.00}, {Position.Y:0.00})";
 
 			// Read applied forces
-			if (ForcesNotZero)
+			if (!Force.IsZero)
 				msgstr +=
 					"\n\n" +
 					"Applied forces:\n" +
@@ -175,7 +169,7 @@ namespace SPM.Elements
 					$"Constraints: {Constraint}";
 
 			// Get displacements
-			if (DisplacementsNotZero)
+			if (!Displacement.IsZero)
 				msgstr +=
 					"\n\n" +
 					"Displacements:\n" +
@@ -188,7 +182,7 @@ namespace SPM.Elements
 		///     Returns true if <paramref name="other" /> is a <see cref="Node" /> and both positions are equal.
 		/// </summary>
 		/// <param name="other">The other <see cref="Node" /> object.</param>
-		public override bool Equals(object other) => other is Node otherNode && Equals(otherNode);
+		public override bool Equals(object? other) => other is Node otherNode && Equals(otherNode);
 
 		public override int GetHashCode() => Position.GetHashCode();
 

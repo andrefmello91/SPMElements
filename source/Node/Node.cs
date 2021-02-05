@@ -14,7 +14,7 @@ namespace SPM.Elements
 	/// <summary>
 	///     Node class.
 	/// </summary>
-	public class Node : INumberedElement, IEquatable<Node>
+	public class Node : INumberedElement, IEquatable<Node>, IComparable<Node>
 	{
 		#region Properties
 
@@ -177,6 +177,10 @@ namespace SPM.Elements
 
 			return msgstr;
 		}
+
+		public int CompareTo(Node? other) => other is null 
+			? 1 
+			: Position.CompareTo(other.Position);
 
 		/// <summary>
 		///     Returns true if <paramref name="other" /> is a <see cref="Node" /> and both positions are equal.

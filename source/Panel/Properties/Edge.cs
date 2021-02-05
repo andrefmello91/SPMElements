@@ -4,15 +4,25 @@ using OnPlaneComponents;
 using UnitsNet;
 using UnitsNet.Units;
 
+#nullable disable
+
 namespace SPM.Elements.PanelProperties
 {
 	/// <summary>
 	///     Panel edge struct.
 	/// </summary>
-	public struct Edge : IUnitConvertible<Edge, LengthUnit>, IEquatable<Edge>, IComparable<Edge>
+	public struct Edge : IUnitConvertible<Edge, LengthUnit>, IApproachable<Edge, Length>, IEquatable<Edge>, IComparable<Edge>
 	{
-		// Auxiliary fields
-		private Length _length, _stringerDimension;
+		#region Properties
+
+		/// <summary>
+		///     Get the <see cref="LengthUnit" /> that this was constructed with.
+		/// </summary>
+		public LengthUnit Unit
+		{
+			get => InitialVertex.Unit;
+			set => ChangeUnit(value);
+		}
 
 		/// <summary>
 		///     Get angle related to horizontal axis, in radians.
@@ -35,23 +45,18 @@ namespace SPM.Elements.PanelProperties
 		public Point InitialVertex { get; }
 
 		/// <summary>
-		///     Get length, in mm.
+		///     Get length of this edge.
 		/// </summary>
-		public double Length => _length.Millimeters;
+		public Length Length { get; private set; }
 
 		/// <summary>
 		///     Get the stringer dimension of this edge, in mm.
 		/// </summary>
-		public double StringerDimension => _stringerDimension.Millimeters;
+		public Length StringerDimension { get; private set; }
 
-		/// <summary>
-		///     Get the <see cref="LengthUnit" /> that this was constructed with.
-		/// </summary>
-		public LengthUnit Unit
-		{
-			get => InitialVertex.Unit;
-			set => ChangeUnit(value);
-		}
+		#endregion
+
+		#region Constructors
 
 		/// <summary>
 		///     Panel edge constructor.
@@ -63,10 +68,14 @@ namespace SPM.Elements.PanelProperties
 			InitialVertex      = initialVertex;
 			FinalVertex        = finalVertex.Convert(initialVertex.Unit);
 			CenterPoint        = initialVertex.MidPoint(finalVertex);
-			_length            = UnitsNet.Length.From(initialVertex.GetDistance(finalVertex), initialVertex.Unit);
+			Length             = initialVertex.GetDistance(finalVertex);
 			Angle              = initialVertex.GetAngle(finalVertex);
-			_stringerDimension = UnitsNet.Length.Zero;
+			StringerDimension  = Length.Zero;
 		}
+
+		#endregion
+
+		#region  Methods
 
 		/// <summary>
 		///     Change the <see cref="LengthUnit" /> of this.
@@ -81,13 +90,11 @@ namespace SPM.Elements.PanelProperties
 			CenterPoint.ChangeUnit(unit);
 			FinalVertex.ChangeUnit(unit);
 
-			_length            = _length.ToUnit(unit);
-			_stringerDimension = _stringerDimension.ToUnit(unit);
+			Length            = Length.ToUnit(unit);
+			StringerDimension = StringerDimension.ToUnit(unit);
 		}
 
 		public Edge Convert(LengthUnit unit) => new Edge(InitialVertex.Convert(unit), FinalVertex.Convert(unit));
-
-		public Edge Copy() => throw new NotImplementedException();
 
 		/// <summary>
 		///     Set stringer dimension in this edge.
@@ -95,11 +102,15 @@ namespace SPM.Elements.PanelProperties
 		/// <param name="height">The height of the <seealso cref="Stringer" />, in <paramref name="unit" /> considered.</param>
 		/// <param name="unit">The <see cref="LengthUnit" /> of <paramref name="height" />.</param>
 		public void SetStringerDimension(double height, LengthUnit unit = LengthUnit.Millimeter) =>
-			SetStringerDimension(UnitsNet.Length.From(height, unit));
+			SetStringerDimension(Length.From(height, unit));
 
 		/// <param name="height">The height of the <seealso cref="Stringer" />.</param>
 		/// <inheritdoc cref="SetStringerDimension(double, LengthUnit)" />
-		public void SetStringerDimension(Length height) => _stringerDimension = height.ToUnit(Unit);
+		public void SetStringerDimension(Length height) => StringerDimension = height.ToUnit(Unit);
+
+		public bool Approaches(Edge other, Length tolerance) =>
+			InitialVertex.Approaches(other.InitialVertex, tolerance) && FinalVertex.Approaches(other.FinalVertex,   tolerance) ||
+			InitialVertex.Approaches(other.FinalVertex,   tolerance) && FinalVertex.Approaches(other.InitialVertex, tolerance);
 
 		public int CompareTo(Edge other) => CenterPoint.CompareTo(other.CenterPoint);
 
@@ -111,13 +122,17 @@ namespace SPM.Elements.PanelProperties
 
 		public override bool Equals(object obj) => obj is Edge other && Equals(other);
 
-		public override int GetHashCode() => (int) (InitialVertex.X * FinalVertex.X + InitialVertex.Y * FinalVertex.Y);
+		public override int GetHashCode() => InitialVertex.GetHashCode() * FinalVertex.GetHashCode();
 
 		public override string ToString() =>
 			$"Initial vertex: ({InitialVertex.X:0.00}, {InitialVertex.Y:0.00})\n" +
 			$"Final vertex: ({FinalVertex.X:0.00}, {FinalVertex.Y:0.00})\n" +
-			$"Lenght = {_length}\n" +
+			$"Lenght = {Length}\n" +
 			$"Angle = {Angle:0.00} rad";
+
+		#endregion
+
+		#region Operators
 
 		/// <summary>
 		///     Returns true if arguments are equal.
@@ -128,5 +143,7 @@ namespace SPM.Elements.PanelProperties
 		///     Returns true if arguments are different.
 		/// </summary>
 		public static bool operator != (Edge left, Edge right) => !left.Equals(right);
+
+		#endregion
 	}
 }

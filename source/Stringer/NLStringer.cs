@@ -9,6 +9,10 @@ using OnPlaneComponents;
 using SPM.Elements.StringerProperties;
 using UnitsNet;
 using UnitsNet.Units;
+using static OnPlaneComponents.Point;
+using Force = UnitsNet.Force;
+
+#nullable enable
 
 namespace SPM.Elements
 {
@@ -21,7 +25,7 @@ namespace SPM.Elements
 
 		// Auxiliary fields
 		private Matrix<double> _BMatrix;
-		private double _N1, _N3;
+		private Force _N1, _N3;
 
 		#endregion
 
@@ -32,13 +36,13 @@ namespace SPM.Elements
 		/// </summary>
 		private Matrix<double> BMatrix => _BMatrix ?? CalculateBMatrix();
 
-		protected override double ConcreteArea => Geometry.Area - (Reinforcement?.Area ?? 0);
+		protected override Area ConcreteArea => Geometry.Area - (Reinforcement?.Area ?? Area.Zero);
 
 		/// <inheritdoc />
-		public override double[] CrackOpenings => Strains.Select(eps => CrackOpening(Reinforcement, eps)).ToArray();
+		public override Length[] CrackOpenings => Strains.Select(eps => CrackOpening(Reinforcement, eps)).ToArray();
 
 		/// <inheritdoc />
-		public override Vector<double> LocalForces => new[] { -_N1, _N1 - _N3, _N3 }.ToVector();
+		public override Vector<double> LocalForces => new[] { -_N1.Newtons, _N1.Newtons - _N3.Newtons, _N3.Newtons }.ToVector();
 
 		/// <summary>
 		///     Get the strain <see cref="Vector" />
@@ -49,14 +53,12 @@ namespace SPM.Elements
 
 		#region Constructors
 
-		/// <param name="width">The stringer width, in <paramref name="unit" /> considered.</param>
-		/// <param name="height">The stringer height, in <paramref name="unit" /> considered.</param>
 		/// <param name="unit">
 		///     The <see cref="LengthUnit" /> of <paramref name="width" /> and <paramref name="height" />.
 		///     <para>Default: <seealso cref="LengthUnit.Millimeter" />.</para>
 		/// </param>
 		/// <inheritdoc cref="NLStringer(Node, Node, Node, Length, Length, Parameters, ConstitutiveModel, UniaxialReinforcement)" />
-		public NLStringer(Node grip1, Node grip2, Node grip3, double width, double height, Parameters concreteParameters, ConstitutiveModel model, UniaxialReinforcement reinforcement = null, LengthUnit unit = LengthUnit.Millimeter)
+		public NLStringer(Node grip1, Node grip2, Node grip3, double width, double height, Parameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, UniaxialReinforcement? reinforcement = null, LengthUnit unit = LengthUnit.Millimeter)
 			: this(grip1, grip2, grip3, Length.From(width, unit), Length.From(height, unit), concreteParameters, model, reinforcement)
 		{
 		}
@@ -65,28 +67,28 @@ namespace SPM.Elements
 		///     Nonlinear stringer object
 		/// </summary>
 		/// <inheritdoc />
-		public NLStringer(Node grip1, Node grip2, Node grip3, Length width, Length height, Parameters concreteParameters, ConstitutiveModel model, UniaxialReinforcement reinforcement = null)
+		public NLStringer(Node grip1, Node grip2, Node grip3, Length width, Length height, Parameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, UniaxialReinforcement? reinforcement = null)
 			: base(grip1, grip2, grip3, width, height, concreteParameters, model, reinforcement)
 		{
 		}
 
 		/// <inheritdoc cref="NLStringer(Node, Node, Node, Length, Length, Parameters, ConstitutiveModel, UniaxialReinforcement)" />
 		/// <inheritdoc />
-		public NLStringer(IEnumerable<Node> nodes, Point grip1Position, Point grip3Position, double width, double height, Parameters concreteParameters, ConstitutiveModel model, UniaxialReinforcement reinforcement = null, LengthUnit unit = LengthUnit.Millimeter)
+		public NLStringer(IEnumerable<Node> nodes, Point grip1Position, Point grip3Position, double width, double height, Parameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, UniaxialReinforcement? reinforcement = null, LengthUnit unit = LengthUnit.Millimeter)
 			: this(nodes, grip1Position, grip3Position, Length.From(width, unit), Length.From(height, unit), concreteParameters, model, reinforcement)
 		{
 		}
 
 		/// <inheritdoc cref="NLStringer(Node, Node, Node, Length, Length, Parameters, ConstitutiveModel, UniaxialReinforcement)" />
 		/// <inheritdoc />
-		public NLStringer(IEnumerable<Node> nodes, Point grip1Position, Point grip3Position, Length width, Length height, Parameters concreteParameters, ConstitutiveModel model, UniaxialReinforcement reinforcement = null)
+		public NLStringer(IEnumerable<Node> nodes, Point grip1Position, Point grip3Position, Length width, Length height, Parameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, UniaxialReinforcement? reinforcement = null)
 			: base(nodes, grip1Position, grip3Position, width, height, concreteParameters, model, reinforcement)
 		{
 		}
 
 		/// <inheritdoc cref="NLStringer(Node, Node, Node, Length, Length, Parameters, ConstitutiveModel, UniaxialReinforcement)" />
 		/// <inheritdoc />
-		public NLStringer(IEnumerable<Node> nodes, StringerGeometry geometry, Parameters concreteParameters, ConstitutiveModel model, UniaxialReinforcement reinforcement = null)
+		public NLStringer(IEnumerable<Node> nodes, StringerGeometry geometry, Parameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, UniaxialReinforcement? reinforcement = null)
 			: base(nodes, geometry, concreteParameters, model, reinforcement)
 		{
 		}
@@ -96,24 +98,24 @@ namespace SPM.Elements
 		#region Methods
 
 		/// <summary>
-		///     Calculate the crack spacing at <paramref name="reinforcement" /> (in mm), according to Kaklauskas (2019)
+		///     Calculate the crack spacing at <paramref name="reinforcement" />, according to Kaklauskas (2019)
 		///     expression.
 		///     <para>sm = 21 mm + 0.155 phi / rho</para>
 		/// </summary>
 		/// <param name="reinforcement">The <see cref="UniaxialReinforcement" />.</param>
-		public static double CrackSpacing(UniaxialReinforcement reinforcement) =>
-			reinforcement is null || reinforcement.BarDiameter.ApproxZero() || reinforcement.Ratio.ApproxZero()
-				? 21
-				: 21 + 0.155 * reinforcement.BarDiameter / reinforcement.Ratio;
+		public static Length CrackSpacing(UniaxialReinforcement? reinforcement) =>
+			reinforcement is null || reinforcement.BarDiameter.ApproxZero(Tolerance) || reinforcement.Ratio.ApproxZero()
+				? Length.FromMillimeters(21)
+				: Length.FromMillimeters(21) + 0.155 * reinforcement.BarDiameter / reinforcement.Ratio;
 
 		/// <summary>
-		///     Calculate the average crack opening, in mm.
+		///     Calculate the average crack opening.
 		/// </summary>
 		/// <param name="reinforcement">The <see cref="UniaxialReinforcement" />.</param>
 		/// <param name="strain">The strain.</param>
-		public static double CrackOpening(UniaxialReinforcement reinforcement, double strain) => strain < 0 || strain.ApproxZero(1E-9) ? 0 : strain  * CrackSpacing(reinforcement);
+		public static Length CrackOpening(UniaxialReinforcement? reinforcement, double strain) => strain < 0 || strain.ApproxZero(1E-9) ? Length.Zero : strain  * CrackSpacing(reinforcement);
 
-		public override void Analysis(Vector<double> globalDisplacements = null)
+		public override void Analysis(Vector<double>? globalDisplacements = null)
 		{
 			// Set displacements
 			if (globalDisplacements != null)
@@ -123,8 +125,8 @@ namespace SPM.Elements
 			var eps = Strains;
 
 			// Calculate normal forces
-			_N1 = Force(eps[0]);
-			_N3 = Force(eps[2]);
+			_N1 = CalculateForce(eps[0]);
+			_N3 = CalculateForce(eps[2]);
 		}
 
 		/// <summary>
@@ -132,7 +134,7 @@ namespace SPM.Elements
 		/// </summary>
 		private Matrix<double> CalculateBMatrix()
 		{
-			_BMatrix = 1 / Geometry.Length * new double[,]
+			_BMatrix = 1 / Geometry.Length.Millimeters * new double[,]
 			{
 				{-3,  4, -1},
 				{-1,  0,  1},
@@ -146,7 +148,10 @@ namespace SPM.Elements
 		///     Calculate force based on strain.
 		/// </summary>
 		/// <param name="strain">Current strain.</param>
-		private double Force(double strain) => strain.ApproxZero(1E-6) ? 0 : Concrete.CalculateForce(strain, Reinforcement) + (Reinforcement?.CalculateForce(strain) ?? 0);
+		private Force CalculateForce(double strain) =>
+			strain.ApproxZero(1E-9)
+				? Force.Zero
+				: Concrete.CalculateForce(strain, Reinforcement) + (Reinforcement?.CalculateForce(strain) ?? Force.Zero);
 
 		#endregion
 	}

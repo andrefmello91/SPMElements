@@ -341,14 +341,14 @@ namespace SPM.Elements
 		private Matrix<double> CalculateStiffness()
 		{
 			// If the panel is rectangular
-			_localStiffness = Geometry.Rectangular ? RectangularPanelStiffness() : NonRectangularPanelStiffness();
+			_localStiffness = Geometry.IsRectangular ? RectangularPanelStiffness() : NonRectangularPanelStiffness();
 
 			return _localStiffness;
 		}
 
 		/// <summary>
 		///     Calculate panel stiffness if panel is rectangular.
-		///     <para>See: <seealso cref="PanelGeometry.Rectangular" /></para>
+		///     <para>See: <seealso cref="PanelGeometry.IsRectangular" /></para>
 		/// </summary>
 		private Matrix<double> RectangularPanelStiffness()
 		{
@@ -379,7 +379,7 @@ namespace SPM.Elements
 
 		/// <summary>
 		///     Calculate panel stiffness if panel is not rectangular.
-		///     <para>See: <seealso cref="PanelGeometry.Rectangular" /></para>
+		///     <para>See: <seealso cref="PanelGeometry.IsRectangular" /></para>
 		/// </summary>
 		private Matrix<double> NonRectangularPanelStiffness()
 		{

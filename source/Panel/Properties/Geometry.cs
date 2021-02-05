@@ -6,29 +6,32 @@ using MathNet.Numerics;
 using OnPlaneComponents;
 using UnitsNet;
 using UnitsNet.Units;
+using static OnPlaneComponents.Point;
+
+#nullable disable
 
 namespace SPM.Elements.PanelProperties
 {
 	/// <summary>
 	///     Panel geometry struct.
 	/// </summary>
-	public struct PanelGeometry : IEquatable<PanelGeometry>, IComparable<PanelGeometry>
+	public struct PanelGeometry : IUnitConvertible<PanelGeometry, LengthUnit>, IApproachable<PanelGeometry, Length>, IEquatable<PanelGeometry>, IComparable<PanelGeometry>, ICloneable<PanelGeometry>
 	{
-		#region Fields
-
-		private (double a, double b, double c, double d)? _dimensions;
-
-		// Auxiliary fields
-		private Length _width;
-
-		#endregion
-
 		#region Properties
 
 		/// <summary>
-		///     Get panel dimensions (a, b, c, d), in mm.
+		///     Get the <see cref="LengthUnit" /> that this was constructed with.
 		/// </summary>
-		public (double a, double b, double c, double d) Dimensions => _dimensions ?? CalculateDimensions();
+		public LengthUnit Unit
+		{
+			get => Width.Unit;
+			set => ChangeUnit(value);
+		}
+
+		/// <summary>
+		///     Get panel dimensions (a, b, c, d).
+		/// </summary>
+		public (Length a, Length b, Length c, Length d) Dimensions { get; private set; }
 
 		/// <summary>
 		///     Get <see cref="Edge" /> 1 (base edge).
@@ -53,7 +56,7 @@ namespace SPM.Elements.PanelProperties
 		/// <summary>
 		///     Get edges' lengths as an array.
 		/// </summary>
-		public double[] EdgeLengths => Edges.Select(e => e.Length).ToArray();
+		public Length[] EdgeLengths => Edges.Select(e => e.Length).ToArray();
 
 		/// <summary>
 		///     Get edges as an array.
@@ -68,7 +71,7 @@ namespace SPM.Elements.PanelProperties
 		/// <summary>
 		///     Returns true if this geometry is rectangular.
 		/// </summary>
-		public bool Rectangular
+		public bool IsRectangular
 		{
 			get
 			{
@@ -89,12 +92,7 @@ namespace SPM.Elements.PanelProperties
 		///     Get edges' stringer dimensions as an array.
 		///     <para>See: <see cref="Edge.SetStringerDimension(Length)" /></para>
 		/// </summary>
-		public double[] StringerDimensions => Edges.Select(e => e.StringerDimension).ToArray();
-
-		/// <summary>
-		///     Get the <see cref="LengthUnit" /> that this was constructed with.
-		/// </summary>
-		public LengthUnit Unit => _width.Unit;
+		public Length[] StringerDimensions => Edges.Select(e => e.StringerDimension).ToArray();
 
 		/// <summary>
 		///     Get vertices of panel.
@@ -102,9 +100,9 @@ namespace SPM.Elements.PanelProperties
 		public Vertices Vertices { get; }
 
 		/// <summary>
-		///     Get panel width, in mm.
+		///     Get panel width.
 		/// </summary>
-		public double Width => _width.Millimeters;
+		public Length Width { get; private set; }
 
 		#endregion
 
@@ -114,7 +112,7 @@ namespace SPM.Elements.PanelProperties
 		///     Panel geometry constructor.
 		/// </summary>
 		/// <param name="vertices">The collection of vertices, in any order.</param>
-		/// <param name="width">Panel width, in <paramref name="unit" />.</param>
+		/// <param name="width">Panel width.</param>
 		/// <param name="unit">
 		///     The <see cref="LengthUnit" /> of <paramref name="width" /> and <paramref name="vertices" />'
 		///     coordinates.
@@ -124,7 +122,6 @@ namespace SPM.Elements.PanelProperties
 		{
 		}
 
-		/// <param name="width">Panel width.</param>
 		/// <inheritdoc cref="PanelGeometry(IEnumerable{Point}, double, LengthUnit)" />
 		public PanelGeometry(IEnumerable<Point> vertices, Length width)
 			: this (new Vertices(vertices), width)
@@ -138,12 +135,11 @@ namespace SPM.Elements.PanelProperties
 		{
 		}
 
-		/// <param name="width">Panel width.</param>
 		/// <inheritdoc cref="PanelGeometry(Vertices, double, LengthUnit)" />
 		public PanelGeometry(Vertices vertices, Length width)
 		{
 			Vertices = vertices;
-			_width   = width.ToUnit(vertices.Unit);
+			Width    = width.ToUnit(vertices.Unit);
 
 			// Get edges
 			Edge1 = new Edge(vertices.Vertex1, vertices.Vertex2);
@@ -151,12 +147,30 @@ namespace SPM.Elements.PanelProperties
 			Edge3 = new Edge(vertices.Vertex3, vertices.Vertex4);
 			Edge4 = new Edge(vertices.Vertex4, vertices.Vertex1);
 
-			_dimensions = null;
+			Dimensions = CalculateDimensions(Vertices);
 		}
 
 		#endregion
 
 		#region  Methods
+
+		/// <summary>
+		///     Calculate panel dimensions (a, b, c, d).
+		/// </summary>
+		public static (Length a, Length b, Length c, Length d) CalculateDimensions(Vertices vertices)
+		{
+			var x = vertices.XCoordinates;
+			var y = vertices.YCoordinates;
+
+			// Calculate the necessary dimensions of the panel
+			Length
+				a = 0.5 * (x[1] + x[2] - x[0] - x[3]),
+				b = 0.5 * (y[2] + y[3] - y[0] - y[1]),
+				c = 0.5 * (x[2] + x[3] - x[0] - x[1]),
+				d = 0.5 * (y[1] + y[2] - y[0] - y[3]);
+
+			return (a, b, c, d);
+		}
 
 		/// <summary>
 		///     Change the <see cref="LengthUnit" /> of this.
@@ -167,33 +181,23 @@ namespace SPM.Elements.PanelProperties
 			if (Unit == unit)
 				return;
 
-			_width = _width.ToUnit(unit);
+			Width = Width.ToUnit(unit);
 
 			Vertices.ChangeUnit(unit);
 
-			foreach (var edge in Edges)
-				edge.ChangeUnit(unit);
+			Edge1.ChangeUnit(unit);
+			Edge2.ChangeUnit(unit);
+			Edge3.ChangeUnit(unit);
+			Edge4.ChangeUnit(unit);
+
+			Dimensions = CalculateDimensions(Vertices);
 		}
 
-		/// <summary>
-		///     Calculate panel dimensions (a, b, c, d).
-		/// </summary>
-		private (double a, double b, double c, double d) CalculateDimensions()
-		{
-			var x = Vertices.XCoordinates;
-			var y = Vertices.YCoordinates;
+		public PanelGeometry Convert(LengthUnit unit) => new PanelGeometry(Vertices.Convert(unit), Width.ToUnit(unit));
 
-			// Calculate the necessary dimensions of the panel
-			double
-				a = 0.5 * (x[1] + x[2] - x[0] - x[3]),
-				b = 0.5 * (y[2] + y[3] - y[0] - y[1]),
-				c = 0.5 * (x[2] + x[3] - x[0] - x[1]),
-				d = 0.5 * (y[1] + y[2] - y[0] - y[3]);
+		public bool Approaches(PanelGeometry other, Length tolerance) => Vertices.Approaches(other.Vertices, tolerance);
 
-			_dimensions = (a, b, c, d);
-
-			return _dimensions.Value;
-		}
+		public PanelGeometry Clone() => new PanelGeometry(Vertices.Clone(), Width);
 
 		public int CompareTo(PanelGeometry other) => Vertices.CompareTo(other.Vertices);
 
@@ -201,11 +205,11 @@ namespace SPM.Elements.PanelProperties
 		///     Returns true if all <see cref="Vertices" /> are equal.
 		/// </summary>
 		/// <param name="other">The other <see cref="PanelGeometry" /> to compare.</param>
-		public bool Equals(PanelGeometry other) => Vertices == other.Vertices;
+		public bool Equals(PanelGeometry other) => Approaches(other, Tolerance);
 
 		public override string ToString() =>
 			$"{Vertices}\n" +
-			$"Width = {_width}";
+			$"Width = {Width}";
 
 		public override bool Equals(object obj) => obj is PanelGeometry other && Equals(other);
 

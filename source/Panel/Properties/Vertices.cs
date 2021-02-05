@@ -3,14 +3,18 @@ using System.Collections.Generic;
 using System.Linq;
 using Extensions;
 using OnPlaneComponents;
+using UnitsNet;
 using UnitsNet.Units;
+using static OnPlaneComponents.Point;
+
+#nullable disable
 
 namespace SPM.Elements.PanelProperties
 {
 	/// <summary>
 	///     Panel vertices struct.
 	/// </summary>
-	public struct Vertices : IUnitConvertible<Vertices, LengthUnit>, IEquatable<Vertices>, IComparable<Vertices>
+	public struct Vertices : IUnitConvertible<Vertices, LengthUnit>, IApproachable<Vertices, Length>, IEquatable<Vertices>, IComparable<Vertices>
 	{
 		#region Properties
 
@@ -31,32 +35,32 @@ namespace SPM.Elements.PanelProperties
 		/// <summary>
 		///     Get vertex 1 (base left vertex).
 		/// </summary>
-		public Point Vertex1 { get ; private set; }
+		public Point Vertex1 { get ; }
 
 		/// <summary>
 		///     Get vertex 2 (base right vertex).
 		/// </summary>
-		public Point Vertex2 { get ; private set; }
+		public Point Vertex2 { get ; }
 
 		/// <summary>
 		///     Get vertex 3 (top right vertex).
 		/// </summary>
-		public Point Vertex3 { get ; private set; }
+		public Point Vertex3 { get ; }
 
 		/// <summary>
 		///     Get vertex 4 (top left vertex).
 		/// </summary>
-		public Point Vertex4 { get ; private set; }
+		public Point Vertex4 { get ; }
 
 		/// <summary>
-		///     Get X coordinates (in mm) of vertices as an array.
+		///     Get X coordinates of vertices as an array.
 		/// </summary>
-		public double[] XCoordinates => AsArray().Select(v => v.Convert(LengthUnit.Millimeter).X).ToArray();
+		public Length[] XCoordinates => AsArray().Select(v => v.X).ToArray();
 
 		/// <summary>
-		///     Get Y coordinates (in mm) of vertices as an array.
+		///     Get Y coordinates of vertices as an array.
 		/// </summary>
-		public double[] YCoordinates => AsArray().Select(v => v.Convert(LengthUnit.Millimeter).Y).ToArray();
+		public Length[] YCoordinates => AsArray().Select(v => v.Y).ToArray();
 
 		#endregion
 
@@ -125,10 +129,10 @@ namespace SPM.Elements.PanelProperties
 			if (Unit == unit)
 				return;
 
-			Vertex1 = Vertex1.Convert(unit);
-			Vertex2 = Vertex2.Convert(unit);
-			Vertex3 = Vertex3.Convert(unit);
-			Vertex4 = Vertex4.Convert(unit);
+			Vertex1.ChangeUnit(unit);
+			Vertex2.ChangeUnit(unit);
+			Vertex3.ChangeUnit(unit);
+			Vertex4.ChangeUnit(unit);
 
 			Unit = unit;
 		}
@@ -140,10 +144,13 @@ namespace SPM.Elements.PanelProperties
 		public Vertices Convert(LengthUnit unit) =>
 			unit == Unit
 				? this
-				: new Vertices(Vertex1.Convert(unit), Vertex2.Convert(unit), Vertex3.Convert(unit),
-					Vertex4.Convert(unit));
+				: new Vertices(Vertex1.Convert(unit), Vertex2.Convert(unit), Vertex3.Convert(unit), Vertex4.Convert(unit));
 
-		public Vertices Copy() => new Vertices(AsArray());
+		public Vertices Clone() => new Vertices(AsArray());
+
+		public bool Approaches(Vertices other, Length tolerance) =>
+			Vertex1.Approaches(other.Vertex1, tolerance) && Vertex2.Approaches(other.Vertex2, tolerance) &&
+			Vertex3.Approaches(other.Vertex3, tolerance) && Vertex4.Approaches(other.Vertex4, tolerance);
 
 		public int CompareTo(Vertices other) => CenterPoint.CompareTo(other.CenterPoint);
 
@@ -151,18 +158,18 @@ namespace SPM.Elements.PanelProperties
 		///     Returns true if all vertices are equal.
 		/// </summary>
 		/// <param name="other">The other <see cref="Vertices" /> to compare.</param>
-		public bool Equals(Vertices other) => Vertex1 == other.Vertex1 && Vertex2 == other.Vertex2 &&
-		                                      Vertex3 == other.Vertex3 && Vertex4 == other.Vertex4;
+		public bool Equals(Vertices other) => Approaches(other, Tolerance);
 
 		public override bool Equals(object obj) => obj is Vertices other && Equals(other);
 
-		public override int GetHashCode() => (int) AsArray().Sum(point => point.X * point.Y);
+		public override int GetHashCode() => AsArray().Sum(point => point.GetHashCode());
 
 		public override string ToString() =>
-			$"Vertex 1: ({Vertex1.X:0.00}, {Vertex1.Y:0.00})\n" +
-			$"Vertex 2: ({Vertex2.X:0.00}, {Vertex2.Y:0.00})\n" +
-			$"Vertex 3: ({Vertex3.X:0.00}, {Vertex3.Y:0.00})\n" +
-			$"Vertex 4: ({Vertex4.X:0.00}, {Vertex4.Y:0.00})";
+			$"Vertex 1: ({Vertex1.X.Value:0.00}, {Vertex1.Y.Value:0.00})\n" +
+			$"Vertex 2: ({Vertex2.X.Value:0.00}, {Vertex2.Y.Value:0.00})\n" +
+			$"Vertex 3: ({Vertex3.X.Value:0.00}, {Vertex3.Y.Value:0.00})\n" +
+			$"Vertex 4: ({Vertex4.X.Value:0.00}, {Vertex4.Y.Value:0.00})\n" +
+			$"Coordinates in {Unit}";
 
 		#endregion
 

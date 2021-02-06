@@ -45,7 +45,7 @@ namespace SPM.Elements
 		public override Vector<double> LocalForces => new[] { -_N1.Newtons, _N1.Newtons - _N3.Newtons, _N3.Newtons }.ToVector();
 
 		/// <summary>
-		///     Get the strain <see cref="Vector" />
+		///     Get the strain <see cref="Vector"/>.
 		/// </summary>
 		private Vector<double> Strains => BMatrix * LocalDisplacements;
 

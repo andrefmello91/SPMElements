@@ -14,6 +14,8 @@ namespace SPM.Elements.StringerProperties
 	/// </summary>
 	public struct StringerGeometry : IUnitConvertible<StringerGeometry, LengthUnit>, IApproachable<StringerGeometry, Length>, IEquatable<StringerGeometry>, IComparable<StringerGeometry>, ICloneable<StringerGeometry>
 	{
+		private Length _width, _height;
+
 		#region Properties
 
 		/// <summary>
@@ -53,7 +55,11 @@ namespace SPM.Elements.StringerProperties
 		/// <summary>
 		///     Get/set the stringer height.
 		/// </summary>
-		public Length Height { get; private set; }
+		public Length Height
+		{
+			get => _height;
+			set => _height = value.ToUnit(Unit);
+		}
 
 		/// <summary>
 		///     Get the initial <see cref="Point" /> of <see cref="Stringer" />.
@@ -61,14 +67,18 @@ namespace SPM.Elements.StringerProperties
 		public Point InitialPoint { get; private set; }
 
 		/// <summary>
-		///     The stringer length, in mm.
+		///     The stringer length.
 		/// </summary>
 		public Length Length { get; private set; }
 
 		/// <summary>
 		///     Get/set the stringer width.
 		/// </summary>
-		public Length Width { get; private set; }
+		public Length Width
+		{
+			get => _width;
+			set => _width = value.ToUnit(Unit);
+		}
 
 		#endregion
 
@@ -108,8 +118,8 @@ namespace SPM.Elements.StringerProperties
 			Angle   = initialPoint.GetAngle(endPoint);
 
 			// Set values
-			Width  = width;
-			Height = height;
+			_width  = width;
+			_height = height;
 		}
 
 		#endregion
@@ -140,9 +150,9 @@ namespace SPM.Elements.StringerProperties
 			EndPoint.ChangeUnit(unit);
 			CenterPoint.ChangeUnit(unit);
 
-			Length = Length.ToUnit(unit);
-			Width  = Width.ToUnit(unit);
-			Height = Height.ToUnit(unit);
+			Length  = Length.ToUnit(unit);
+			_width  = _width.ToUnit(unit);
+			_height = _height.ToUnit(unit);
 		}
 
 		/// <summary>

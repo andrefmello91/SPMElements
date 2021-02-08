@@ -17,6 +17,8 @@ namespace SPM.Elements.PanelProperties
 	/// </summary>
 	public struct PanelGeometry : IUnitConvertible<PanelGeometry, LengthUnit>, IApproachable<PanelGeometry, Length>, IEquatable<PanelGeometry>, IComparable<PanelGeometry>, ICloneable<PanelGeometry>
 	{
+		private Length _width;
+
 		#region Properties
 
 		/// <summary>
@@ -24,7 +26,7 @@ namespace SPM.Elements.PanelProperties
 		/// </summary>
 		public LengthUnit Unit
 		{
-			get => Width.Unit;
+			get => Vertices.Unit;
 			set => ChangeUnit(value);
 		}
 
@@ -102,7 +104,11 @@ namespace SPM.Elements.PanelProperties
 		/// <summary>
 		///     Get panel width.
 		/// </summary>
-		public Length Width { get; private set; }
+		public Length Width
+		{
+			get => _width; 
+			set => _width = value.ToUnit(Unit);
+		}
 
 		#endregion
 
@@ -139,7 +145,7 @@ namespace SPM.Elements.PanelProperties
 		public PanelGeometry(Vertices vertices, Length width)
 		{
 			Vertices = vertices;
-			Width    = width.ToUnit(vertices.Unit);
+			_width   = width.ToUnit(vertices.Unit);
 
 			// Get edges
 			Edge1 = new Edge(vertices.Vertex1, vertices.Vertex2);
@@ -181,7 +187,7 @@ namespace SPM.Elements.PanelProperties
 			if (Unit == unit)
 				return;
 
-			Width = Width.ToUnit(unit);
+			_width = _width.ToUnit(unit);
 
 			Vertices.ChangeUnit(unit);
 

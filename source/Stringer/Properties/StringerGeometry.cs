@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Extensions;
 using OnPlaneComponents;
 using UnitsNet;
@@ -14,7 +15,11 @@ namespace SPM.Elements.StringerProperties
 	/// </summary>
 	public struct StringerGeometry : IUnitConvertible<StringerGeometry, LengthUnit>, IApproachable<StringerGeometry, Length>, IEquatable<StringerGeometry>, IComparable<StringerGeometry>, ICloneable<StringerGeometry>
 	{
+		#region Fields
+
 		private Length _width, _height;
+
+		#endregion
 
 		#region Properties
 
@@ -40,7 +45,7 @@ namespace SPM.Elements.StringerProperties
 		/// <summary>
 		///     Get the center <see cref="Point" /> of <see cref="Stringer" />.
 		/// </summary>
-		public Point CenterPoint { get; private set; }
+		public Point CenterPoint { get;  }
 
 		/// <summary>
 		///     Get the connected <see cref="Point" />'s.
@@ -50,7 +55,7 @@ namespace SPM.Elements.StringerProperties
 		/// <summary>
 		///     Get the final <see cref="Point" /> of <see cref="Stringer" />.
 		/// </summary>
-		public Point EndPoint { get; private set; }
+		public Point EndPoint { get;  }
 
 		/// <summary>
 		///     Get/set the stringer height.
@@ -64,7 +69,7 @@ namespace SPM.Elements.StringerProperties
 		/// <summary>
 		///     Get the initial <see cref="Point" /> of <see cref="Stringer" />.
 		/// </summary>
-		public Point InitialPoint { get; private set; }
+		public Point InitialPoint { get;  }
 
 		/// <summary>
 		///     The stringer length.
@@ -84,7 +89,7 @@ namespace SPM.Elements.StringerProperties
 
 		#region Constructors
 
-		/// <inheritdoc cref="StringerGeometry(Point, Point, Length, Length)"/>
+		/// <inheritdoc cref="StringerGeometry(Point, Point, Length, Length)" />
 		/// <param name="unit">
 		///     The <see cref="LengthUnit" /> of <paramref name="width" />, <paramref name="height" /> and nodes' coordinates.
 		///     <para>Default: <seealso cref="LengthUnit.Millimeter" />.</para>
@@ -127,6 +132,40 @@ namespace SPM.Elements.StringerProperties
 		#region  Methods
 
 		/// <summary>
+		///     Divide a <see cref="StringerGeometry" /> in a <paramref name="number" /> of new ones.
+		/// </summary>
+		/// <param name="geometry">The <see cref="StringerGeometry" /> to divide</param>
+		/// <param name="number">The number of new <see cref="StringerGeometry" />'s.</param>
+		public static IEnumerable<StringerGeometry> Divide(StringerGeometry geometry, int number)
+		{
+			if (number <= 1)
+			{
+				yield return geometry;
+				yield break;
+			}
+
+			var iPt = geometry.InitialPoint;
+			var ePt = geometry.EndPoint;
+
+			// Calculate distances
+			var dx = (ePt.X - iPt.X) / number;
+			var dy = (ePt.Y - iPt.Y) / number;
+
+
+			for (var i = 0; i < number; i++)
+			{
+				// Get end point
+				ePt = new Point(iPt.X + dx, iPt.Y + dy);
+
+				// Return a divided geometry
+				yield return new StringerGeometry(iPt, ePt, geometry.Width, geometry.Height);
+
+				// Set initial point
+				iPt = ePt;
+			}
+		}
+
+		/// <summary>
 		///     Convert this <see cref="StringerGeometry" /> object to another <see cref="LengthUnit" />.
 		/// </summary>
 		/// <param name="unit">The desired <see cref="LengthUnit" />.</param>
@@ -136,6 +175,12 @@ namespace SPM.Elements.StringerProperties
 				: new StringerGeometry(InitialPoint.Convert(unit), EndPoint.Convert(unit), Width.ToUnit(unit), Height.ToUnit(unit));
 
 		public StringerGeometry Clone() => new StringerGeometry(InitialPoint, EndPoint, Width, Height);
+
+		/// <summary>
+		///     Divide this <see cref="StringerGeometry" /> in a <paramref name="number" /> of new ones.
+		/// </summary>
+		/// <inheritdoc cref="Divide(StringerGeometry, int)" />
+		public IEnumerable<StringerGeometry> Divide(int number) => Divide(this, number);
 
 		/// <summary>
 		///     Change the <see cref="LengthUnit" /> of this.
@@ -154,6 +199,10 @@ namespace SPM.Elements.StringerProperties
 			_width  = _width.ToUnit(unit);
 			_height = _height.ToUnit(unit);
 		}
+
+		public bool Approaches(StringerGeometry other, Length tolerance) =>
+			InitialPoint.Approaches(other.InitialPoint, tolerance) && EndPoint.Approaches(other.EndPoint,     tolerance) ||
+			InitialPoint.Approaches(other!.EndPoint,    tolerance) && EndPoint.Approaches(other.InitialPoint, tolerance);
 
 		/// <summary>
 		///     Compare this <see cref="StringerGeometry" /> to <paramref name="other" />, based on <see cref="CenterPoint" />.
@@ -175,10 +224,6 @@ namespace SPM.Elements.StringerProperties
 		/// </summary>
 		/// <inheritdoc cref="CompareTo" />
 		public bool EqualsWidthAndHeight(StringerGeometry other) => Width.Approx(other.Width, Tolerance) && Height.Approx(other.Height, Tolerance);
-
-		public bool Approaches(StringerGeometry other, Length tolerance) => 
-			InitialPoint.Approaches(other.InitialPoint, tolerance) && EndPoint.Approaches(other.EndPoint,     tolerance) ||
-			InitialPoint.Approaches(other!.EndPoint,    tolerance) && EndPoint.Approaches(other.InitialPoint, tolerance);
 
 
 		public override bool Equals(object? obj) => obj is StringerGeometry other && Equals(other);

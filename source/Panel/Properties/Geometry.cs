@@ -73,22 +73,7 @@ namespace SPM.Elements.PanelProperties
 		/// <summary>
 		///     Returns true if this geometry is rectangular.
 		/// </summary>
-		public bool IsRectangular
-		{
-			get
-			{
-				// Calculate the angles between the edges
-				double[] angles =
-				{
-					Edge2.Angle - Edge1.Angle,
-					Edge4.Angle - Edge3.Angle
-				};
-
-				return
-					angles.All(angle =>
-						angle.Approx(Constants.PiOver2, 1E-3) || angle.Approx(Constants.Pi3Over2, 1E-3));
-			}
-		}
+		public bool IsRectangular => Vertices.IsRectangular;
 
 		/// <summary>
 		///     Get edges' stringer dimensions as an array.
@@ -177,6 +162,16 @@ namespace SPM.Elements.PanelProperties
 
 			return (a, b, c, d);
 		}
+
+		/// <inheritdoc cref="Vertices.Divide(int, int)" />
+		public IEnumerable<PanelGeometry> Divide(int rows, int columns) => Divide(this, rows, columns);
+
+		/// <summary>
+		///     Divide a <see cref="PanelGeometry" /> object into new ones.
+		/// </summary>
+		/// <param name="geometry">The <see cref="PanelGeometry" /> object to divide.</param>
+		/// <inheritdoc cref="Vertices.Divide(Vertices, int, int)"/>
+		public static IEnumerable<PanelGeometry> Divide(PanelGeometry geometry, int rows, int columns) => geometry.Vertices.Divide(rows, columns).Select(v => new PanelGeometry(v, geometry.Width));
 
 		/// <summary>
 		///     Change the <see cref="LengthUnit" /> of this.

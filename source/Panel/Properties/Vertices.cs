@@ -33,6 +33,11 @@ namespace SPM.Elements.PanelProperties
 		public Point CenterPoint { get; }
 
 		/// <summary>
+		///     Returns true if this forms a rectangular geometry.
+		/// </summary>
+		public bool IsRectangular => Rectangular(this);
+
+		/// <summary>
 		///     Get vertex 1 (base left vertex).
 		/// </summary>
 		public Point Vertex1 { get ; }
@@ -114,6 +119,64 @@ namespace SPM.Elements.PanelProperties
 
 			return pt1.MidPoint(pt2);
 		}
+
+		/// <summary>
+		///     Returns true if <paramref name="vertices" /> form a rectangular geometry.
+		/// </summary>
+		/// <param name="vertices">The <see cref="Vertices" /> object to check.</param>
+		public static bool Rectangular(Vertices vertices) =>
+			vertices.Vertex1.Y.Approx(vertices.Vertex2.Y, Tolerance) &&
+			vertices.Vertex4.Y.Approx(vertices.Vertex3.Y, Tolerance) &&
+			vertices.Vertex1.X.Approx(vertices.Vertex4.X, Tolerance) &&
+			vertices.Vertex2.X.Approx(vertices.Vertex3.X, Tolerance);
+
+		/// <summary>
+		///     Divide a <see cref="Vertices" /> object into new ones.
+		/// </summary>
+		/// <remarks>
+		///     The object must be rectangular, otherwise a collection containing only it is returned.
+		/// </remarks>
+		/// <param name="vertices">The <see cref="Vertices" /> object to divide.</param>
+		/// <param name="rows">The required number of rows.</param>
+		/// <param name="columns">The required number of columns.</param>
+		public static IEnumerable<Vertices> Divide(Vertices vertices, int rows, int columns)
+		{
+			if (!vertices.IsRectangular)
+			{
+				yield return vertices;
+				yield break;
+			}
+
+			// Get distances
+			var dx = (vertices.Vertex2.X - vertices.Vertex1.X) / columns;
+			var dy = (vertices.Vertex4.Y - vertices.Vertex1.Y) / rows;
+
+			for (var r = 0; r < rows; r++)
+			{
+				// Get initial vertex for this row
+				var v1 = new Point(vertices.Vertex1.X, vertices.Vertex1.Y + r * dy);
+
+				for (var c = 0; c < columns; c++)
+				{
+					// Get other vertices
+					var v2 = new Point(v1.X + dx, v1.Y);
+					var v3 = new Point(v1.X + dx, v1.Y + dy);
+					var v4 = new Point(v1.X,      v1.Y + dy);
+
+					// Return
+					yield return new Vertices(v1, v2, v3, v4);
+
+					// Set initial vertex for next column
+					v1 = v2;
+				}
+			}
+		}
+
+		/// <summary>
+		///     Divide this object into new ones.
+		/// </summary>
+		/// <inheritdoc cref="Divide(Vertices, int, int)" />
+		public IEnumerable<Vertices> Divide(int rows, int columns) => Divide(this, rows, columns);
 
 		/// <summary>
 		///     Get vertices as an array.

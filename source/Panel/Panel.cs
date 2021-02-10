@@ -258,7 +258,7 @@ namespace SPM.Elements
 		/// <param name="number">The panel number.</param>
 		/// <inheritdoc
 		///     cref="Panel(IEnumerable{Node}, PanelGeometry, Parameters, ConstitutiveModel, WebReinforcement)" />
-		public static Panel Read(AnalysisType analysisType, int number, IEnumerable<Node> nodes, PanelGeometry geometry, Parameters concreteParameters, ConstitutiveModel model, WebReinforcement reinforcement = null) =>
+		public static Panel Read(AnalysisType analysisType, int number, IEnumerable<Node> nodes, PanelGeometry geometry, Parameters concreteParameters, ConstitutiveModel model, WebReinforcement? reinforcement = null) =>
 			analysisType is AnalysisType.Linear
 				? new   Panel(nodes, geometry, concreteParameters, model, reinforcement) {Number = number}
 				: new NLPanel(nodes, geometry, concreteParameters, model, reinforcement) {Number = number};

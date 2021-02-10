@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using Extensions;
-using MathNet.Numerics;
 using OnPlaneComponents;
 using UnitsNet;
 using UnitsNet.Units;
@@ -17,7 +16,11 @@ namespace SPM.Elements.PanelProperties
 	/// </summary>
 	public struct PanelGeometry : IUnitConvertible<PanelGeometry, LengthUnit>, IApproachable<PanelGeometry, Length>, IEquatable<PanelGeometry>, IComparable<PanelGeometry>, ICloneable<PanelGeometry>
 	{
+		#region Fields
+
 		private Length _width;
+
+		#endregion
 
 		#region Properties
 
@@ -91,7 +94,7 @@ namespace SPM.Elements.PanelProperties
 		/// </summary>
 		public Length Width
 		{
-			get => _width; 
+			get => _width;
 			set => _width = value.ToUnit(Unit);
 		}
 
@@ -163,15 +166,15 @@ namespace SPM.Elements.PanelProperties
 			return (a, b, c, d);
 		}
 
-		/// <inheritdoc cref="Vertices.Divide(int, int)" />
-		public IEnumerable<PanelGeometry> Divide(int rows, int columns) => Divide(this, rows, columns);
-
 		/// <summary>
 		///     Divide a <see cref="PanelGeometry" /> object into new ones.
 		/// </summary>
 		/// <param name="geometry">The <see cref="PanelGeometry" /> object to divide.</param>
-		/// <inheritdoc cref="Vertices.Divide(Vertices, int, int)"/>
+		/// <inheritdoc cref="Vertices.Divide(Vertices, int, int)" />
 		public static IEnumerable<PanelGeometry> Divide(PanelGeometry geometry, int rows, int columns) => geometry.Vertices.Divide(rows, columns).Select(v => new PanelGeometry(v, geometry.Width));
+
+		/// <inheritdoc cref="Vertices.Divide(int, int)" />
+		public IEnumerable<PanelGeometry> Divide(int rows, int columns) => Divide(this, rows, columns);
 
 		/// <summary>
 		///     Change the <see cref="LengthUnit" /> of this.

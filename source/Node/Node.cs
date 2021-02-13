@@ -23,7 +23,7 @@ namespace SPM.Elements
 		public int Number { get; set; }
 
 		/// <summary>
-		///     Get/set <see cref="Elements.Constraint" /> condition.
+		///     Get/set <see cref="OnPlaneComponents.Constraint" /> condition.
 		/// </summary>
 		public Constraint Constraint { get; set; } = Constraint.Free;
 
@@ -67,7 +67,7 @@ namespace SPM.Elements
 		/// <summary>
 		///     Returns true if the node is free.
 		/// </summary>
-		public bool IsFree => Constraint is Constraint.Free;
+		public bool IsFree => Constraint.Direction == ConstraintDirection.None;
 
 		/// <summary>
 		///     Get the position of the node.

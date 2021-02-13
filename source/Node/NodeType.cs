@@ -6,12 +6,7 @@
 	public enum NodeType
 	{
 		/// <summary>
-		///     All nodes (excluding displaced nodes).
-		/// </summary>
-		All,
-
-		/// <summary>
-		///     External nodes (grips to stringers).
+		///     External nodes (external grips to stringers).
 		/// </summary>
 		External,
 

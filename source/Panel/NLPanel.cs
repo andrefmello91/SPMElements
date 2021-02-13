@@ -122,7 +122,7 @@ namespace SPM.Elements
 		///     Nonlinear panel object.
 		/// </summary>
 		/// <inheritdoc />
-		public NLPanel(Node grip1, Node grip2, Node grip3, Node grip4, Vertices vertices, double width, Parameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, WebReinforcement? reinforcement = null, LengthUnit unit = LengthUnit.Millimeter)
+		public NLPanel(Node grip1, Node grip2, Node grip3, Node grip4, Vertices vertices, double width, IParameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, WebReinforcement? reinforcement = null, LengthUnit unit = LengthUnit.Millimeter)
 			: this(grip1, grip2, grip3, grip4, vertices, Length.From(width, unit), concreteParameters, model, reinforcement)
 		{
 		}
@@ -131,7 +131,7 @@ namespace SPM.Elements
 		///     Nonlinear panel object.
 		/// </summary>
 		/// <inheritdoc />
-		public NLPanel(Node grip1, Node grip2, Node grip3, Node grip4, Vertices vertices, Length width, Parameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, WebReinforcement? reinforcement = null)
+		public NLPanel(Node grip1, Node grip2, Node grip3, Node grip4, Vertices vertices, Length width, IParameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, WebReinforcement? reinforcement = null)
 			: this(grip1, grip2, grip3, grip4, new PanelGeometry(vertices, width), concreteParameters, model, reinforcement)
 		{
 		}
@@ -140,14 +140,14 @@ namespace SPM.Elements
 		///     Nonlinear panel object.
 		/// </summary>
 		/// <inheritdoc />
-		public NLPanel(Node grip1, Node grip2, Node grip3, Node grip4, PanelGeometry geometry, Parameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, WebReinforcement? reinforcement = null)
+		public NLPanel(Node grip1, Node grip2, Node grip3, Node grip4, PanelGeometry geometry, IParameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, WebReinforcement? reinforcement = null)
 			: base(grip1, grip2, grip3, grip4, geometry, concreteParameters, model, reinforcement) => IntegrationPoints = IntPoints().ToArray();
 
 		/// <summary>
 		///     Nonlinear panel object.
 		/// </summary>
 		/// <inheritdoc />
-		public NLPanel(IEnumerable<Node> nodes, Vertices vertices, double width, Parameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, WebReinforcement? reinforcement = null, LengthUnit unit = LengthUnit.Millimeter)
+		public NLPanel(IEnumerable<Node> nodes, Vertices vertices, double width, IParameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, WebReinforcement? reinforcement = null, LengthUnit unit = LengthUnit.Millimeter)
 			: this(nodes, vertices, Length.From(width, unit), concreteParameters, model, reinforcement)
 		{
 		}
@@ -156,7 +156,7 @@ namespace SPM.Elements
 		///     Nonlinear panel object.
 		/// </summary>
 		/// <inheritdoc />
-		public NLPanel(IEnumerable<Node> nodes, Vertices vertices, Length width, Parameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, WebReinforcement? reinforcement = null)
+		public NLPanel(IEnumerable<Node> nodes, Vertices vertices, Length width, IParameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, WebReinforcement? reinforcement = null)
 			: this(nodes, new PanelGeometry(vertices, width), concreteParameters, model, reinforcement)
 		{
 		}
@@ -165,7 +165,7 @@ namespace SPM.Elements
 		///     Nonlinear panel object.
 		/// </summary>
 		/// <inheritdoc />
-		public NLPanel(IEnumerable<Node> nodes, PanelGeometry geometry, Parameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, WebReinforcement? reinforcement = null)
+		public NLPanel(IEnumerable<Node> nodes, PanelGeometry geometry, IParameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, WebReinforcement? reinforcement = null)
 			: base(nodes, geometry, concreteParameters, model, reinforcement) => IntegrationPoints = IntPoints().ToArray();
 
 		#endregion

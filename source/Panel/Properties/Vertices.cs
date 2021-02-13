@@ -88,7 +88,7 @@ namespace SPM.Elements.PanelProperties
 			CenterPoint = CalculateCenterPoint(Vertex1, Vertex2, Vertex3, Vertex4);
 		}
 
-		/// <param name="vertices">The collection of the four <see cref="Point" /> vertices.</param>
+		/// <param name="vertices">The collection of the four <see cref="Point" /> vertices, in any order.</param>
 		/// <inheritdoc cref="Vertices(Point, Point, Point, Point)" />
 		public Vertices(IEnumerable<Point> vertices)
 		{

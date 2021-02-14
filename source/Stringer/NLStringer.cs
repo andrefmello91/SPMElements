@@ -36,7 +36,7 @@ namespace SPM.Elements
 		/// </summary>
 		private Matrix<double> BMatrix => _BMatrix ?? CalculateBMatrix();
 
-		protected override Area ConcreteArea => Geometry.Area - (Reinforcement?.Area ?? Area.Zero);
+		protected override Area ConcreteArea => Geometry.CrossSection.Area - (Reinforcement?.Area ?? Area.Zero);
 
 		/// <inheritdoc />
 		public override Length[] CrackOpenings => Strains.Select(eps => CrackOpening(Reinforcement, eps)).ToArray();

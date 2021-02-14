@@ -15,11 +15,7 @@ namespace SPM.Elements.StringerProperties
 	/// </summary>
 	public struct StringerGeometry : IUnitConvertible<StringerGeometry, LengthUnit>, IApproachable<StringerGeometry, Length>, IEquatable<StringerGeometry>, IComparable<StringerGeometry>, ICloneable<StringerGeometry>
 	{
-		#region Fields
-
-		private Length _width, _height;
-
-		#endregion
+		private CrossSection _section;
 
 		#region Properties
 
@@ -38,9 +34,13 @@ namespace SPM.Elements.StringerProperties
 		public double Angle { get; }
 
 		/// <summary>
-		///     Get cross-section area.
+		///     Get the cross-section.
 		/// </summary>
-		public Area Area => (Width * Height).ToUnit(Unit.GetAreaUnit());
+		public CrossSection CrossSection
+		{
+			get => _section; 
+			set => _section = value.Convert(Unit);
+		}
 
 		/// <summary>
 		///     Get the center <see cref="Point" /> of <see cref="Stringer" />.
@@ -58,15 +58,6 @@ namespace SPM.Elements.StringerProperties
 		public Point EndPoint { get;  }
 
 		/// <summary>
-		///     Get/set the stringer height.
-		/// </summary>
-		public Length Height
-		{
-			get => _height;
-			set => _height = value.ToUnit(Unit);
-		}
-
-		/// <summary>
 		///     Get the initial <see cref="Point" /> of <see cref="Stringer" />.
 		/// </summary>
 		public Point InitialPoint { get;  }
@@ -75,15 +66,6 @@ namespace SPM.Elements.StringerProperties
 		///     The stringer length.
 		/// </summary>
 		public Length Length { get; private set; }
-
-		/// <summary>
-		///     Get/set the stringer width.
-		/// </summary>
-		public Length Width
-		{
-			get => _width;
-			set => _width = value.ToUnit(Unit);
-		}
 
 		#endregion
 
@@ -102,17 +84,25 @@ namespace SPM.Elements.StringerProperties
 		/// <summary>
 		///     Stringer geometry object.
 		/// </summary>
-		/// <param name="initialPoint">
-		///     The initial <see cref="Point" /> of the <see cref="Stringer" />, in equal unit of
-		///     <paramref name="width" /> and <paramref name="height" />.
-		/// </param>
-		/// <param name="endPoint">
-		///     The final <see cref="Point" /> of the <see cref="Stringer" />, in equal unit of
-		///     <paramref name="width" /> and <paramref name="height" />.
-		/// </param>
 		/// <param name="width">The stringer width.</param>
 		/// <param name="height">The stringer height.</param>
+		/// <inheritdoc cref="StringerGeometry(Point, Point, CrossSection)"/>
 		public StringerGeometry(Point initialPoint, Point endPoint, Length width, Length height)
+			: this (initialPoint, endPoint, new CrossSection(width, height))
+		{
+		}
+
+		/// <summary>
+		///     Stringer geometry object.
+		/// </summary>
+		/// <param name="initialPoint">
+		///     The initial <see cref="Point" /> of the <see cref="Stringer" />.
+		/// </param>
+		/// <param name="endPoint">
+		///     The final <see cref="Point" /> of the <see cref="Stringer" />.
+		/// </param>
+		/// <param name="crossSection">The stringer cross-section.</param>
+		public StringerGeometry(Point initialPoint, Point endPoint, CrossSection crossSection)
 		{
 			InitialPoint = initialPoint;
 			EndPoint     = endPoint.Convert(initialPoint.Unit);
@@ -123,8 +113,7 @@ namespace SPM.Elements.StringerProperties
 			Angle   = initialPoint.GetAngle(endPoint);
 
 			// Set values
-			_width  = width;
-			_height = height;
+			_section = crossSection;
 		}
 
 		#endregion
@@ -158,7 +147,7 @@ namespace SPM.Elements.StringerProperties
 				ePt = new Point(iPt.X + dx, iPt.Y + dy);
 
 				// Return a divided geometry
-				yield return new StringerGeometry(iPt, ePt, geometry.Width, geometry.Height);
+				yield return new StringerGeometry(iPt, ePt, geometry.CrossSection);
 
 				// Set initial point
 				iPt = ePt;
@@ -172,9 +161,9 @@ namespace SPM.Elements.StringerProperties
 		public StringerGeometry Convert(LengthUnit unit) =>
 			unit == Unit
 				? this
-				: new StringerGeometry(InitialPoint.Convert(unit), EndPoint.Convert(unit), Width.ToUnit(unit), Height.ToUnit(unit));
+				: new StringerGeometry(InitialPoint.Convert(unit), EndPoint.Convert(unit), CrossSection.Convert(unit));
 
-		public StringerGeometry Clone() => new StringerGeometry(InitialPoint, EndPoint, Width, Height);
+		public StringerGeometry Clone() => new StringerGeometry(InitialPoint, EndPoint, CrossSection.Clone());
 
 		/// <summary>
 		///     Divide this <see cref="StringerGeometry" /> in a <paramref name="number" /> of new ones.
@@ -194,10 +183,9 @@ namespace SPM.Elements.StringerProperties
 			InitialPoint.ChangeUnit(unit);
 			EndPoint.ChangeUnit(unit);
 			CenterPoint.ChangeUnit(unit);
+			CrossSection.ChangeUnit(unit);
 
 			Length  = Length.ToUnit(unit);
-			_width  = _width.ToUnit(unit);
-			_height = _height.ToUnit(unit);
 		}
 
 		public bool Approaches(StringerGeometry other, Length tolerance) =>
@@ -220,20 +208,19 @@ namespace SPM.Elements.StringerProperties
 		public bool Equals(StringerGeometry other) => Approaches(other, Tolerance);
 
 		/// <summary>
-		///     Returns true if <see cref="Width" /> and <seealso cref="Height" /> of <paramref name="other" /> coincide.
+		///     Returns true if <see cref="CrossSection" /> of <paramref name="other" /> coincide to this object.
 		/// </summary>
 		/// <inheritdoc cref="CompareTo" />
-		public bool EqualsWidthAndHeight(StringerGeometry other) => Width.Approx(other.Width, Tolerance) && Height.Approx(other.Height, Tolerance);
+		public bool EqualsCrossSection(StringerGeometry other) => CrossSection == other.CrossSection;
 
 
 		public override bool Equals(object? obj) => obj is StringerGeometry other && Equals(other);
 
-		public override int GetHashCode() => (int) (Length.Value * Area.Value);
+		public override int GetHashCode() => InitialPoint.GetHashCode() * EndPoint.GetHashCode();
 
 		public override string ToString() =>
 			$"Lenght = {Length}\n" +
-			$"Width  = {Width}\n" +
-			$"Height = {Height}";
+			CrossSection;
 
 		#endregion
 

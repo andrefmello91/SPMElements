@@ -5,7 +5,6 @@ using OnPlaneComponents;
 using UnitsNet;
 using UnitsNet.Units;
 using static SPM.Elements.Extensions;
-using Force = OnPlaneComponents.Force;
 
 #nullable enable
 
@@ -28,9 +27,9 @@ namespace SPM.Elements
 		public Constraint Constraint { get; set; } = Constraint.Free;
 
 		/// <summary>
-		///     Get/set nodal <see cref="OnPlaneComponents.Displacement" />
+		///     Get/set nodal <see cref="PlaneDisplacement" />
 		/// </summary>
-		public Displacement Displacement { get; set; } = Displacement.Zero;
+		public PlaneDisplacement Displacement { get; set; } = PlaneDisplacement.Zero;
 
 		/// <summary>
 		///     Get/set the <see cref="LengthUnit" /> of <see cref="Displacement" />.
@@ -42,17 +41,17 @@ namespace SPM.Elements
 		}
 
 		/// <summary>
-		///     Get/set applied <see cref="OnPlaneComponents.Force" />.
+		///     Get/set applied <see cref="PlaneForce" />.
 		/// </summary>
-		public Force Force { get; set; } = Force.Zero;
+		public PlaneForce PlaneForce { get; set; } = PlaneForce.Zero;
 
 		/// <summary>
-		///     Get/set the <see cref="UnitsNet.Units.ForceUnit" /> of <see cref="Force" />.
+		///     Get/set the <see cref="UnitsNet.Units.ForceUnit" /> of <see cref="PlaneForce" />.
 		/// </summary>
 		public ForceUnit ForceUnit
 		{
-			get => Force.Unit;
-			set => Force.ChangeUnit(value);
+			get => PlaneForce.Unit;
+			set => PlaneForce.ChangeUnit(value);
 		}
 
 		/// <summary>
@@ -139,7 +138,7 @@ namespace SPM.Elements
 				uy = u[j];
 
 			// Save to the node, in mm
-			var disp = new Displacement(ux, uy).Convert(DisplacementUnit);
+			var disp = new PlaneDisplacement(ux, uy).Convert(DisplacementUnit);
 			Displacement = disp;
 		}
 
@@ -156,11 +155,11 @@ namespace SPM.Elements
 				$"Position: ({Position.X:0.00}, {Position.Y:0.00})";
 
 			// Read applied forces
-			if (!Force.IsZero)
+			if (!PlaneForce.IsZero)
 				msgstr +=
 					"\n\n" +
 					"Applied forces:\n" +
-					$"{Force}";
+					$"{PlaneForce}";
 
 			// Get supports
 			if (!IsFree)

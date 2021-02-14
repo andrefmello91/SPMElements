@@ -13,7 +13,7 @@ using UnitsNet;
 using UnitsNet.Units;
 using static SPM.Elements.Extensions;
 using Force = UnitsNet.Force;
-using static OnPlaneComponents.Force;
+using static OnPlaneComponents.PlaneForce;
 
 #nullable enable
 
@@ -76,7 +76,7 @@ namespace SPM.Elements
 		/// <summary>
 		///     Get concrete area.
 		/// </summary>
-		protected virtual Area ConcreteArea => Geometry.Area;
+		protected virtual Area ConcreteArea => Geometry.CrossSection.Area;
 
 		/// <summary>
 		///     Get crack openings in start, mid and end nodes.

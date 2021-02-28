@@ -66,7 +66,7 @@ namespace SPM.Elements
 		/// <summary>
 		///     Returns true if the node is free.
 		/// </summary>
-		public bool IsFree => Constraint.Direction == ConstraintDirection.None;
+		public bool IsFree => Constraint.Direction == ComponentDirection.None;
 
 		/// <summary>
 		///     Get the position of the node.

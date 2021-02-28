@@ -301,7 +301,7 @@ namespace SPM.Elements
 
 			// Analyze panel grips
 			for (var i = 0; i < 4; i++)
-				hs[i] = 0.5 * stringers.First(str => Grips[i] == str.Grips[1]).Geometry.Height;
+				hs[i] = 0.5 * stringers.First(str => Grips[i] == str.Grips[1]).Geometry.CrossSection.Height;
 
 			// Set on edges
 			Geometry.Edge1.SetStringerDimension(hs[0]);

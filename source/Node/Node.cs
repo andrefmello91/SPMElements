@@ -41,17 +41,17 @@ namespace SPM.Elements
 		}
 
 		/// <summary>
-		///     Get/set applied <see cref="PlaneForce" />.
+		///     Get/set applied <see cref="Force" />.
 		/// </summary>
-		public PlaneForce PlaneForce { get; set; } = PlaneForce.Zero;
+		public PlaneForce Force { get; set; } = PlaneForce.Zero;
 
 		/// <summary>
-		///     Get/set the <see cref="UnitsNet.Units.ForceUnit" /> of <see cref="PlaneForce" />.
+		///     Get/set the <see cref="UnitsNet.Units.ForceUnit" /> of <see cref="Force" />.
 		/// </summary>
 		public ForceUnit ForceUnit
 		{
-			get => PlaneForce.Unit;
-			set => PlaneForce.ChangeUnit(value);
+			get => Force.Unit;
+			set => Force.ChangeUnit(value);
 		}
 
 		/// <summary>
@@ -155,11 +155,11 @@ namespace SPM.Elements
 				$"Position: ({Position.X:0.00}, {Position.Y:0.00})";
 
 			// Read applied forces
-			if (!PlaneForce.IsZero)
+			if (!Force.IsZero)
 				msgstr +=
 					"\n\n" +
 					"Applied forces:\n" +
-					$"{PlaneForce}";
+					$"{Force}";
 
 			// Get supports
 			if (!IsFree)

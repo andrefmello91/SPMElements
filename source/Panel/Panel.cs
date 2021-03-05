@@ -214,6 +214,9 @@ namespace SPM.Elements
 			Concrete = new BiaxialConcrete(concreteParameters, model);
 
 			Reinforcement = reinforcement;
+
+			if (!(Reinforcement is null))
+				Reinforcement.Width = Geometry.Width;
 		}
 
 		/// <inheritdoc
@@ -244,6 +247,9 @@ namespace SPM.Elements
 			Concrete = new BiaxialConcrete(concreteParameters, model);
 
 			Reinforcement = reinforcement;
+
+			if (!(Reinforcement is null))
+				Reinforcement.Width = Geometry.Width;
 		}
 
 		#endregion

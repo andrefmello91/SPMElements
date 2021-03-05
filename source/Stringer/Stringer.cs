@@ -76,7 +76,9 @@ namespace SPM.Elements
 		/// <summary>
 		///     Get concrete area.
 		/// </summary>
-		protected virtual Area ConcreteArea => Geometry.CrossSection.Area;
+		protected Area ConcreteArea => this is NLStringer
+			? Geometry.CrossSection.Area - (Reinforcement?.Area ?? Area.Zero)
+			: Geometry.CrossSection.Area;
 
 		/// <summary>
 		///     Get crack openings in start, mid and end nodes.
@@ -111,7 +113,7 @@ namespace SPM.Elements
 		/// <summary>
 		///     Get the <see cref="UniaxialReinforcement" /> of this element.
 		/// </summary>
-		public UniaxialReinforcement? Reinforcement { get; protected set; }
+		public UniaxialReinforcement? Reinforcement { get; }
 
 		/// <summary>
 		///     Get the state of forces acting on the stringer.
@@ -168,6 +170,9 @@ namespace SPM.Elements
 			Grip3          = grip3;
 			Reinforcement  = reinforcement;
 			Concrete       = new UniaxialConcrete(concreteParameters, ConcreteArea, model);
+
+			if (!(Reinforcement is null))
+				Reinforcement.ConcreteArea = Geometry.CrossSection.Area;
 		}
 
 		/// <param name="nodes">The collection containing all <see cref="Node" />'s of SPM model.</param>
@@ -194,9 +199,12 @@ namespace SPM.Elements
 			Geometry       = geometry;
 			Grip1          = nodes.GetByPosition(Geometry.InitialPoint);
 			Grip2          = nodes.GetByPosition(Geometry.CenterPoint);
-			Grip3          = nodes.GetByPosition(Geometry.InitialPoint);
+			Grip3          = nodes.GetByPosition(Geometry.EndPoint);
 			Reinforcement  = reinforcement;
 			Concrete       = new UniaxialConcrete(concreteParameters, ConcreteArea, model);
+
+			if (!(Reinforcement is null))
+				Reinforcement.ConcreteArea = Geometry.CrossSection.Area;
 		}
 
 		#endregion

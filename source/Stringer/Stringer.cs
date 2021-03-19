@@ -333,9 +333,11 @@ namespace SPM.Elements
 			var msgstr =
 				$"Stringer {Number}\n\n" +
 				$"Grips: ({Grips[0]} - {Grips[1]} - {Grips[2]})\n" +
+				$"DoFIndex: {DoFIndex.Select(i => i.ToString()).Aggregate((i, f) => $"{i} - {f}")}\n" +
 				$"{Geometry}";
 
-			if (Reinforcement != null) msgstr += $"\n\n{Reinforcement}";
+			if (!(Reinforcement is null)) 
+				msgstr += $"\n\n{Reinforcement}";
 
 			return msgstr;
 		}

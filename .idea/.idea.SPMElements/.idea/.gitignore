@@ -1,0 +1,13 @@
+﻿# Default ignored files
+/shelf/
+/workspace.xml
+# Rider ignored files
+/contentModel.xml
+/projectSettingsUpdater.xml
+/.idea.SPMElements.iml
+/modules.xml
+# Datasource local storage ignored files
+/../../../../../../../../../../:\André\OneDrive\source\repos\andrefmello91\SPMElements\.idea\.idea.SPMElements\.idea/dataSources/
+/dataSources.local.xml
+# Editor-based HTTP Client requests
+/httpRequests/

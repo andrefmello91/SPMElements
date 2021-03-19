@@ -114,9 +114,7 @@ namespace SPM.Elements
 					fyy = Reinforcement?.DirectionY?.Steel?.YieldStress ?? Pressure.Zero;
 
 				if (fyx.Approx(fyy, StressState.Tolerance))
-				{
 					sig2 = -2 * tau.Abs();
-				}
 
 				else
 				{
@@ -544,6 +542,7 @@ namespace SPM.Elements
 			var msgstr =
 				$"Panel {Number}\n\n" +
 				$"Grips: ({Grips[0]} - {Grips[1]} - {Grips[2]} - {Grips[3]})\n" +
+				$"DoFIndex: {DoFIndex.Select(i => i.ToString()).Aggregate((i, f) => $"{i} - {f}")}\n" +
 				$"{Geometry}";
 
 			if (!(Reinforcement is null))

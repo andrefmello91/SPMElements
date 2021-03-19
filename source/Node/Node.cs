@@ -66,7 +66,7 @@ namespace SPM.Elements
 		/// <summary>
 		///     Returns true if the node is free.
 		/// </summary>
-		public bool IsFree => Constraint.Direction == ComponentDirection.None;
+		public bool IsFree => Constraint.Direction is ComponentDirection.None;
 
 		/// <summary>
 		///     Get the position of the node.
@@ -152,7 +152,8 @@ namespace SPM.Elements
 		{
 			var msgstr =
 				$"Node {Number}\n" +
-				$"Position: ({Position.X:0.00}, {Position.Y:0.00})";
+				$"Position: ({Position.X:0.00}, {Position.Y:0.00})\n" +
+				$"DoFIndex: {DoFIndex.Select(i => i.ToString()).Aggregate((i,f) => $"{i} - {f}")}";
 
 			// Read applied forces
 			if (!Force.IsZero)

@@ -74,7 +74,7 @@ namespace SPM.Elements
 			get
 			{
 				// Get the dimensions as a vector
-				var lsV = Geometry.EdgeLengths.Select(l => l.Value).ToVector();
+				var lsV = Geometry.EdgeLengths.Select(l => l.Millimeters).ToVector();
 
 				// Calculate the shear stresses
 				var tau = LocalForces / (lsV * Geometry.Width.Millimeters);

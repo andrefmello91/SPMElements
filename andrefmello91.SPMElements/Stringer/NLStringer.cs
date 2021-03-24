@@ -109,7 +109,7 @@ namespace andrefmello91.SPMElements
 		/// <param name="strain">The strain.</param>
 		public static Length CrackOpening(UniaxialReinforcement? reinforcement, double strain) => strain < 0 || strain.ApproxZero(1E-9) ? Length.Zero : strain  * CrackSpacing(reinforcement);
 
-		public override void Analysis(Vector<double>? globalDisplacements = null)
+		public override void CalculateForces(Vector<double>? globalDisplacements = null)
 		{
 			// Set displacements
 			if (globalDisplacements != null)

@@ -1,6 +1,21 @@
 ﻿namespace andrefmello91.SPMElements
 {
 	/// <summary>
+	///		Element models.
+	/// </summary>
+	public enum ElementModel
+	{
+		/// <summary>
+		///		Elastic model for linear analysis.
+		/// </summary>
+		Elastic,
+		
+		/// <summary>
+		///		Nonlinear model, for nonlinear analysis.
+		/// </summary>
+		Nonlinear
+	}
+	/// <summary>
 	///     Node types.
 	/// </summary>
 	public enum NodeType

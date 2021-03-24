@@ -1,4 +1,5 @@
 ﻿using System;
+using andrefmello91.OnPlaneComponents;
 using Extensions;
 using UnitsNet;
 using UnitsNet.Units;
@@ -18,6 +19,7 @@ namespace andrefmello91.SPMElements.StringerProperties
 
 		#region Properties
 
+		/// <inheritdoc />
 		public LengthUnit Unit
 		{
 			get => _width.Unit;
@@ -77,6 +79,7 @@ namespace andrefmello91.SPMElements.StringerProperties
 
 		#region  Methods
 
+		/// <inheritdoc />
 		public void ChangeUnit(LengthUnit unit)
 		{
 			if (Unit == unit)
@@ -86,13 +89,17 @@ namespace andrefmello91.SPMElements.StringerProperties
 			_height = _height.ToUnit(unit);
 		}
 
+		/// <inheritdoc />
 		public CrossSection Convert(LengthUnit unit) => new CrossSection(Width.ToUnit(unit), Height.ToUnit(unit));
 
+		/// <inheritdoc />
 		public bool Approaches(CrossSection other, Length tolerance) => Width.Approx(other.Width, tolerance) && Height.Approx(other.Width, tolerance);
 
 
+		/// <inheritdoc />
 		public CrossSection Clone() => new CrossSection(Width, Height);
 
+		/// <inheritdoc />
 		public int CompareTo(CrossSection other) =>
 			Width == other.Width && Height == other.Height
 				? 0
@@ -100,8 +107,10 @@ namespace andrefmello91.SPMElements.StringerProperties
 					?  1
 					: -1;
 
-		public bool Equals(CrossSection other) => Approaches(other, Tolerance);
+		/// <inheritdoc />
+		public bool Equals(CrossSection other) => Approaches(other, Point.Tolerance);
 
+		/// <inheritdoc />
 		public override string ToString() =>
 			$"Width = {Width}\n" +
 			$"Height = {Height}\n";

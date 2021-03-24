@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using andrefmello91.OnPlaneComponents;
 using Extensions;
 using UnitsNet;
 using UnitsNet.Units;
@@ -69,7 +70,7 @@ namespace andrefmello91.SPMElements.StringerProperties
 
 		#region Constructors
 
-		/// <inheritdoc cref="StringerGeometry" />
+		/// <inheritdoc cref="StringerGeometry(Point, Point, Length, Length)"/>
 		/// <param name="unit">
 		///     The <see cref="LengthUnit" /> of <paramref name="width" />, <paramref name="height" /> and nodes' coordinates.
 		///     <para>Default: <seealso cref="LengthUnit.Millimeter" />.</para>
@@ -79,12 +80,9 @@ namespace andrefmello91.SPMElements.StringerProperties
 		{
 		}
 
-		/// <summary>
-		///     Stringer geometry object.
-		/// </summary>
+		/// <inheritdoc cref="StringerGeometry(Point, Point, CrossSection)"/>
 		/// <param name="width">The stringer width.</param>
 		/// <param name="height">The stringer height.</param>
-		/// <inheritdoc cref="StringerGeometry"/>
 		public StringerGeometry(Point initialPoint, Point endPoint, Length width, Length height)
 			: this (initialPoint, endPoint, new CrossSection(width, height))
 		{
@@ -161,6 +159,7 @@ namespace andrefmello91.SPMElements.StringerProperties
 				? this
 				: new StringerGeometry(InitialPoint.Convert(unit), EndPoint.Convert(unit), CrossSection.Convert(unit));
 
+		/// <inheritdoc />
 		public StringerGeometry Clone() => new StringerGeometry(InitialPoint, EndPoint, CrossSection.Clone());
 
 		/// <summary>
@@ -186,6 +185,7 @@ namespace andrefmello91.SPMElements.StringerProperties
 			Length  = Length.ToUnit(unit);
 		}
 
+		/// <inheritdoc />
 		public bool Approaches(StringerGeometry other, Length tolerance) =>
 			InitialPoint.Approaches(other.InitialPoint, tolerance) && EndPoint.Approaches(other.EndPoint,     tolerance) ||
 			InitialPoint.Approaches(other!.EndPoint,    tolerance) && EndPoint.Approaches(other.InitialPoint, tolerance);
@@ -203,19 +203,21 @@ namespace andrefmello91.SPMElements.StringerProperties
 		///     Returns true if <see cref="InitialPoint" /> and <seealso cref="EndPoint" /> of <paramref name="other" /> coincide.
 		/// </summary>
 		/// <inheritdoc cref="CompareTo" />
-		public bool Equals(StringerGeometry other) => Approaches(other, Tolerance);
+		public bool Equals(StringerGeometry other) => Approaches(other, Point.Tolerance);
 
 		/// <summary>
 		///     Returns true if <see cref="CrossSection" /> of <paramref name="other" /> coincide to this object.
 		/// </summary>
 		/// <inheritdoc cref="CompareTo" />
 		public bool EqualsCrossSection(StringerGeometry other) => CrossSection == other.CrossSection;
+		
+		/// <inheritdoc />
+		public override bool Equals(object obj) => obj is StringerGeometry other && Equals(other);
 
-
-		public override bool Equals(object? obj) => obj is StringerGeometry other && Equals(other);
-
+		/// <inheritdoc />
 		public override int GetHashCode() => InitialPoint.GetHashCode() * EndPoint.GetHashCode();
 
+		/// <inheritdoc />
 		public override string ToString() =>
 			$"Lenght = {Length}\n" +
 			CrossSection;

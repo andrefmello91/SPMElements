@@ -1,9 +1,12 @@
 ﻿using System;
 using System.Linq;
-using MathNet.Numerics.LinearAlgebra;
+using andrefmello91.FEMAnalysis;
+using andrefmello91.OnPlaneComponents;
+using andrefmello91.OnPlaneComponents.Displacement;
+using andrefmello91.OnPlaneComponents.Force;
 using UnitsNet;
 using UnitsNet.Units;
-using static andrefmello91.SPMElements.Extensions;
+using static andrefmello91.FEMAnalysis.Extensions;
 
 #nullable enable
 
@@ -12,23 +15,9 @@ namespace andrefmello91.SPMElements
 	/// <summary>
 	///     Node class.
 	/// </summary>
-	public class Node : INumberedElement, IEquatable<Node>, IComparable<Node>
+	public class Node : IGrip, IEquatable<Node>, IComparable<Node>
 	{
 		#region Properties
-
-		public int[] DoFIndex => GlobalIndexes(Number).ToArray();
-
-		public int Number { get; set; }
-
-		/// <summary>
-		///     Get/set <see cref="OnPlaneComponents.Constraint" /> condition.
-		/// </summary>
-		public Constraint Constraint { get; set; } = Constraint.Free;
-
-		/// <summary>
-		///     Get/set nodal <see cref="PlaneDisplacement" />
-		/// </summary>
-		public PlaneDisplacement Displacement { get; set; } = PlaneDisplacement.Zero;
 
 		/// <summary>
 		///     Get/set the <see cref="LengthUnit" /> of <see cref="Displacement" />.
@@ -38,11 +27,6 @@ namespace andrefmello91.SPMElements
 			get => Displacement.Unit;
 			set => Displacement.ChangeUnit(value);
 		}
-
-		/// <summary>
-		///     Get/set applied <see cref="Force" />.
-		/// </summary>
-		public PlaneForce Force { get; set; } = PlaneForce.Zero;
 
 		/// <summary>
 		///     Get/set the <see cref="UnitsNet.Units.ForceUnit" /> of <see cref="Force" />.
@@ -78,8 +62,31 @@ namespace andrefmello91.SPMElements
 		/// </summary>
 		public NodeType Type { get; }
 
-		#endregion
+		/// <summary>
+		///     Get/set <see cref="OnPlaneComponents.Constraint" /> condition.
+		/// </summary>
+		public Constraint Constraint { get; set; } = Constraint.Free;
 
+		/// <summary>
+		///     Get/set nodal <see cref="PlaneDisplacement" />
+		/// </summary>
+		public PlaneDisplacement Displacement { get; set; } = PlaneDisplacement.Zero;
+
+		/// <summary>
+		///     Get/set applied <see cref="Force" />.
+		/// </summary>
+		public PlaneForce Force { get; set; } = PlaneForce.Zero;
+
+		/// <inheritdoc />
+		public PlaneForce Reaction { get; set; }
+
+		/// <inheritdoc />
+		public int[] DoFIndex => GlobalIndexes(this).ToArray();
+
+		/// <inheritdoc />
+		public int Number { get; set; }
+
+		#endregion
 		#region Constructors
 
 		/// <summary>
@@ -101,8 +108,20 @@ namespace andrefmello91.SPMElements
 		}
 
 		#endregion
+		#region Methods
 
-		#region  Methods
+		/// <summary>
+		///     Returns true if <paramref name="other" /> is a <see cref="Node" /> and both positions are equal.
+		/// </summary>
+		/// <param name="other">The other <see cref="Node" /> object.</param>
+		public override bool Equals(object? other) => other is Node otherNode && Equals(otherNode);
+
+		/// <summary>
+		///     Return the angle, related to horizontal axis, of a line that connects this to <paramref name="otherNode" /> (in
+		///     radians).
+		/// </summary>
+		/// <inheritdoc cref="GetDistance" />
+		public double GetAngle(Node? otherNode) => !(otherNode is null) ? Position.GetAngle(otherNode.Position) : 0;
 
 		/// <summary>
 		///     Return the distance to another <see cref="Node" />.
@@ -110,49 +129,32 @@ namespace andrefmello91.SPMElements
 		/// <param name="otherNode">The other <see cref="Node" /> object.</param>
 		public Length GetDistance(Node? otherNode) => !(otherNode is null) ? Position.GetDistance(otherNode.Position) : Length.Zero;
 
-		/// <summary>
-		///     Return the angle, related to horizontal axis, of a line that connects this to <paramref name="otherNode" /> (in
-		///     radians).
-		/// </summary>
-		/// <inheritdoc cref="GetDistance" />
-		public double GetAngle(Node otherNode) => !(otherNode is null) ? Position.GetAngle(otherNode.Position) : 0;
+		public int CompareTo(IGrip? other) => other is Node node
+			? CompareTo(node)
+			: 0;
 
-		/// <summary>
-		///     Set nodal displacements.
-		/// </summary>
-		/// <param name="displacementVector">The global displacement vector, with values in mm.</param>
-		public void SetDisplacements(Vector<double> displacementVector)
-		{
-			var u = displacementVector;
+		public int CompareTo(Node? other) => other is null
+			? 1
+			: Position.CompareTo(other.Position);
 
-			// Get the index of the node on the list
-			var index = DoFIndex;
-			int
-				i = index[0],
-				j = index[1];
-
-			// Get the displacements
-			double
-				ux = u[i],
-				uy = u[j];
-
-			// Save to the node, in mm
-			var disp = new PlaneDisplacement(ux, uy).Convert(DisplacementUnit);
-			Displacement = disp;
-		}
+		public bool Equals(IGrip? other) => other is Node node && Equals(node);
 
 		/// <summary>
 		///     Returns true if both nodes positions are equal.
 		/// </summary>
 		/// <param name="other">The other <see cref="Node" /> object.</param>
-		public bool Equals(Node other) => !(other is null) && Position == other.Position;
+		public bool Equals(Node? other) => !(other is null) && Position == other.Position;
 
+		/// <inheritdoc />
+		public override int GetHashCode() => Position.GetHashCode();
+
+		/// <inheritdoc />
 		public override string ToString()
 		{
 			var msgstr =
 				$"Node {Number}\n" +
 				$"Position: ({Position.X:0.00}, {Position.Y:0.00})\n" +
-				$"DoFIndex: {DoFIndex.Select(i => i.ToString()).Aggregate((i,f) => $"{i} - {f}")}";
+				$"DoFIndex: {DoFIndex.Select(i => i.ToString()).Aggregate((i, f) => $"{i} - {f}")}";
 
 			// Read applied forces
 			if (!Force.IsZero)
@@ -177,31 +179,18 @@ namespace andrefmello91.SPMElements
 			return msgstr;
 		}
 
-		public int CompareTo(Node? other) => other is null 
-			? 1 
-			: Position.CompareTo(other.Position);
-
-		/// <summary>
-		///     Returns true if <paramref name="other" /> is a <see cref="Node" /> and both positions are equal.
-		/// </summary>
-		/// <param name="other">The other <see cref="Node" /> object.</param>
-		public override bool Equals(object? other) => other is Node otherNode && Equals(otherNode);
-
-		public override int GetHashCode() => Position.GetHashCode();
-
 		#endregion
-
 		#region Operators
 
 		/// <summary>
 		///     Returns true if both nodes positions are equal.
 		/// </summary>
-		public static bool operator == (Node left, Node right) => !(left is null) && left.Equals(right);
+		public static bool operator ==(Node? left, Node? right) => !(left is null) && left.Equals(right);
 
 		/// <summary>
 		///     Returns true if both nodes positions are different.
 		/// </summary>
-		public static bool operator != (Node left, Node right) => !(left is null) && !left.Equals(right);
+		public static bool operator !=(Node? left, Node? right) => !(left is null) && !left.Equals(right);
 
 		#endregion
 	}

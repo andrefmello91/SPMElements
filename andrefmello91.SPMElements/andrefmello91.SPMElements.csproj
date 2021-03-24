@@ -22,7 +22,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="andrefmello91.FEMAnalysis" Version="0.1.2" />
+        <PackageReference Include="andrefmello91.FEMAnalysis" Version="0.1.4" />
         <PackageReference Include="MathNet.Numerics" Version="4.15.0" />
         <PackageReference Include="UnitsNet" Version="4.87.0" />
         <PackageReference Include="andrefmello91.Extensions" Version="1.0.2" />

@@ -2,14 +2,12 @@
 using System.Collections.Generic;
 using System.Linq;
 using Extensions;
-using OnPlaneComponents;
 using UnitsNet;
 using UnitsNet.Units;
-using static OnPlaneComponents.Point;
 
 #nullable disable
 
-namespace SPM.Elements.PanelProperties
+namespace andrefmello91.SPMElements.PanelProperties
 {
 	/// <summary>
 	///     Panel geometry struct.
@@ -129,7 +127,7 @@ namespace SPM.Elements.PanelProperties
 		{
 		}
 
-		/// <inheritdoc cref="PanelGeometry(Vertices, double, LengthUnit)" />
+		/// <inheritdoc cref="PanelGeometry" />
 		public PanelGeometry(Vertices vertices, Length width)
 		{
 			Vertices = vertices;

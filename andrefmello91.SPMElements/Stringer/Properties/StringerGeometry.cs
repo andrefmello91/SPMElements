@@ -1,14 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using Extensions;
-using OnPlaneComponents;
 using UnitsNet;
 using UnitsNet.Units;
-using static OnPlaneComponents.Point;
 
 #nullable disable
 
-namespace SPM.Elements.StringerProperties
+namespace andrefmello91.SPMElements.StringerProperties
 {
 	/// <summary>
 	///     Stringer geometry struct.
@@ -71,7 +69,7 @@ namespace SPM.Elements.StringerProperties
 
 		#region Constructors
 
-		/// <inheritdoc cref="StringerGeometry(Point, Point, Length, Length)" />
+		/// <inheritdoc cref="StringerGeometry" />
 		/// <param name="unit">
 		///     The <see cref="LengthUnit" /> of <paramref name="width" />, <paramref name="height" /> and nodes' coordinates.
 		///     <para>Default: <seealso cref="LengthUnit.Millimeter" />.</para>
@@ -86,7 +84,7 @@ namespace SPM.Elements.StringerProperties
 		/// </summary>
 		/// <param name="width">The stringer width.</param>
 		/// <param name="height">The stringer height.</param>
-		/// <inheritdoc cref="StringerGeometry(Point, Point, CrossSection)"/>
+		/// <inheritdoc cref="StringerGeometry"/>
 		public StringerGeometry(Point initialPoint, Point endPoint, Length width, Length height)
 			: this (initialPoint, endPoint, new CrossSection(width, height))
 		{

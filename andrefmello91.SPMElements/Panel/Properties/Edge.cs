@@ -1,12 +1,11 @@
 ﻿using System;
+using andrefmello91.SPMElements;
 using Extensions;
-using OnPlaneComponents;
 using UnitsNet;
 using UnitsNet.Units;
-
 #nullable disable
 
-namespace SPM.Elements.PanelProperties
+namespace andrefmello91.SPMElements.PanelProperties
 {
 	/// <summary>
 	///     Panel edge struct.

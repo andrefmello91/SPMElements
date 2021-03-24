@@ -3,15 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.30907.101
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SPMElements", "SPMElements.csproj", "{C5D17547-2237-48B1-A724-2DC55957A428}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Extensions", "..\Extensions\Extensions.csproj", "{8AE154FC-2846-4708-8957-2DFD9DC98243}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Material", "..\Material\Material.csproj", "{63475CBB-FEF3-44C7-B9AB-BC104440B999}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "On-Plane-Components", "..\On-Plane-Components\On-Plane-Components.csproj", "{08A0E09A-2C41-4949-A1CC-69A2BECA3792}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RCMembrane", "..\Reinforced-Concrete-Membrane\RCMembrane.csproj", "{BFDED22F-DD54-4315-94E9-DEE5A879C20D}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "andrefmello91.SPMElements", "andrefmello91.SPMElements\andrefmello91.SPMElements.csproj", "{589B4DD6-D5F4-4FC6-BBA4-BD52EC4F287F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -19,26 +11,10 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{C5D17547-2237-48B1-A724-2DC55957A428}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{C5D17547-2237-48B1-A724-2DC55957A428}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{C5D17547-2237-48B1-A724-2DC55957A428}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{C5D17547-2237-48B1-A724-2DC55957A428}.Release|Any CPU.Build.0 = Release|Any CPU
-		{8AE154FC-2846-4708-8957-2DFD9DC98243}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{8AE154FC-2846-4708-8957-2DFD9DC98243}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{8AE154FC-2846-4708-8957-2DFD9DC98243}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{8AE154FC-2846-4708-8957-2DFD9DC98243}.Release|Any CPU.Build.0 = Release|Any CPU
-		{63475CBB-FEF3-44C7-B9AB-BC104440B999}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{63475CBB-FEF3-44C7-B9AB-BC104440B999}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{63475CBB-FEF3-44C7-B9AB-BC104440B999}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{63475CBB-FEF3-44C7-B9AB-BC104440B999}.Release|Any CPU.Build.0 = Release|Any CPU
-		{08A0E09A-2C41-4949-A1CC-69A2BECA3792}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{08A0E09A-2C41-4949-A1CC-69A2BECA3792}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{08A0E09A-2C41-4949-A1CC-69A2BECA3792}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{08A0E09A-2C41-4949-A1CC-69A2BECA3792}.Release|Any CPU.Build.0 = Release|Any CPU
-		{BFDED22F-DD54-4315-94E9-DEE5A879C20D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{BFDED22F-DD54-4315-94E9-DEE5A879C20D}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{BFDED22F-DD54-4315-94E9-DEE5A879C20D}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{BFDED22F-DD54-4315-94E9-DEE5A879C20D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{589B4DD6-D5F4-4FC6-BBA4-BD52EC4F287F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{589B4DD6-D5F4-4FC6-BBA4-BD52EC4F287F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{589B4DD6-D5F4-4FC6-BBA4-BD52EC4F287F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{589B4DD6-D5F4-4FC6-BBA4-BD52EC4F287F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -3,7 +3,7 @@ using MathNet.Numerics.LinearAlgebra.Double;
 using UnitsNet;
 using UnitsNet.Units;
 
-namespace SPM.Elements
+namespace andrefmello91.SPMElements
 {
 	/// <summary>
     /// SPM element types.

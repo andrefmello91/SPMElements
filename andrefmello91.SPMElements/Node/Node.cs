@@ -1,14 +1,13 @@
 ﻿using System;
 using System.Linq;
 using MathNet.Numerics.LinearAlgebra;
-using OnPlaneComponents;
 using UnitsNet;
 using UnitsNet.Units;
-using static SPM.Elements.Extensions;
+using static andrefmello91.SPMElements.Extensions;
 
 #nullable enable
 
-namespace SPM.Elements
+namespace andrefmello91.SPMElements
 {
 	/// <summary>
 	///     Node class.

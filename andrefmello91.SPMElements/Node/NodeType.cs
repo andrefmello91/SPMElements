@@ -1,4 +1,4 @@
-﻿namespace SPM.Elements
+﻿namespace andrefmello91.SPMElements
 {
 	/// <summary>
 	///     Node types.

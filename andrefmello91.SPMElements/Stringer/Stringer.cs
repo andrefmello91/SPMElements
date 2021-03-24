@@ -1,23 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using andrefmello91.SPMElements.StringerProperties;
 using Extensions;
-using Material.Concrete;
-using Material.Concrete.Uniaxial;
-using Material.Reinforcement.Uniaxial;
 using MathNet.Numerics.LinearAlgebra;
 using MathNet.Numerics.LinearAlgebra.Double;
-using OnPlaneComponents;
-using SPM.Elements.StringerProperties;
 using UnitsNet;
 using UnitsNet.Units;
-using static SPM.Elements.Extensions;
+using static andrefmello91.SPMElements.Extensions;
 using Force = UnitsNet.Force;
-using static OnPlaneComponents.PlaneForce;
 
 #nullable enable
 
-namespace SPM.Elements
+namespace andrefmello91.SPMElements
 {
 	/// <summary>
 	///     Stringer base class with linear properties.
@@ -91,19 +86,19 @@ namespace SPM.Elements
 		public StringerGeometry Geometry { get; }
 
 		/// <summary>
-		///     Get the initial <see cref="Node" /> of this.
+		///     Get the initial <see cref="SPMElements.Node" /> of this.
 		/// </summary>
-		public Node Grip1 { get; }
+		public SPMElements.Node Grip1 { get; }
 
 		/// <summary>
-		///     Get the center <see cref="Node" /> of this.
+		///     Get the center <see cref="SPMElements.Node" /> of this.
 		/// </summary>
-		public Node Grip2 { get; }
+		public SPMElements.Node Grip2 { get; }
 
 		/// <summary>
-		///     Get the end <see cref="Node" /> of this.
+		///     Get the end <see cref="SPMElements.Node" /> of this.
 		/// </summary>
-		public Node Grip3 { get; }
+		public SPMElements.Node Grip3 { get; }
 
 		/// <summary>
 		///     Get normal forces acting in the stringer.
@@ -141,12 +136,12 @@ namespace SPM.Elements
 
 		#region Constructors
 
-		/// <inheritdoc cref="Stringer(Node, Node, Node, Length, Length, IParameters, ConstitutiveModel, UniaxialReinforcement)" />
+		/// <inheritdoc cref="Stringer" />
 		/// <param name="unit">
 		///     The <see cref="LengthUnit" /> of <paramref name="width" /> and <paramref name="height" />.
 		///     <para>Default: <seealso cref="LengthUnit.Millimeter" />.</para>
 		/// </param>
-		public Stringer(Node grip1, Node grip2, Node grip3, double width, double height, IParameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, UniaxialReinforcement? reinforcement = null, LengthUnit unit = LengthUnit.Millimeter)
+		public Stringer(SPMElements.Node grip1, SPMElements.Node grip2, SPMElements.Node grip3, double width, double height, IParameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, UniaxialReinforcement? reinforcement = null, LengthUnit unit = LengthUnit.Millimeter)
 			: this (grip1, grip2, grip3, Length.From(width, unit), Length.From(height, unit), concreteParameters, model, reinforcement)
 		{
 		}
@@ -154,15 +149,15 @@ namespace SPM.Elements
 		/// <summary>
 		///     Stringer object.
 		/// </summary>
-		/// <param name="grip1">The initial <see cref="Node" /> of the <see cref="Stringer" />.</param>
-		/// <param name="grip2">The center <see cref="Node" /> of the <see cref="Stringer" />.</param>
-		/// <param name="grip3">The final <see cref="Node" /> of the <see cref="Stringer" />.</param>
+		/// <param name="grip1">The initial <see cref="SPMElements" /> of the <see cref="Stringer" />.</param>
+		/// <param name="grip2">The center <see cref="SPMElements" /> of the <see cref="Stringer" />.</param>
+		/// <param name="grip3">The final <see cref="SPMElements" /> of the <see cref="Stringer" />.</param>
 		/// <param name="width">The stringer width.</param>
 		/// <param name="height">The stringer height.</param>
 		/// <param name="concreteParameters">The concrete <see cref="IParameters" />.</param>
 		/// <param name="model">The concrete <see cref="ConstitutiveModel" />.</param>
 		/// <param name="reinforcement">The <see cref="UniaxialReinforcement" /> of this stringer.</param>
-		public Stringer(Node grip1, Node grip2, Node grip3, Length width, Length height, IParameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, UniaxialReinforcement? reinforcement = null)
+		public Stringer(SPMElements.Node grip1, SPMElements.Node grip2, SPMElements.Node grip3, Length width, Length height, IParameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, UniaxialReinforcement? reinforcement = null)
 		{
 			Geometry       = new StringerGeometry(grip1.Position, grip3.Position, width, height);
 			Grip1          = grip1;
@@ -175,26 +170,26 @@ namespace SPM.Elements
 				Reinforcement.ConcreteArea = Geometry.CrossSection.Area;
 		}
 
-		/// <param name="nodes">The collection containing all <see cref="Node" />'s of SPM model.</param>
-		/// <param name="grip1Position">The position of initial <see cref="Node" /> of the <see cref="Stringer" />.</param>
-		/// <param name="grip3Position">The position of final <see cref="Node" /> of the <see cref="Stringer" />.</param>
+		/// <param name="nodes">The collection containing all <see cref="SPMElements" />'s of SPM model.</param>
+		/// <param name="grip1Position">The position of initial <see cref="SPMElements" /> of the <see cref="Stringer" />.</param>
+		/// <param name="grip3Position">The position of final <see cref="SPMElements" /> of the <see cref="Stringer" />.</param>
 		/// <inheritdoc
-		///     cref="Stringer(Node, Node, Node, double, double, IParameters, ConstitutiveModel, UniaxialReinforcement, LengthUnit)" />
-		public Stringer(IEnumerable<Node> nodes, Point grip1Position, Point grip3Position, double width, double height, IParameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, UniaxialReinforcement? reinforcement = null, LengthUnit unit = LengthUnit.Millimeter)
+		///     cref="Stringer" />
+		public Stringer(IEnumerable<SPMElements.Node> nodes, Point grip1Position, Point grip3Position, double width, double height, IParameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, UniaxialReinforcement? reinforcement = null, LengthUnit unit = LengthUnit.Millimeter)
 			: this(nodes, grip1Position, grip3Position, Length.From(width, unit), Length.From(height, unit), concreteParameters, model, reinforcement)
 		{
 		}
 
-		/// <inheritdoc cref="Stringer(Node, Node, Node, Length, Length, IParameters, ConstitutiveModel, UniaxialReinforcement)" />
-		/// <inheritdoc cref="Stringer(IEnumerable{Node}, Point, Point, double, double, IParameters, ConstitutiveModel, UniaxialReinforcement, LengthUnit)" />
-		public Stringer(IEnumerable<Node> nodes, Point grip1Position, Point grip3Position, Length width, Length height, IParameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, UniaxialReinforcement? reinforcement = null)
+		/// <inheritdoc cref="Stringer" />
+		/// <inheritdoc cref="Stringer" />
+		public Stringer(IEnumerable<SPMElements.Node> nodes, Point grip1Position, Point grip3Position, Length width, Length height, IParameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, UniaxialReinforcement? reinforcement = null)
 			: this (nodes, new StringerGeometry(grip1Position, grip3Position, width, height), concreteParameters, model, reinforcement)
 		{
 		}
 
 		/// <param name="geometry">The <see cref="StringerGeometry"/> of this element.</param>
-		/// <inheritdoc cref="Stringer(IEnumerable{Node}, Point, Point,Length, Length, IParameters, ConstitutiveModel, UniaxialReinforcement)" />
-		public Stringer(IEnumerable<Node> nodes, StringerGeometry geometry, IParameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, UniaxialReinforcement? reinforcement = null)
+		/// <inheritdoc cref="Stringer" />
+		public Stringer(IEnumerable<SPMElements.Node> nodes, StringerGeometry geometry, IParameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, UniaxialReinforcement? reinforcement = null)
 		{
 			Geometry       = geometry;
 			Grip1          = nodes.GetByPosition(Geometry.InitialPoint);
@@ -216,8 +211,8 @@ namespace SPM.Elements
 		/// </summary>
 		/// <param name="analysisType">Type of analysis to perform (<see cref="AnalysisType" />).</param>
 		/// <param name="number">The stringer number.</param>
-		/// <inheritdoc cref="Stringer(IEnumerable{Node}, StringerGeometry, IParameters, ConstitutiveModel, UniaxialReinforcement)" />
-		public static Stringer Read(AnalysisType analysisType, int number, IEnumerable<Node> nodes, StringerGeometry geometry, IParameters concreteParameters, ConstitutiveModel model, UniaxialReinforcement reinforcement = null) =>
+		/// <inheritdoc cref="Stringer" />
+		public static Stringer Read(AnalysisType analysisType, int number, IEnumerable<SPMElements.Node> nodes, StringerGeometry geometry, IParameters concreteParameters, ConstitutiveModel model, UniaxialReinforcement reinforcement = null) =>
 			analysisType is AnalysisType.Linear
 				? new   Stringer(nodes, geometry, concreteParameters, model, reinforcement) { Number = number }
 				: new NLStringer(nodes, geometry, concreteParameters, model, reinforcement) { Number = number };

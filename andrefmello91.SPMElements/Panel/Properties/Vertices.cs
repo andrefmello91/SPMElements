@@ -2,14 +2,12 @@
 using System.Collections.Generic;
 using System.Linq;
 using Extensions;
-using OnPlaneComponents;
 using UnitsNet;
 using UnitsNet.Units;
-using static OnPlaneComponents.Point;
 
 #nullable disable
 
-namespace SPM.Elements.PanelProperties
+namespace andrefmello91.SPMElements.PanelProperties
 {
 	/// <summary>
 	///     Panel vertices struct.

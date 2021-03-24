@@ -1,20 +1,16 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using andrefmello91.SPMElements.StringerProperties;
 using Extensions;
-using Material.Concrete;
-using Material.Reinforcement.Uniaxial;
 using MathNet.Numerics.LinearAlgebra;
 using MathNet.Numerics.LinearAlgebra.Double;
-using OnPlaneComponents;
-using SPM.Elements.StringerProperties;
 using UnitsNet;
 using UnitsNet.Units;
-using static OnPlaneComponents.Point;
 using Force = UnitsNet.Force;
 
 #nullable enable
 
-namespace SPM.Elements
+namespace andrefmello91.SPMElements
 {
 	/// <summary>
 	///     Nonlinear stringer class.
@@ -55,8 +51,8 @@ namespace SPM.Elements
 		///     The <see cref="LengthUnit" /> of <paramref name="width" /> and <paramref name="height" />.
 		///     <para>Default: <seealso cref="LengthUnit.Millimeter" />.</para>
 		/// </param>
-		/// <inheritdoc cref="NLStringer(Node, Node, Node, Length, Length, IParameters, ConstitutiveModel, UniaxialReinforcement)" />
-		public NLStringer(Node grip1, Node grip2, Node grip3, double width, double height, IParameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, UniaxialReinforcement? reinforcement = null, LengthUnit unit = LengthUnit.Millimeter)
+		/// <inheritdoc cref="NLStringer" />
+		public NLStringer(SPMElements.Node grip1, SPMElements.Node grip2, SPMElements.Node grip3, double width, double height, IParameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, UniaxialReinforcement? reinforcement = null, LengthUnit unit = LengthUnit.Millimeter)
 			: this(grip1, grip2, grip3, Length.From(width, unit), Length.From(height, unit), concreteParameters, model, reinforcement)
 		{
 		}
@@ -65,28 +61,28 @@ namespace SPM.Elements
 		///     Nonlinear stringer object
 		/// </summary>
 		/// <inheritdoc />
-		public NLStringer(Node grip1, Node grip2, Node grip3, Length width, Length height, IParameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, UniaxialReinforcement? reinforcement = null)
+		public NLStringer(SPMElements.Node grip1, SPMElements.Node grip2, SPMElements.Node grip3, Length width, Length height, IParameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, UniaxialReinforcement? reinforcement = null)
 			: base(grip1, grip2, grip3, width, height, concreteParameters, model, reinforcement)
 		{
 		}
 
-		/// <inheritdoc cref="NLStringer(Node, Node, Node, Length, Length, IParameters, ConstitutiveModel, UniaxialReinforcement)" />
+		/// <inheritdoc cref="NLStringer" />
 		/// <inheritdoc />
-		public NLStringer(IEnumerable<Node> nodes, Point grip1Position, Point grip3Position, double width, double height, IParameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, UniaxialReinforcement? reinforcement = null, LengthUnit unit = LengthUnit.Millimeter)
+		public NLStringer(IEnumerable<SPMElements.Node> nodes, Point grip1Position, Point grip3Position, double width, double height, IParameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, UniaxialReinforcement? reinforcement = null, LengthUnit unit = LengthUnit.Millimeter)
 			: this(nodes, grip1Position, grip3Position, Length.From(width, unit), Length.From(height, unit), concreteParameters, model, reinforcement)
 		{
 		}
 
-		/// <inheritdoc cref="NLStringer(Node, Node, Node, Length, Length, IParameters, ConstitutiveModel, UniaxialReinforcement)" />
+		/// <inheritdoc cref="NLStringer" />
 		/// <inheritdoc />
-		public NLStringer(IEnumerable<Node> nodes, Point grip1Position, Point grip3Position, Length width, Length height, IParameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, UniaxialReinforcement? reinforcement = null)
+		public NLStringer(IEnumerable<SPMElements.Node> nodes, Point grip1Position, Point grip3Position, Length width, Length height, IParameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, UniaxialReinforcement? reinforcement = null)
 			: base(nodes, grip1Position, grip3Position, width, height, concreteParameters, model, reinforcement)
 		{
 		}
 
-		/// <inheritdoc cref="NLStringer(Node, Node, Node, Length, Length, IParameters, ConstitutiveModel, UniaxialReinforcement)" />
+		/// <inheritdoc cref="NLStringer" />
 		/// <inheritdoc />
-		public NLStringer(IEnumerable<Node> nodes, StringerGeometry geometry, IParameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, UniaxialReinforcement? reinforcement = null)
+		public NLStringer(IEnumerable<SPMElements.Node> nodes, StringerGeometry geometry, IParameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, UniaxialReinforcement? reinforcement = null)
 			: base(nodes, geometry, concreteParameters, model, reinforcement)
 		{
 		}

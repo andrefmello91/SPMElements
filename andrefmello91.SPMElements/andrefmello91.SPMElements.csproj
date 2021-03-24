@@ -1,0 +1,31 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFrameworks>net5.0;netcoreapp3.1;netstandard2.0</TargetFrameworks>
+        <LangVersion>9.0</LangVersion>
+        <Nullable>enable</Nullable>
+        <PackageId>andrefmello91.SPMElements</PackageId>
+        <Version>0.1.0</Version>
+        <Authors>andrefmello91</Authors>
+        <PackageDescription>Finite element implementation for Stringer-Panel Method.</PackageDescription>
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <PackageVersion>0.1.0</PackageVersion>
+        <Description>Finite element implementation for Stringer-Panel Method.</Description>
+        <RepositoryUrl>https://github.com/andrefmello91/SPMElements</RepositoryUrl>
+        <PackageProjectUrl>https://github.com/andrefmello91/SPMElements</PackageProjectUrl>
+        <PackageReleaseNotes>Initial pre-release.</PackageReleaseNotes>
+        <AssemblyName>andrefmello91.SPMElements</AssemblyName>
+        <RootNamespace>andrefmello91.SPMElements</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="MathNet.Numerics" Version="4.15.0" />
+        <PackageReference Include="UnitsNet" Version="4.86.0" />
+        <PackageReference Include="andrefmello91.Extensions" Version="1.0.1" />
+        <PackageReference Include="andrefmello91.OnPlaneComponents" Version="1.0.0" />
+        <PackageReference Include="andrefmello91.Material" Version="1.0.0" />
+        <PackageReference Include="andrefmello91.ReinforcedConcreteMembrane" Version="1.0.0" />
+        <PackageReference Include="andrefmello91.FEMAnalysis" Version="0.1.0" />
+    </ItemGroup>
+
+</Project>

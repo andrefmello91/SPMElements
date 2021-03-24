@@ -2,9 +2,8 @@
 using Extensions;
 using UnitsNet;
 using UnitsNet.Units;
-using static OnPlaneComponents.Point;
 
-namespace SPM.Elements.StringerProperties
+namespace andrefmello91.SPMElements.StringerProperties
 {
 	/// <summary>
 	///     Stringer cross-section struct.

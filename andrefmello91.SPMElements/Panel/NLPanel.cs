@@ -25,7 +25,6 @@ namespace andrefmello91.SPMElements
 		private Vector<double> _forces;
 
 		#endregion
-		
 		#region Properties
 
 		/// <inheritdoc />

@@ -244,6 +244,7 @@ namespace andrefmello91.SPMElements
 
 			return msgstr;
 		}
+
 		#endregion
 	}
 }

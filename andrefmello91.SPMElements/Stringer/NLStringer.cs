@@ -9,7 +9,6 @@ using Extensions;
 using MathNet.Numerics.LinearAlgebra;
 using MathNet.Numerics.LinearAlgebra.Double;
 using UnitsNet;
-
 #nullable enable
 
 namespace andrefmello91.SPMElements

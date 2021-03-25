@@ -244,22 +244,6 @@ namespace andrefmello91.SPMElements
 
 			return msgstr;
 		}
-
-		#endregion
-		#region Operators
-
-		/// <summary>
-		///     Returns true if arguments are equal.
-		///     <para>See:<seealso cref="Equals(Stringer)" />.</para>
-		/// </summary>
-		public static bool operator ==(Stringer? left, Stringer? right) => !(left is null) && left.Equals(right);
-
-		/// <summary>
-		///     Returns true if arguments are different.
-		///     <para>See:<seealso cref="Equals(Stringer)" />.</para>
-		/// </summary>
-		public static bool operator !=(Stringer? left, Stringer? right) => !(left is null) && !left.Equals(right);
-
 		#endregion
 	}
 }

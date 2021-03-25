@@ -103,5 +103,16 @@ namespace andrefmello91.SPMElements
 		}
 
 		#endregion
+		
+		/// <summary>
+		///     Returns true if arguments are equal.
+		/// </summary>
+		public static bool operator == (SPMElement? left, SPMElement? right) => !(left is null) && left.Equals(right);
+
+		/// <summary>
+		///     Returns true if arguments are different.
+		/// </summary>
+		public static bool operator !=(SPMElement? left, SPMElement? right) => !(left is null) && !left.Equals(right);
+
 	}
 }

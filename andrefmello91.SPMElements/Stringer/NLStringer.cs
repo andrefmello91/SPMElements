@@ -1,12 +1,14 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using andrefmello91.Material.Concrete;
+using andrefmello91.Material.Reinforcement.Uniaxial;
+using andrefmello91.OnPlaneComponents;
 using andrefmello91.SPMElements.StringerProperties;
 using Extensions;
 using MathNet.Numerics.LinearAlgebra;
 using MathNet.Numerics.LinearAlgebra.Double;
 using UnitsNet;
-using UnitsNet.Units;
-using Force = UnitsNet.Force;
 
 #nullable enable
 
@@ -20,76 +22,73 @@ namespace andrefmello91.SPMElements
 		#region Fields
 
 		// Auxiliary fields
-		private Matrix<double> _BMatrix;
-		private Force _N1, _N3;
+		private readonly Lazy<Matrix<double>> _bMatrix;
+		private Force _n1, _n3;
 
 		#endregion
-
 		#region Properties
-
-		/// <summary>
-		///     Get B <see cref="Matrix" /> to transform displacements in strains.
-		/// </summary>
-		private Matrix<double> BMatrix => _BMatrix ?? CalculateBMatrix();
 
 		/// <inheritdoc />
 		public override Length[] CrackOpenings => Strains.Select(eps => CrackOpening(Reinforcement, eps)).ToArray();
 
 		/// <inheritdoc />
-		public override Vector<double> LocalForces => new[] { -_N1.Newtons, _N1.Newtons - _N3.Newtons, _N3.Newtons }.ToVector();
+		public override Vector<double> LocalForces => new[] { -_n1.Newtons, _n1.Newtons - _n3.Newtons, _n3.Newtons }.ToVector();
 
 		/// <summary>
-		///     Get the strain <see cref="Vector"/>.
+		///     Get B <see cref="Matrix" /> to transform displacements in strains.
+		/// </summary>
+		private Matrix<double> BMatrix => _bMatrix.Value;
+
+		/// <summary>
+		///     Get the strain <see cref="Vector" />.
 		/// </summary>
 		private Vector<double> Strains => BMatrix * LocalDisplacements;
 
 		#endregion
-
 		#region Constructors
 
-		/// <param name="unit">
-		///     The <see cref="LengthUnit" /> of <paramref name="width" /> and <paramref name="height" />.
-		///     <para>Default: <seealso cref="LengthUnit.Millimeter" />.</para>
-		/// </param>
-		/// <inheritdoc cref="NLStringer" />
-		public NLStringer(SPMElements.Node grip1, SPMElements.Node grip2, SPMElements.Node grip3, double width, double height, IParameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, UniaxialReinforcement? reinforcement = null, LengthUnit unit = LengthUnit.Millimeter)
-			: this(grip1, grip2, grip3, Length.From(width, unit), Length.From(height, unit), concreteParameters, model, reinforcement)
-		{
-		}
-
 		/// <summary>
-		///     Nonlinear stringer object
+		///     Nonlinear stringer object.
 		/// </summary>
-		/// <inheritdoc />
-		public NLStringer(SPMElements.Node grip1, SPMElements.Node grip2, SPMElements.Node grip3, Length width, Length height, IParameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, UniaxialReinforcement? reinforcement = null)
-			: base(grip1, grip2, grip3, width, height, concreteParameters, model, reinforcement)
-		{
-		}
-
-		/// <inheritdoc cref="NLStringer" />
-		/// <inheritdoc />
-		public NLStringer(IEnumerable<SPMElements.Node> nodes, Point grip1Position, Point grip3Position, double width, double height, IParameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, UniaxialReinforcement? reinforcement = null, LengthUnit unit = LengthUnit.Millimeter)
-			: this(nodes, grip1Position, grip3Position, Length.From(width, unit), Length.From(height, unit), concreteParameters, model, reinforcement)
-		{
-		}
-
-		/// <inheritdoc cref="NLStringer" />
-		/// <inheritdoc />
-		public NLStringer(IEnumerable<SPMElements.Node> nodes, Point grip1Position, Point grip3Position, Length width, Length height, IParameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, UniaxialReinforcement? reinforcement = null)
-			: base(nodes, grip1Position, grip3Position, width, height, concreteParameters, model, reinforcement)
-		{
-		}
-
-		/// <inheritdoc cref="NLStringer" />
-		/// <inheritdoc />
-		public NLStringer(IEnumerable<SPMElements.Node> nodes, StringerGeometry geometry, IParameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, UniaxialReinforcement? reinforcement = null)
-			: base(nodes, geometry, concreteParameters, model, reinforcement)
-		{
-		}
+		/// <inheritdoc cref="Stringer(Node, Node, Node, CrossSection, IParameters, ConstitutiveModel, UniaxialReinforcement)" />
+		public NLStringer(Node grip1, Node grip2, Node grip3, CrossSection crossSection, IParameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, UniaxialReinforcement? reinforcement = null)
+			: base(grip1, grip2, grip3, crossSection, concreteParameters, model, reinforcement) =>
+			_bMatrix = new Lazy<Matrix<double>>(CalculateBMatrix(Geometry.Length));
 
 		#endregion
-
 		#region Methods
+
+		/// <summary>
+		///     Calculate B Matrix based on stringer length.
+		/// </summary>
+		/// <param name="stringerLength">The length of the stringer.</param>
+		public static Matrix<double> CalculateBMatrix(Length stringerLength) =>
+			1.00 / stringerLength.Millimeters * new double[,]
+			{
+				{ -3, 4, -1 },
+				{ -1, 0, 1 },
+				{ 1, -4, 3 }
+			}.ToMatrix();
+
+		/// <summary>
+		///     Calculate force for <paramref name="concrete" /> and <paramref name="reinforcement" /> based on strain.
+		/// </summary>
+		/// <param name="strain">Current strain.</param>
+		/// <param name="concrete">The uniaxial concrete of the stringer.</param>
+		/// <param name="reinforcement">The <see cref="UniaxialReinforcement" /> of the stringer.</param>
+		public static Force CalculateForce(double strain, [NotNull] UniaxialConcrete concrete, UniaxialReinforcement? reinforcement) =>
+			strain.ApproxZero(1E-9)
+				? Force.Zero
+				: concrete.CalculateForce(strain, reinforcement) + (reinforcement?.CalculateForce(strain) ?? Force.Zero);
+
+		/// <summary>
+		///     Calculate the average crack opening.
+		/// </summary>
+		/// <param name="reinforcement">The <see cref="UniaxialReinforcement" />.</param>
+		/// <param name="strain">The strain.</param>
+		public static Length CrackOpening(UniaxialReinforcement? reinforcement, double strain) => strain < 0 || strain.ApproxZero(1E-9)
+			? Length.Zero
+			: strain * CrackSpacing(reinforcement);
 
 		/// <summary>
 		///     Calculate the crack spacing at <paramref name="reinforcement" />, according to Kaklauskas (2019)
@@ -98,54 +97,28 @@ namespace andrefmello91.SPMElements
 		/// </summary>
 		/// <param name="reinforcement">The <see cref="UniaxialReinforcement" />.</param>
 		public static Length CrackSpacing(UniaxialReinforcement? reinforcement) =>
-			reinforcement is null || reinforcement.BarDiameter.ApproxZero(Tolerance) || reinforcement.Ratio.ApproxZero()
+			reinforcement is null || reinforcement.BarDiameter.ApproxZero(Point.Tolerance) || reinforcement.Ratio.ApproxZero()
 				? Length.FromMillimeters(21)
 				: Length.FromMillimeters(21) + 0.155 * reinforcement.BarDiameter / reinforcement.Ratio;
 
-		/// <summary>
-		///     Calculate the average crack opening.
-		/// </summary>
-		/// <param name="reinforcement">The <see cref="UniaxialReinforcement" />.</param>
-		/// <param name="strain">The strain.</param>
-		public static Length CrackOpening(UniaxialReinforcement? reinforcement, double strain) => strain < 0 || strain.ApproxZero(1E-9) ? Length.Zero : strain  * CrackSpacing(reinforcement);
-
-		public override void CalculateForces(Vector<double>? globalDisplacements = null)
+		/// <inheritdoc />
+		public override void CalculateForces()
 		{
-			// Set displacements
-			if (globalDisplacements != null)
-				SetDisplacements(globalDisplacements);
-
 			// Get strains
 			var eps = Strains;
 
 			// Calculate normal forces
-			_N1 = CalculateForce(eps[0]);
-			_N3 = CalculateForce(eps[2]);
+			_n1 = CalculateForce(eps[0], Concrete, Reinforcement);
+			_n3 = CalculateForce(eps[2], Concrete, Reinforcement);
 		}
 
 		/// <summary>
-		///     Calculate B Matrix.
+		///     Create a <see cref="Stringer" /> object based in this nonlinear stringer.
 		/// </summary>
-		private Matrix<double> CalculateBMatrix()
-		{
-			_BMatrix = 1 / Geometry.Length.Millimeters * new double[,]
-			{
-				{-3,  4, -1},
-				{-1,  0,  1},
-				{ 1, -4,  3}
-			}.ToMatrix();
-
-			return _BMatrix;
-		}
-
-		/// <summary>
-		///     Calculate force based on strain.
-		/// </summary>
-		/// <param name="strain">Current strain.</param>
-		private Force CalculateForce(double strain) =>
-			strain.ApproxZero(1E-9)
-				? Force.Zero
-				: Concrete.CalculateForce(strain, Reinforcement) + (Reinforcement?.CalculateForce(strain) ?? Force.Zero);
+		/// <returns>
+		///     <see cref="Stringer" />
+		/// </returns>
+		public Stringer ToLinear() => new(Grip1, Grip2, Grip3, Geometry.CrossSection, Concrete.Parameters, Concrete.Model, Reinforcement);
 
 		#endregion
 	}

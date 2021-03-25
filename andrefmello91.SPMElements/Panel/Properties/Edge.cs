@@ -1,5 +1,5 @@
 ﻿using System;
-using andrefmello91.SPMElements;
+using andrefmello91.OnPlaneComponents;
 using Extensions;
 using UnitsNet;
 using UnitsNet.Units;
@@ -12,6 +12,8 @@ namespace andrefmello91.SPMElements.PanelProperties
 	/// </summary>
 	public struct Edge : IUnitConvertible<Edge, LengthUnit>, IApproachable<Edge, Length>, IEquatable<Edge>, IComparable<Edge>
 	{
+		private Length _stringerDimension;
+
 		#region Properties
 
 		/// <summary>
@@ -51,7 +53,11 @@ namespace andrefmello91.SPMElements.PanelProperties
 		/// <summary>
 		///     Get the stringer dimension of this edge, in mm.
 		/// </summary>
-		public Length StringerDimension { get; private set; }
+		public Length StringerDimension
+		{
+			get => _stringerDimension;
+			set => _stringerDimension = value.ToUnit(Unit);
+		}
 
 		#endregion
 
@@ -69,12 +75,12 @@ namespace andrefmello91.SPMElements.PanelProperties
 			CenterPoint        = initialVertex.MidPoint(finalVertex);
 			Length             = initialVertex.GetDistance(finalVertex);
 			Angle              = initialVertex.GetAngle(finalVertex);
-			StringerDimension  = Length.Zero;
+			_stringerDimension = Length.Zero;
 		}
 
 		#endregion
 
-		#region  Methods
+		#region Methods
 
 		/// <summary>
 		///     Change the <see cref="LengthUnit" /> of this.
@@ -89,28 +95,19 @@ namespace andrefmello91.SPMElements.PanelProperties
 			CenterPoint.ChangeUnit(unit);
 			FinalVertex.ChangeUnit(unit);
 
-			Length            = Length.ToUnit(unit);
-			StringerDimension = StringerDimension.ToUnit(unit);
+			Length             = Length.ToUnit(unit);
+			_stringerDimension = _stringerDimension.ToUnit(unit);
 		}
 
-		public Edge Convert(LengthUnit unit) => new Edge(InitialVertex.Convert(unit), FinalVertex.Convert(unit));
+		/// <inheritdoc />
+		public Edge Convert(LengthUnit unit) => new(InitialVertex.Convert(unit), FinalVertex.Convert(unit));
 
-		/// <summary>
-		///     Set stringer dimension in this edge.
-		/// </summary>
-		/// <param name="height">The height of the <seealso cref="Stringer" />, in <paramref name="unit" /> considered.</param>
-		/// <param name="unit">The <see cref="LengthUnit" /> of <paramref name="height" />.</param>
-		public void SetStringerDimension(double height, LengthUnit unit = LengthUnit.Millimeter) =>
-			SetStringerDimension(Length.From(height, unit));
-
-		/// <param name="height">The height of the <seealso cref="Stringer" />.</param>
-		/// <inheritdoc cref="SetStringerDimension(double, LengthUnit)" />
-		public void SetStringerDimension(Length height) => StringerDimension = height.ToUnit(Unit);
-
+		/// <inheritdoc />
 		public bool Approaches(Edge other, Length tolerance) =>
-			InitialVertex.Approaches(other.InitialVertex, tolerance) && FinalVertex.Approaches(other.FinalVertex,   tolerance) ||
-			InitialVertex.Approaches(other.FinalVertex,   tolerance) && FinalVertex.Approaches(other.InitialVertex, tolerance);
+			InitialVertex.Approaches(other.InitialVertex, tolerance) && FinalVertex.Approaches(other.FinalVertex, tolerance) ||
+			InitialVertex.Approaches(other.FinalVertex, tolerance) && FinalVertex.Approaches(other.InitialVertex, tolerance);
 
+		/// <inheritdoc />
 		public int CompareTo(Edge other) => CenterPoint.CompareTo(other.CenterPoint);
 
 		/// <summary>
@@ -119,10 +116,13 @@ namespace andrefmello91.SPMElements.PanelProperties
 		/// <param name="other">The other <see cref="Edge" /> object.</param>
 		public bool Equals(Edge other) => InitialVertex == other.InitialVertex && FinalVertex == other.FinalVertex;
 
+		/// <inheritdoc />
 		public override bool Equals(object obj) => obj is Edge other && Equals(other);
 
+		/// <inheritdoc />
 		public override int GetHashCode() => InitialVertex.GetHashCode() * FinalVertex.GetHashCode();
 
+		/// <inheritdoc />
 		public override string ToString() =>
 			$"Initial vertex: ({InitialVertex.X:0.00}, {InitialVertex.Y:0.00})\n" +
 			$"Final vertex: ({FinalVertex.X:0.00}, {FinalVertex.Y:0.00})\n" +
@@ -136,12 +136,12 @@ namespace andrefmello91.SPMElements.PanelProperties
 		/// <summary>
 		///     Returns true if arguments are equal.
 		/// </summary>
-		public static bool operator == (Edge left, Edge right) => left.Equals(right);
+		public static bool operator ==(Edge left, Edge right) => left.Equals(right);
 
 		/// <summary>
 		///     Returns true if arguments are different.
 		/// </summary>
-		public static bool operator != (Edge left, Edge right) => !left.Equals(right);
+		public static bool operator !=(Edge left, Edge right) => !left.Equals(right);
 
 		#endregion
 	}

@@ -35,4 +35,30 @@
 		/// </summary>
 		Displaced
 	}
+	/// <summary>
+	///     Type of forces that stringer can be loaded.
+	/// </summary>
+	public enum StringerForceState
+	{
+		/// <summary>
+		///     Stringer is not loaded.
+		/// </summary>
+		Unloaded,
+
+		/// <summary>
+		///     Stringer is fully tensioned.
+		/// </summary>
+		PureTension,
+
+		/// <summary>
+		///     Stringer is fully compressed.
+		/// </summary>
+		PureCompression,
+
+		/// <summary>
+		///     Stringer is tensioned at an end and compressed at the other end.
+		/// </summary>
+		Combined
+	}
+
 }

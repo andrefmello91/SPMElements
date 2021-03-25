@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using andrefmello91.OnPlaneComponents;
 using Extensions;
 using UnitsNet;
 using UnitsNet.Units;
-
 #nullable disable
 
 namespace andrefmello91.SPMElements.PanelProperties
@@ -12,7 +12,7 @@ namespace andrefmello91.SPMElements.PanelProperties
 	/// <summary>
 	///     Panel vertices struct.
 	/// </summary>
-	public struct Vertices : IUnitConvertible<Vertices, LengthUnit>, IApproachable<Vertices, Length>, IEquatable<Vertices>, IComparable<Vertices>
+	public struct Vertices : IUnitConvertible<Vertices, LengthUnit>, IApproachable<Vertices, Length>, IEquatable<Vertices>, IComparable<Vertices>, ICloneable<Vertices>
 	{
 		#region Properties
 
@@ -38,22 +38,22 @@ namespace andrefmello91.SPMElements.PanelProperties
 		/// <summary>
 		///     Get vertex 1 (base left vertex).
 		/// </summary>
-		public Point Vertex1 { get ; }
+		public Point Vertex1 { get; }
 
 		/// <summary>
 		///     Get vertex 2 (base right vertex).
 		/// </summary>
-		public Point Vertex2 { get ; }
+		public Point Vertex2 { get; }
 
 		/// <summary>
 		///     Get vertex 3 (top right vertex).
 		/// </summary>
-		public Point Vertex3 { get ; }
+		public Point Vertex3 { get; }
 
 		/// <summary>
 		///     Get vertex 4 (top left vertex).
 		/// </summary>
-		public Point Vertex4 { get ; }
+		public Point Vertex4 { get; }
 
 		/// <summary>
 		///     Get X coordinates of vertices as an array.
@@ -103,7 +103,7 @@ namespace andrefmello91.SPMElements.PanelProperties
 
 		#endregion
 
-		#region  Methods
+		#region Methods
 
 		/// <summary>
 		///     Calculate <see cref="Vertices" /> approximated center point.
@@ -123,10 +123,10 @@ namespace andrefmello91.SPMElements.PanelProperties
 		/// </summary>
 		/// <param name="vertices">The <see cref="Vertices" /> object to check.</param>
 		public static bool Rectangular(Vertices vertices) =>
-			vertices.Vertex1.Y.Approx(vertices.Vertex2.Y, Tolerance) &&
-			vertices.Vertex4.Y.Approx(vertices.Vertex3.Y, Tolerance) &&
-			vertices.Vertex1.X.Approx(vertices.Vertex4.X, Tolerance) &&
-			vertices.Vertex2.X.Approx(vertices.Vertex3.X, Tolerance);
+			vertices.Vertex1.Y.Approx(vertices.Vertex2.Y, Point.Tolerance) &&
+			vertices.Vertex4.Y.Approx(vertices.Vertex3.Y, Point.Tolerance) &&
+			vertices.Vertex1.X.Approx(vertices.Vertex4.X, Point.Tolerance) &&
+			vertices.Vertex2.X.Approx(vertices.Vertex3.X, Point.Tolerance);
 
 		/// <summary>
 		///     Divide a <see cref="Vertices" /> object into new ones.
@@ -159,7 +159,7 @@ namespace andrefmello91.SPMElements.PanelProperties
 					// Get other vertices
 					var v2 = new Point(v1.X + dx, v1.Y);
 					var v3 = new Point(v1.X + dx, v1.Y + dy);
-					var v4 = new Point(v1.X,      v1.Y + dy);
+					var v4 = new Point(v1.X, v1.Y + dy);
 
 					// Return
 					yield return new Vertices(v1, v2, v3, v4);
@@ -179,7 +179,7 @@ namespace andrefmello91.SPMElements.PanelProperties
 		/// <summary>
 		///     Get vertices as an array.
 		/// </summary>
-		public Point[] AsArray() => new [] {Vertex1, Vertex2, Vertex3, Vertex4};
+		public Point[] AsArray() => new[] { Vertex1, Vertex2, Vertex3, Vertex4 };
 
 		/// <summary>
 		///     Change the <see cref="LengthUnit" /> of vertices' coordinates.
@@ -207,24 +207,30 @@ namespace andrefmello91.SPMElements.PanelProperties
 				? this
 				: new Vertices(Vertex1.Convert(unit), Vertex2.Convert(unit), Vertex3.Convert(unit), Vertex4.Convert(unit));
 
-		public Vertices Clone() => new Vertices(AsArray());
+		/// <inheritdoc />
+		public Vertices Clone() => new(AsArray());
 
+		/// <inheritdoc />
 		public bool Approaches(Vertices other, Length tolerance) =>
 			Vertex1.Approaches(other.Vertex1, tolerance) && Vertex2.Approaches(other.Vertex2, tolerance) &&
 			Vertex3.Approaches(other.Vertex3, tolerance) && Vertex4.Approaches(other.Vertex4, tolerance);
 
+		/// <inheritdoc />
 		public int CompareTo(Vertices other) => CenterPoint.CompareTo(other.CenterPoint);
 
 		/// <summary>
 		///     Returns true if all vertices are equal.
 		/// </summary>
 		/// <param name="other">The other <see cref="Vertices" /> to compare.</param>
-		public bool Equals(Vertices other) => Approaches(other, Tolerance);
+		public bool Equals(Vertices other) => Approaches(other, Point.Tolerance);
 
+		/// <inheritdoc />
 		public override bool Equals(object obj) => obj is Vertices other && Equals(other);
 
+		/// <inheritdoc />
 		public override int GetHashCode() => AsArray().Sum(point => point.GetHashCode());
 
+		/// <inheritdoc />
 		public override string ToString() =>
 			$"Vertex 1: ({Vertex1.X.Value:0.00}, {Vertex1.Y.Value:0.00})\n" +
 			$"Vertex 2: ({Vertex2.X.Value:0.00}, {Vertex2.Y.Value:0.00})\n" +
@@ -239,12 +245,12 @@ namespace andrefmello91.SPMElements.PanelProperties
 		/// <summary>
 		///     Returns true if arguments are equal.
 		/// </summary>
-		public static bool operator == (Vertices left, Vertices right) => left.Equals(right);
+		public static bool operator ==(Vertices left, Vertices right) => left.Equals(right);
 
 		/// <summary>
 		///     Returns true if arguments are different.
 		/// </summary>
-		public static bool operator != (Vertices left, Vertices right) => !left.Equals(right);
+		public static bool operator !=(Vertices left, Vertices right) => !left.Equals(right);
 
 		#endregion
 	}

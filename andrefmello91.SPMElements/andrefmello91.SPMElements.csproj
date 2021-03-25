@@ -10,7 +10,6 @@
         <PackageDescription>Finite element implementation for Stringer-Panel Method.</PackageDescription>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
-        <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\$(AssemblyName).xml</DocumentationFile>
         <PackageVersion>0.1.0</PackageVersion>
         <Description>Finite element implementation for Stringer-Panel Method.</Description>

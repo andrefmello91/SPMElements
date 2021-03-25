@@ -77,7 +77,7 @@ namespace andrefmello91.SPMElements.StringerProperties
 
 		#endregion
 
-		#region  Methods
+		#region Methods
 
 		/// <inheritdoc />
 		public void ChangeUnit(LengthUnit unit)
@@ -90,21 +90,21 @@ namespace andrefmello91.SPMElements.StringerProperties
 		}
 
 		/// <inheritdoc />
-		public CrossSection Convert(LengthUnit unit) => new CrossSection(Width.ToUnit(unit), Height.ToUnit(unit));
+		public CrossSection Convert(LengthUnit unit) => new(Width.ToUnit(unit), Height.ToUnit(unit));
 
 		/// <inheritdoc />
 		public bool Approaches(CrossSection other, Length tolerance) => Width.Approx(other.Width, tolerance) && Height.Approx(other.Width, tolerance);
 
 
 		/// <inheritdoc />
-		public CrossSection Clone() => new CrossSection(Width, Height);
+		public CrossSection Clone() => new(Width, Height);
 
 		/// <inheritdoc />
 		public int CompareTo(CrossSection other) =>
 			Width == other.Width && Height == other.Height
 				? 0
 				: Width > other.Width || Width >= other.Width && Height > other.Height
-					?  1
+					? 1
 					: -1;
 
 		/// <inheritdoc />
@@ -122,12 +122,12 @@ namespace andrefmello91.SPMElements.StringerProperties
 		/// <summary>
 		///     Returns true if objects are equal.
 		/// </summary>
-		public static bool operator == (CrossSection left, CrossSection right) => left.Equals(right);
+		public static bool operator ==(CrossSection left, CrossSection right) => left.Equals(right);
 
 		/// <summary>
 		///     Returns true if objects are different.
 		/// </summary>
-		public static bool operator != (CrossSection left, CrossSection right) => !left.Equals(right);
+		public static bool operator !=(CrossSection left, CrossSection right) => !left.Equals(right);
 
 		#endregion
 	}

@@ -14,16 +14,19 @@ namespace andrefmello91.SPMElements
 	/// </summary>
 	public abstract class SPMElement : IFiniteElement
 	{
-		/// <summary>
-		///		Auxiliary field to <see cref="LocalStiffness"/>.
-		/// </summary>
-		protected Lazy<Matrix<double>> LocStiffness = null!;
-		
-		/// <summary>
-		///		Auxiliary field to <see cref="TransformationMatrix"/>.
-		/// </summary>
-		protected Lazy<Matrix<double>> TransMatrix  = null!;
+		#region Fields
 
+		/// <summary>
+		///     Auxiliary field to <see cref="LocalStiffness" />.
+		/// </summary>
+		protected Lazy<Matrix<double>> LocStiffness;
+
+		/// <summary>
+		///     Auxiliary field to <see cref="TransformationMatrix" />.
+		/// </summary>
+		protected Lazy<Matrix<double>> TransMatrix;
+
+		#endregion
 		#region Properties
 
 		/// <summary>
@@ -66,13 +69,13 @@ namespace andrefmello91.SPMElements
 		public Vector<double> Displacements => this.GetDisplacementsFromGrips();
 
 		/// <inheritdoc />
-		public Vector<double> Forces => TransformationMatrix.Transpose() * LocalForces;
+		public virtual Vector<double> Forces => TransformationMatrix.Transpose() * LocalForces;
 
 		/// <inheritdoc />
 		public abstract IGrip[] Grips { get; }
 
 		/// <inheritdoc />
-		public Matrix<double> Stiffness => TransformationMatrix.Transpose() * LocalStiffness * TransformationMatrix;
+		public virtual Matrix<double> Stiffness => TransformationMatrix.Transpose() * LocalStiffness * TransformationMatrix;
 
 		/// <inheritdoc />
 		public int[] DoFIndex => GlobalIndexes(Grips).ToArray();

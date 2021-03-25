@@ -65,11 +65,11 @@ namespace andrefmello91.SPMElements.PanelProperties
 		/// <param name="finalVertex">The final vertex.</param>
 		public Edge(Point initialVertex, Point finalVertex)
 		{
-			InitialVertex      = initialVertex;
-			FinalVertex        = finalVertex.Convert(initialVertex.Unit);
-			CenterPoint        = initialVertex.MidPoint(finalVertex);
-			Length             = initialVertex.GetDistance(finalVertex);
-			Angle              = initialVertex.GetAngle(finalVertex);
+			InitialVertex     = initialVertex;
+			FinalVertex       = finalVertex.Convert(initialVertex.Unit);
+			CenterPoint       = initialVertex.MidPoint(finalVertex);
+			Length            = initialVertex.GetDistance(finalVertex);
+			Angle             = initialVertex.GetAngle(finalVertex);
 			StringerDimension = Length.Zero;
 		}
 
@@ -90,10 +90,10 @@ namespace andrefmello91.SPMElements.PanelProperties
 			CenterPoint.ChangeUnit(unit);
 			FinalVertex.ChangeUnit(unit);
 
-			Length             = Length.ToUnit(unit);
+			Length            = Length.ToUnit(unit);
 			StringerDimension = StringerDimension.ToUnit(unit);
 		}
-		
+
 		/// <summary>
 		///     Set stringer dimension in this edge.
 		/// </summary>

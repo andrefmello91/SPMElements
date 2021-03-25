@@ -151,10 +151,10 @@ namespace andrefmello91.SPMElements
 		/// <summary>
 		///     Elastic panel object.
 		/// </summary>
-		/// <param name="grip1">The center <see cref="SPMElements" /> of bottom edge</param>
-		/// <param name="grip2">The center <see cref="SPMElements" /> of right edge</param>
-		/// <param name="grip3">The center <see cref="SPMElements" /> of top edge</param>
-		/// <param name="grip4">The center <see cref="SPMElements" /> of left edge</param>
+		/// <param name="grip1">The center <see cref="Node" /> of bottom edge</param>
+		/// <param name="grip2">The center <see cref="Node" /> of right edge</param>
+		/// <param name="grip3">The center <see cref="Node" /> of top edge</param>
+		/// <param name="grip4">The center <see cref="Node" /> of left edge</param>
 		/// <param name="geometry">The <seealso cref="PanelGeometry" />.</param>
 		/// <param name="concreteParameters">The concrete parameters <see cref="Parameters" />.</param>
 		/// <param name="model">The concrete <see cref="ConstitutiveModel" />.</param>
@@ -176,8 +176,8 @@ namespace andrefmello91.SPMElements
 				Reinforcement.Width = Geometry.Width;
 
 			// Initiate lazy members
-			TransMatrix  = new Lazy<Matrix<double>>(CalculateTransformationMatrix(Geometry));
-			LocStiffness = new Lazy<Matrix<double>>(CalculateStiffness(Geometry, Concrete.Parameters.TransverseModule));
+			TransMatrix  = new Lazy<Matrix<double>>(() => CalculateTransformationMatrix(Geometry));
+			LocStiffness = new Lazy<Matrix<double>>(() => CalculateStiffness(Geometry, Concrete.Parameters.TransverseModule));
 		}
 
 		#endregion
@@ -193,7 +193,9 @@ namespace andrefmello91.SPMElements
 
 			var panel = new Panel(nds[0], nds[1], nds[2], nds[3], geometry, concreteParameters, model, reinforcement);
 
-			return panel;
+			return elementModel is ElementModel.Elastic
+				? panel
+				: panel.ToNonlinear();
 		}
 
 		/// <summary>
@@ -360,11 +362,6 @@ namespace andrefmello91.SPMElements
 				}.ToMatrix();
 		}
 
-		public void CalculateForces()
-		{
-			throw new NotImplementedException();
-		}
-
 		/// <inheritdoc />
 		public override int CompareTo(IFiniteElement? other) => other is Panel panel
 			? CompareTo(panel)
@@ -380,44 +377,31 @@ namespace andrefmello91.SPMElements
 		public override bool Equals(object? obj) => obj is Panel other && Equals(other);
 
 		/// <summary>
-		///     Set panel displacements from global displacement vector.
-		/// </summary>
-		public void SetDisplacements(Vector<double> globalDisplacementVector)
-		{
-			var u   = globalDisplacementVector;
-			var ind = DoFIndex;
-
-			// Get the displacements
-			var up = Vector<double>.Build.Dense(8);
-			for (var i = 0; i < ind.Length; i++)
-			{
-				// Indexers
-				var j = ind[i];
-
-				// Set values
-				up[i] = u[j];
-			}
-
-			// Set
-			Displacements = up;
-		}
-
-		/// <summary>
 		///     Set stringer dimensions on edges.
 		///     <para>See: <see cref="Edge.SetStringerDimension" /></para>
 		/// </summary>
 		/// <param name="stringers">The collection containing all of the stringers.</param>
-		public void SetEdgeStringersDimensions([NotNull] IEnumerable<Stringer> stringers)
+		public void SetStringersDimensions([NotNull] IEnumerable<Stringer> stringers)
 		{
 			// Get dimensions
-			var hs = GripNumbers.Select(n => 0.5 * stringers.First(str => n == str.GripNumbers[1]).Geometry.CrossSection.Height).ToArray();
-			
+			var hs = Grips
+				.Select(g => 0.5 * stringers.First(str => g.Equals(str.Grip2)).Geometry.CrossSection.Height)
+				.ToArray();
+
 			// Set on edges
 			Geometry.Edge1.SetStringerDimension(hs[0]);
 			Geometry.Edge2.SetStringerDimension(hs[1]);
 			Geometry.Edge3.SetStringerDimension(hs[2]);
 			Geometry.Edge4.SetStringerDimension(hs[3]);
 		}
+
+		/// <summary>
+		///     Create a <see cref="NLPanel" /> object based in this nonlinear stringer.
+		/// </summary>
+		/// <returns>
+		///     <see cref="NLPanel" />
+		/// </returns>
+		public Panel ToNonlinear() => new NLPanel(Grip1, Grip2, Grip3, Grip4, Geometry, Concrete.Parameters, Concrete.Model, Reinforcement?.Clone());
 
 		/// <inheritdoc />
 		public int CompareTo(Panel? other) => other is null

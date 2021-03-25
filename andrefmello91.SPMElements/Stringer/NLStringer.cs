@@ -53,7 +53,7 @@ namespace andrefmello91.SPMElements
 		/// <inheritdoc cref="Stringer(Node, Node, Node, CrossSection, IParameters, ConstitutiveModel, UniaxialReinforcement)" />
 		public NLStringer(Node grip1, Node grip2, Node grip3, CrossSection crossSection, IParameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, UniaxialReinforcement? reinforcement = null)
 			: base(grip1, grip2, grip3, crossSection, concreteParameters, model, reinforcement) =>
-			_bMatrix = new Lazy<Matrix<double>>(CalculateBMatrix(Geometry.Length));
+			_bMatrix = new Lazy<Matrix<double>>(() => CalculateBMatrix(Geometry.Length));
 
 		#endregion
 		#region Methods

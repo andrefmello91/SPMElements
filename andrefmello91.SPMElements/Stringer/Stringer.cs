@@ -122,12 +122,29 @@ namespace andrefmello91.SPMElements
 				Reinforcement.ConcreteArea = Concrete.Area;
 
 			// Initiate lazy members
-			TransMatrix  = new Lazy<Matrix<double>>(CalculateTransformationMatrix(Geometry.Angle));
-			LocStiffness = new Lazy<Matrix<double>>(CalculateStiffness(Concrete.Stiffness, Geometry.Length));
+			TransMatrix  = new Lazy<Matrix<double>>(() => CalculateTransformationMatrix(Geometry.Angle));
+			LocStiffness = new Lazy<Matrix<double>>(() => CalculateStiffness(Concrete.Stiffness, Geometry.Length));
 		}
 
 		#endregion
 		#region Methods
+
+		/// <inheritdoc cref="Stringer(Node, Node, Node, CrossSection, IParameters, ConstitutiveModel, UniaxialReinforcement)" />
+		/// <summary>
+		///     Create a <see cref="Stringer" /> from a collection of <paramref name="nodes" /> and known positions of initial and
+		///     final grips.
+		/// </summary>
+		/// <param name="nodes">The collection containing all <see cref="Node" />'s of SPM model.</param>
+		/// <param name="grip1Position">The position of initial <see cref="Node" /> of the <see cref="Stringer" />.</param>
+		/// <param name="grip3Position">The position of final <see cref="Node" /> of the <see cref="Stringer" />.</param>
+		public static Stringer FromNodes([NotNull] IEnumerable<Node> nodes, Point grip1Position, Point grip3Position, CrossSection crossSection, IParameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, UniaxialReinforcement? reinforcement = null, ElementModel elementModel = ElementModel.Elastic)
+		{
+			var stringer = new Stringer(nodes.GetByPosition(grip1Position), nodes.GetByPosition(grip1Position.MidPoint(grip3Position)), nodes.GetByPosition(grip3Position), crossSection, concreteParameters, model, reinforcement);
+
+			return elementModel is ElementModel.Elastic
+				? stringer
+				: stringer.ToNonlinear();
+		}
 
 		/// <summary>
 		///     Calculate local stiffness <see cref="Matrix" />.
@@ -165,23 +182,6 @@ namespace andrefmello91.SPMElements
 				{ 0, 0, l, m, 0, 0 },
 				{ 0, 0, 0, 0, l, m }
 			}.ToMatrix();
-		}
-
-		/// <inheritdoc cref="Stringer(Node, Node, Node, CrossSection, IParameters, ConstitutiveModel, UniaxialReinforcement)" />
-		/// <summary>
-		///     Create a <see cref="Stringer" /> from a collection of <paramref name="nodes" /> and known positions of initial and
-		///     final grips.
-		/// </summary>
-		/// <param name="nodes">The collection containing all <see cref="Node" />'s of SPM model.</param>
-		/// <param name="grip1Position">The position of initial <see cref="Node" /> of the <see cref="Stringer" />.</param>
-		/// <param name="grip3Position">The position of final <see cref="Node" /> of the <see cref="Stringer" />.</param>
-		public static Stringer FromNodes([NotNull] IEnumerable<Node> nodes, Point grip1Position, Point grip3Position, CrossSection crossSection, IParameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, UniaxialReinforcement? reinforcement = null, ElementModel elementModel = ElementModel.Elastic)
-		{
-			var stringer = new Stringer(nodes.GetByPosition(grip1Position), nodes.GetByPosition(grip1Position.MidPoint(grip3Position)), nodes.GetByPosition(grip3Position), crossSection, concreteParameters, model, reinforcement);
-
-			return elementModel is ElementModel.Elastic
-				? stringer
-				: stringer.ToNonlinear();
 		}
 
 		/// <summary>

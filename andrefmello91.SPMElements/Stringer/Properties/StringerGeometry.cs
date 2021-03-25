@@ -4,7 +4,6 @@ using andrefmello91.OnPlaneComponents;
 using Extensions;
 using UnitsNet;
 using UnitsNet.Units;
-
 #nullable disable
 
 namespace andrefmello91.SPMElements.StringerProperties
@@ -37,29 +36,29 @@ namespace andrefmello91.SPMElements.StringerProperties
 		/// </summary>
 		public CrossSection CrossSection
 		{
-			get => _section; 
+			get => _section;
 			set => _section = value.Convert(Unit);
 		}
 
 		/// <summary>
 		///     Get the center <see cref="Point" /> of <see cref="Stringer" />.
 		/// </summary>
-		public Point CenterPoint { get;  }
+		public Point CenterPoint { get; }
 
 		/// <summary>
 		///     Get the connected <see cref="Point" />'s.
 		/// </summary>
-		public Point[] ConnectedPoints => new [] {InitialPoint, CenterPoint, EndPoint};
+		public Point[] ConnectedPoints => new[] { InitialPoint, CenterPoint, EndPoint };
 
 		/// <summary>
 		///     Get the final <see cref="Point" /> of <see cref="Stringer" />.
 		/// </summary>
-		public Point EndPoint { get;  }
+		public Point EndPoint { get; }
 
 		/// <summary>
 		///     Get the initial <see cref="Point" /> of <see cref="Stringer" />.
 		/// </summary>
-		public Point InitialPoint { get;  }
+		public Point InitialPoint { get; }
 
 		/// <summary>
 		///     The stringer length.
@@ -70,21 +69,21 @@ namespace andrefmello91.SPMElements.StringerProperties
 
 		#region Constructors
 
-		/// <inheritdoc cref="StringerGeometry(Point, Point, Length, Length)"/>
+		/// <inheritdoc cref="StringerGeometry(Point, Point, Length, Length)" />
 		/// <param name="unit">
 		///     The <see cref="LengthUnit" /> of <paramref name="width" />, <paramref name="height" /> and nodes' coordinates.
 		///     <para>Default: <seealso cref="LengthUnit.Millimeter" />.</para>
 		/// </param>
 		public StringerGeometry(Point initialPoint, Point endPoint, double width, double height, LengthUnit unit = LengthUnit.Millimeter)
-			: this (initialPoint.Convert(unit), endPoint, Length.From(width, unit), Length.From(height, unit))
+			: this(initialPoint.Convert(unit), endPoint, Length.From(width, unit), Length.From(height, unit))
 		{
 		}
 
-		/// <inheritdoc cref="StringerGeometry(Point, Point, CrossSection)"/>
+		/// <inheritdoc cref="StringerGeometry(Point, Point, CrossSection)" />
 		/// <param name="width">The stringer width.</param>
 		/// <param name="height">The stringer height.</param>
 		public StringerGeometry(Point initialPoint, Point endPoint, Length width, Length height)
-			: this (initialPoint, endPoint, new CrossSection(width, height))
+			: this(initialPoint, endPoint, new CrossSection(width, height))
 		{
 		}
 
@@ -105,8 +104,8 @@ namespace andrefmello91.SPMElements.StringerProperties
 			CenterPoint  = initialPoint.MidPoint(endPoint);
 
 			// Calculate length and angle
-			Length  = initialPoint.GetDistance(endPoint);
-			Angle   = initialPoint.GetAngle(endPoint);
+			Length = initialPoint.GetDistance(endPoint);
+			Angle  = initialPoint.GetAngle(endPoint);
 
 			// Set values
 			_section = crossSection;
@@ -114,7 +113,7 @@ namespace andrefmello91.SPMElements.StringerProperties
 
 		#endregion
 
-		#region  Methods
+		#region Methods
 
 		/// <summary>
 		///     Divide a <see cref="StringerGeometry" /> in a <paramref name="number" /> of new ones.
@@ -160,7 +159,7 @@ namespace andrefmello91.SPMElements.StringerProperties
 				: new StringerGeometry(InitialPoint.Convert(unit), EndPoint.Convert(unit), CrossSection.Convert(unit));
 
 		/// <inheritdoc />
-		public StringerGeometry Clone() => new StringerGeometry(InitialPoint, EndPoint, CrossSection.Clone());
+		public StringerGeometry Clone() => new(InitialPoint, EndPoint, CrossSection.Clone());
 
 		/// <summary>
 		///     Divide this <see cref="StringerGeometry" /> in a <paramref name="number" /> of new ones.
@@ -182,13 +181,13 @@ namespace andrefmello91.SPMElements.StringerProperties
 			CenterPoint.ChangeUnit(unit);
 			CrossSection.ChangeUnit(unit);
 
-			Length  = Length.ToUnit(unit);
+			Length = Length.ToUnit(unit);
 		}
 
 		/// <inheritdoc />
 		public bool Approaches(StringerGeometry other, Length tolerance) =>
-			InitialPoint.Approaches(other.InitialPoint, tolerance) && EndPoint.Approaches(other.EndPoint,     tolerance) ||
-			InitialPoint.Approaches(other!.EndPoint,    tolerance) && EndPoint.Approaches(other.InitialPoint, tolerance);
+			InitialPoint.Approaches(other.InitialPoint, tolerance) && EndPoint.Approaches(other.EndPoint, tolerance) ||
+			InitialPoint.Approaches(other!.EndPoint, tolerance) && EndPoint.Approaches(other.InitialPoint, tolerance);
 
 		/// <summary>
 		///     Compare this <see cref="StringerGeometry" /> to <paramref name="other" />, based on <see cref="CenterPoint" />.
@@ -210,7 +209,7 @@ namespace andrefmello91.SPMElements.StringerProperties
 		/// </summary>
 		/// <inheritdoc cref="CompareTo" />
 		public bool EqualsCrossSection(StringerGeometry other) => CrossSection == other.CrossSection;
-		
+
 		/// <inheritdoc />
 		public override bool Equals(object obj) => obj is StringerGeometry other && Equals(other);
 
@@ -230,13 +229,13 @@ namespace andrefmello91.SPMElements.StringerProperties
 		///     Returns true if objects are equal.
 		///     <para>See: <seealso cref="Equals(StringerGeometry)" />.</para>
 		/// </summary>
-		public static bool operator == (StringerGeometry left, StringerGeometry right) => left.Equals(right);
+		public static bool operator ==(StringerGeometry left, StringerGeometry right) => left.Equals(right);
 
 		/// <summary>
 		///     Returns true if objects are different.
 		///     <para>See: <seealso cref="Equals(StringerGeometry)" />.</para>
 		/// </summary>
-		public static bool operator != (StringerGeometry left, StringerGeometry right) => !left.Equals(right);
+		public static bool operator !=(StringerGeometry left, StringerGeometry right) => !left.Equals(right);
 
 		#endregion
 	}

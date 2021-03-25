@@ -12,7 +12,6 @@ namespace andrefmello91.SPMElements.PanelProperties
 	/// </summary>
 	public struct Edge : IUnitConvertible<Edge, LengthUnit>, IApproachable<Edge, Length>, IEquatable<Edge>, IComparable<Edge>
 	{
-		private Length _stringerDimension;
 
 		#region Properties
 
@@ -53,11 +52,7 @@ namespace andrefmello91.SPMElements.PanelProperties
 		/// <summary>
 		///     Get the stringer dimension of this edge, in mm.
 		/// </summary>
-		public Length StringerDimension
-		{
-			get => _stringerDimension;
-			set => _stringerDimension = value.ToUnit(Unit);
-		}
+		public Length StringerDimension { get; private set; }
 
 		#endregion
 
@@ -75,7 +70,7 @@ namespace andrefmello91.SPMElements.PanelProperties
 			CenterPoint        = initialVertex.MidPoint(finalVertex);
 			Length             = initialVertex.GetDistance(finalVertex);
 			Angle              = initialVertex.GetAngle(finalVertex);
-			_stringerDimension = Length.Zero;
+			StringerDimension = Length.Zero;
 		}
 
 		#endregion
@@ -96,8 +91,20 @@ namespace andrefmello91.SPMElements.PanelProperties
 			FinalVertex.ChangeUnit(unit);
 
 			Length             = Length.ToUnit(unit);
-			_stringerDimension = _stringerDimension.ToUnit(unit);
+			StringerDimension = StringerDimension.ToUnit(unit);
 		}
+		
+		/// <summary>
+		///     Set stringer dimension in this edge.
+		/// </summary>
+		/// <param name="height">The height of the <seealso cref="Stringer" />, in <paramref name="unit" /> considered.</param>
+		/// <param name="unit">The <see cref="LengthUnit" /> of <paramref name="height" />.</param>
+		public void SetStringerDimension(double height, LengthUnit unit = LengthUnit.Millimeter) =>
+			SetStringerDimension(Length.From(height, unit));
+
+		/// <param name="height">The height of the <seealso cref="Stringer" />.</param>
+		/// <inheritdoc cref="SetStringerDimension(double, LengthUnit)" />
+		public void SetStringerDimension(Length height) => StringerDimension = height.ToUnit(Unit);
 
 		/// <inheritdoc />
 		public Edge Convert(LengthUnit unit) => new(InitialVertex.Convert(unit), FinalVertex.Convert(unit));

@@ -32,7 +32,7 @@ namespace andrefmello91.SPMElements
 		public override Length[] CrackOpenings => Strains.Select(eps => CrackOpening(Reinforcement, eps)).ToArray();
 
 		/// <inheritdoc />
-		public override Vector<double> LocalForces => new[] { -_n1.Newtons, _n1.Newtons - _n3.Newtons, _n3.Newtons }.ToVector();
+		protected override Vector<double> LocalForces => new[] { -_n1.Newtons, _n1.Newtons - _n3.Newtons, _n3.Newtons }.ToVector();
 
 		/// <summary>
 		///     Get B <see cref="Matrix" /> to transform displacements in strains.
@@ -76,7 +76,7 @@ namespace andrefmello91.SPMElements
 		/// <param name="strain">Current strain.</param>
 		/// <param name="concrete">The uniaxial concrete of the stringer.</param>
 		/// <param name="reinforcement">The <see cref="UniaxialReinforcement" /> of the stringer.</param>
-		public static Force CalculateForce(double strain, [NotNull] UniaxialConcrete concrete, UniaxialReinforcement? reinforcement) =>
+		private static Force CalculateForce(double strain, [NotNull] UniaxialConcrete concrete, UniaxialReinforcement? reinforcement) =>
 			strain.ApproxZero(1E-9)
 				? Force.Zero
 				: concrete.CalculateForce(strain, reinforcement) + (reinforcement?.CalculateForce(strain) ?? Force.Zero);
@@ -86,7 +86,7 @@ namespace andrefmello91.SPMElements
 		/// </summary>
 		/// <param name="reinforcement">The <see cref="UniaxialReinforcement" />.</param>
 		/// <param name="strain">The strain.</param>
-		public static Length CrackOpening(UniaxialReinforcement? reinforcement, double strain) => strain < 0 || strain.ApproxZero(1E-9)
+		private static Length CrackOpening(UniaxialReinforcement? reinforcement, double strain) => strain < 0 || strain.ApproxZero(1E-9)
 			? Length.Zero
 			: strain * CrackSpacing(reinforcement);
 
@@ -96,7 +96,7 @@ namespace andrefmello91.SPMElements
 		///     <para>sm = 21 mm + 0.155 phi / rho</para>
 		/// </summary>
 		/// <param name="reinforcement">The <see cref="UniaxialReinforcement" />.</param>
-		public static Length CrackSpacing(UniaxialReinforcement? reinforcement) =>
+		private static Length CrackSpacing(UniaxialReinforcement? reinforcement) =>
 			reinforcement is null || reinforcement.BarDiameter.ApproxZero(Point.Tolerance) || reinforcement.Ratio.ApproxZero()
 				? Length.FromMillimeters(21)
 				: Length.FromMillimeters(21) + 0.155 * reinforcement.BarDiameter / reinforcement.Ratio;

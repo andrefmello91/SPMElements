@@ -12,9 +12,6 @@ using Extensions;
 using MathNet.Numerics.LinearAlgebra;
 using MathNet.Numerics.LinearAlgebra.Double;
 using UnitsNet;
-using UnitsNet.Units;
-using static andrefmello91.FEMAnalysis.Extensions;
-
 #nullable enable
 
 namespace andrefmello91.SPMElements
@@ -22,21 +19,14 @@ namespace andrefmello91.SPMElements
 	/// <summary>
 	///     Stringer base class with linear properties.
 	/// </summary>
-	public class Stringer : IFiniteElement, IEquatable<Stringer>, IComparable<Stringer>
+	public class Stringer : SPMElement, IEquatable<Stringer>, IComparable<Stringer>
 	{
-		#region Fields
-
-		// Auxiliary fields
-		private readonly Lazy<Matrix<double>> _transMatrix;
-		private readonly Lazy<Matrix<double>> _localStiffness;
-
-		#endregion
 		#region Properties
 
 		/// <summary>
-		///     Get/set the <see cref="UniaxialConcrete" /> of this.
+		///     Get the <see cref="UniaxialConcrete" /> of this stringer.
 		/// </summary>
-		public UniaxialConcrete Concrete { get; protected set; }
+		public UniaxialConcrete Concrete { get; }
 
 		/// <summary>
 		///     Get crack openings in start, mid and end nodes.
@@ -63,36 +53,13 @@ namespace andrefmello91.SPMElements
 		/// </summary>
 		public Node Grip3 { get; }
 
-		/// <summary>
-		///     Get the grip numbers of this element.
-		/// </summary>
-		public int[] GripNumbers => new[] { Grip1.Number, Grip2.Number, Grip3.Number };
 
-		/// <summary>
-		///     Get the displacement <see cref="Vector" />, in local coordinate system.
-		/// </summary>
-		/// <remarks>
-		///     Components in <see cref="LengthUnit.Millimeter" />.
-		/// </remarks>
-		public Vector<double> LocalDisplacements => TransformationMatrix * Displacements;
+		/// <inheritdoc />
+		public override IGrip[] Grips => new IGrip[] { Grip1, Grip2, Grip3 };
 
-		/// <summary>
-		///     Get the force <see cref="Vector" />, in local coordinate system.
-		/// </summary>
-		/// <remarks>
-		///     Components in <see cref="ForceUnit.Newton" />.
-		/// </remarks>
-		public virtual Vector<double> LocalForces { get; protected set; }
 
-		/// <summary>
-		///     Get the local stiffness <see cref="Matrix" />.
-		/// </summary>
-		public virtual Matrix<double> LocalStiffness => _localStiffness.Value;
-
-		/// <summary>
-		///     Get the maximum local force at this stringer.
-		/// </summary>
-		public Force MaxForce => Force.FromNewtons(LocalForces.AbsoluteMaximum());
+		/// <inheritdoc />
+		public override Force MaxForce => Force.FromNewtons(LocalForces.AbsoluteMaximum());
 
 		/// <summary>
 		///     Get normal forces acting in the stringer.
@@ -126,28 +93,8 @@ namespace andrefmello91.SPMElements
 			}
 		}
 
-		/// <summary>
-		///     Get the transformation matrix to transform from local to global coordinate systems.
-		/// </summary>
-		public Matrix<double> TransformationMatrix => _transMatrix.Value;
-
 		/// <inheritdoc />
-		public Vector<double> Displacements => this.GetDisplacementsFromGrips();
-
-		/// <inheritdoc />
-		public Vector<double> Forces => TransformationMatrix.Transpose() * LocalForces;
-
-		/// <inheritdoc />
-		public IGrip[] Grips => new IGrip[] { Grip1, Grip2, Grip3 };
-
-		/// <inheritdoc />
-		public Matrix<double> Stiffness => TransformationMatrix.Transpose() * LocalStiffness * TransformationMatrix;
-
-		/// <inheritdoc />
-		public int[] DoFIndex => GlobalIndexes(Grips).ToArray();
-
-		/// <inheritdoc />
-		public int Number { get; set; }
+		protected override Vector<double> LocalForces { get; set; }
 
 		#endregion
 		#region Constructors
@@ -175,21 +122,59 @@ namespace andrefmello91.SPMElements
 				Reinforcement.ConcreteArea = Concrete.Area;
 
 			// Initiate lazy members
-			_transMatrix    = new Lazy<Matrix<double>>(CalculateTransformationMatrix);
-			_localStiffness = new Lazy<Matrix<double>>(CalculateStiffness);
+			TransMatrix  = new Lazy<Matrix<double>>(CalculateTransformationMatrix(Geometry.Angle));
+			LocStiffness = new Lazy<Matrix<double>>(CalculateStiffness(Concrete.Stiffness, Geometry.Length));
 		}
 
 		#endregion
 		#region Methods
+
+		/// <summary>
+		///     Calculate local stiffness <see cref="Matrix" />.
+		/// </summary>
+		/// <param name="concreteStiffness">The stiffness of concrete cross-section.</param>
+		/// <param name="stringerLength">The length of the stringer.</param>
+		private static Matrix<double> CalculateStiffness(Force concreteStiffness, Length stringerLength)
+		{
+			// Calculate the constant factor of stiffness
+			var k = concreteStiffness.Newtons / (3 * stringerLength.Millimeters);
+
+			// Calculate the local stiffness matrix
+			return
+				k * new double[,]
+				{
+					{ 7, -8, 1 },
+					{ -8, 16, -8 },
+					{ 1, -8, 7 }
+				}.ToMatrix();
+		}
+
+		/// <summary>
+		///     Calculate the transformation matrix based on the <paramref name="angle" /> of a stringer.
+		/// </summary>
+		/// <param name="angle">The angle of the stringer, related to horizontal axis.</param>
+		private static Matrix<double> CalculateTransformationMatrix(double angle)
+		{
+			// Get the direction cosines
+			var (l, m) = angle.DirectionCosines();
+
+			// Obtain the transformation matrix
+			return new[,]
+			{
+				{ l, m, 0, 0, 0, 0 },
+				{ 0, 0, l, m, 0, 0 },
+				{ 0, 0, 0, 0, l, m }
+			}.ToMatrix();
+		}
 
 		/// <inheritdoc cref="Stringer(Node, Node, Node, CrossSection, IParameters, ConstitutiveModel, UniaxialReinforcement)" />
 		/// <summary>
 		///     Create a <see cref="Stringer" /> from a collection of <paramref name="nodes" /> and known positions of initial and
 		///     final grips.
 		/// </summary>
-		/// <param name="nodes">The collection containing all <see cref="SPMElements" />'s of SPM model.</param>
-		/// <param name="grip1Position">The position of initial <see cref="SPMElements" /> of the <see cref="Stringer" />.</param>
-		/// <param name="grip3Position">The position of final <see cref="SPMElements" /> of the <see cref="Stringer" />.</param>
+		/// <param name="nodes">The collection containing all <see cref="Node" />'s of SPM model.</param>
+		/// <param name="grip1Position">The position of initial <see cref="Node" /> of the <see cref="Stringer" />.</param>
+		/// <param name="grip3Position">The position of final <see cref="Node" /> of the <see cref="Stringer" />.</param>
 		public static Stringer FromNodes([NotNull] IEnumerable<Node> nodes, Point grip1Position, Point grip3Position, CrossSection crossSection, IParameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, UniaxialReinforcement? reinforcement = null, ElementModel elementModel = ElementModel.Elastic)
 		{
 			var stringer = new Stringer(nodes.GetByPosition(grip1Position), nodes.GetByPosition(grip1Position.MidPoint(grip3Position)), nodes.GetByPosition(grip3Position), crossSection, concreteParameters, model, reinforcement);
@@ -200,23 +185,20 @@ namespace andrefmello91.SPMElements
 		}
 
 		/// <summary>
-		///		Create a <see cref="NLStringer"/> object based in this stringer.
+		///     Get the proper concrete area for a <paramref name="stringer" />.
 		/// </summary>
-		/// <returns>
-		///		<see cref="NLStringer"/>
-		/// </returns>
-		public NLStringer ToNonlinear() => new NLStringer(Grip1, Grip2, Grip3, Geometry.CrossSection, Concrete.Parameters, Concrete.Model, Reinforcement);
-		
-		/// <summary>
-		///		Get the proper concrete area for a <paramref name="stringer"/>.
-		/// </summary>
-		public static Area GetConcreteArea(Stringer stringer) =>
+		private static Area GetConcreteArea(Stringer stringer) =>
 			stringer switch
 			{
 				NLStringer => stringer.Geometry.CrossSection.Area - (stringer.Reinforcement?.Area ?? Area.Zero),
 				_          => stringer.Geometry.CrossSection.Area
 			};
-		
+
+		/// <inheritdoc />
+		public override int CompareTo(IFiniteElement? other) => other is Stringer stringer
+			? CompareTo(stringer)
+			: 0;
+
 		/// <summary>
 		///     Returns true if <paramref name="obj" /> is <see cref="Stringer" /> and <see cref="Geometry" /> of
 		///     <paramref name="obj" /> is equal to this.
@@ -224,76 +206,26 @@ namespace andrefmello91.SPMElements
 		public override bool Equals(object? obj) => obj is Stringer other && Equals(other);
 
 		/// <inheritdoc />
-		public int CompareTo(IFiniteElement? other) => other is Stringer stringer
-			? CompareTo(stringer)
-			: 0;
+		public override bool Equals(IFiniteElement? other) => other is Stringer stringer && Equals(stringer);
+
+		/// <summary>
+		///     Create a <see cref="NLStringer" /> object based in this stringer.
+		/// </summary>
+		/// <returns>
+		///     <see cref="NLStringer" />
+		/// </returns>
+		public NLStringer ToNonlinear() => new(Grip1, Grip2, Grip3, Geometry.CrossSection, Concrete.Parameters, Concrete.Model, Reinforcement);
 
 		/// <inheritdoc />
 		public int CompareTo(Stringer? other) => other is null
 			? 1
 			: Geometry.CompareTo(other.Geometry);
 
-		/// <inheritdoc />
-		public bool Equals(IFiniteElement? other) => other is Stringer stringer && Equals(stringer);
-
 		/// <summary>
 		///     Returns true if <see cref="Geometry" /> of <paramref name="other" /> is equal to this.
 		/// </summary>
 		/// <param name="other"></param>
 		public bool Equals(Stringer? other) => !(other is null) && Geometry == other.Geometry;
-
-		/// <inheritdoc />
-		public virtual void CalculateForces() => LocalForces = CalculateLocalForces();
-		
-		/// <summary>
-		///     Calculate local stiffness <see cref="Matrix" />.
-		/// </summary>
-		/// <returns></returns>
-		protected Matrix<double> CalculateStiffness()
-		{
-			// Calculate the constant factor of stiffness
-			var k = Concrete.Stiffness.Newtons / (3 * Geometry.Length.Millimeters);
-
-			// Calculate the local stiffness matrix
-			return
-				k * new double[,]
-				{
-					{ 7,  -8,  1 },
-					{ -8, 16, -8 },
-					{ 1,  -8,  7 }
-				}.ToMatrix();
-		}
-
-		/// <summary>
-		///     Calculate local stringer forces.
-		/// </summary>
-		private Vector<double> CalculateLocalForces()
-		{
-			// Calculate the vector of normal forces
-			var fl = LocalStiffness * LocalDisplacements;
-
-			// Approximate small values to zero
-			fl.CoerceZero(0.001);
-
-			return fl;
-		}
-
-		/// <summary>
-		///     Calculate the transformation matrix.
-		/// </summary>
-		private Matrix<double> CalculateTransformationMatrix()
-		{
-			// Get the direction cosines
-			var (l, m) = Geometry.Angle.DirectionCosines();
-
-			// Obtain the transformation matrix
-			return new[,]
-			{
-				{ l, m, 0, 0, 0, 0 },
-				{ 0, 0, l, m, 0, 0 },
-				{ 0, 0, 0, 0, l, m }
-			}.ToMatrix();
-		}
 
 		/// <inheritdoc />
 		public override int GetHashCode() => Geometry.GetHashCode();

@@ -2,7 +2,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using andrefmello91.Material.Concrete;
-using andrefmello91.Material.Reinforcement.Uniaxial;
+using andrefmello91.Material.Reinforcement;
 using andrefmello91.OnPlaneComponents;
 using andrefmello91.SPMElements.StringerProperties;
 using Extensions;

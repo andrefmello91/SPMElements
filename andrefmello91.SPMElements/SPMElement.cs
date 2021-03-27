@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using andrefmello91.Extensions;
 using andrefmello91.FEMAnalysis;
 using MathNet.Numerics.LinearAlgebra;
 using MathNet.Numerics.LinearAlgebra.Double;
@@ -12,8 +13,9 @@ namespace andrefmello91.SPMElements
 	/// <summary>
 	///     Base class for SPM elements.
 	/// </summary>
-	public abstract class SPMElement : IFiniteElement
+	public abstract class SPMElement : IFiniteElement, IEquatable<SPMElement>
 	{
+
 		#region Fields
 
 		/// <summary>
@@ -27,6 +29,7 @@ namespace andrefmello91.SPMElements
 		protected Lazy<Matrix<double>> TransMatrix;
 
 		#endregion
+
 		#region Properties
 
 		/// <summary>
@@ -84,6 +87,7 @@ namespace andrefmello91.SPMElements
 		public int Number { get; set; }
 
 		#endregion
+
 		#region Methods
 
 		/// <inheritdoc />
@@ -91,6 +95,9 @@ namespace andrefmello91.SPMElements
 
 		/// <inheritdoc />
 		public abstract bool Equals(IFiniteElement? other);
+
+		/// <inheritdoc />
+		public abstract bool Equals(SPMElement? other);
 
 		/// <inheritdoc />
 		public virtual void CalculateForces()
@@ -103,18 +110,20 @@ namespace andrefmello91.SPMElements
 		}
 
 		#endregion
+
 		#region Operators
 
 		/// <summary>
 		///     Returns true if arguments are equal.
 		/// </summary>
-		public static bool operator ==(SPMElement? left, SPMElement? right) => !(left is null) && left.Equals(right);
+		public static bool operator ==(SPMElement? left, SPMElement? right) => left.IsEqualTo(right);
 
 		/// <summary>
 		///     Returns true if arguments are different.
 		/// </summary>
-		public static bool operator !=(SPMElement? left, SPMElement? right) => !(left is null) && !left.Equals(right);
+		public static bool operator !=(SPMElement? left, SPMElement? right) => left.IsNotEqualTo(right);
 
 		#endregion
+
 	}
 }

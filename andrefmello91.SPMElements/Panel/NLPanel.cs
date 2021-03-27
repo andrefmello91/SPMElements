@@ -1,13 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using andrefmello91.Extensions;
 using andrefmello91.Material.Concrete;
 using andrefmello91.Material.Reinforcement;
-using andrefmello91.OnPlaneComponents.Strain;
-using andrefmello91.OnPlaneComponents.Stress;
+using andrefmello91.OnPlaneComponents;
 using andrefmello91.ReinforcedConcreteMembrane;
 using andrefmello91.SPMElements.PanelProperties;
-using Extensions;
 using MathNet.Numerics.LinearAlgebra;
 using MathNet.Numerics.LinearAlgebra.Double;
 using UnitsNet;
@@ -18,6 +17,7 @@ namespace andrefmello91.SPMElements
 {
 	public class NLPanel : Panel
 	{
+
 		#region Fields
 
 		// Auxiliary fields
@@ -25,6 +25,7 @@ namespace andrefmello91.SPMElements
 		private Vector<double> _forces;
 
 		#endregion
+
 		#region Properties
 
 		/// <inheritdoc />
@@ -126,6 +127,7 @@ namespace andrefmello91.SPMElements
 		private Matrix<double> BaMatrix => _baMatrix.Value;
 
 		#endregion
+
 		#region Constructors
 
 		/// <summary>
@@ -151,6 +153,7 @@ namespace andrefmello91.SPMElements
 		}
 
 		#endregion
+
 		#region Methods
 
 		/// <summary>
@@ -502,5 +505,6 @@ namespace andrefmello91.SPMElements
 		}
 
 		#endregion
+
 	}
 }

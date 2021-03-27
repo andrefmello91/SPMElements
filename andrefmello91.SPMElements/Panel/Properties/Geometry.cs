@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using andrefmello91.Extensions;
 using andrefmello91.OnPlaneComponents;
-using Extensions;
 using UnitsNet;
 using UnitsNet.Units;
 #nullable disable
@@ -14,6 +14,7 @@ namespace andrefmello91.SPMElements.PanelProperties
 	/// </summary>
 	public struct PanelGeometry : IUnitConvertible<PanelGeometry, LengthUnit>, IApproachable<PanelGeometry, Length>, IEquatable<PanelGeometry>, IComparable<PanelGeometry>, ICloneable<PanelGeometry>
 	{
+
 		#region Fields
 
 		private Length _width;
@@ -250,5 +251,6 @@ namespace andrefmello91.SPMElements.PanelProperties
 		public static bool operator !=(PanelGeometry left, PanelGeometry right) => !left.Equals(right);
 
 		#endregion
+
 	}
 }

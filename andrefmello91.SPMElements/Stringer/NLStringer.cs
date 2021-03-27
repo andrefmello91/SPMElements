@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using andrefmello91.Extensions;
 using andrefmello91.Material.Concrete;
 using andrefmello91.Material.Reinforcement;
 using andrefmello91.OnPlaneComponents;
 using andrefmello91.SPMElements.StringerProperties;
-using Extensions;
 using MathNet.Numerics.LinearAlgebra;
 using MathNet.Numerics.LinearAlgebra.Double;
 using UnitsNet;
@@ -18,6 +18,7 @@ namespace andrefmello91.SPMElements
 	/// </summary>
 	public class NLStringer : Stringer
 	{
+
 		#region Fields
 
 		// Auxiliary fields
@@ -25,6 +26,7 @@ namespace andrefmello91.SPMElements
 		private Force _n1, _n3;
 
 		#endregion
+
 		#region Properties
 
 		/// <inheritdoc />
@@ -44,6 +46,7 @@ namespace andrefmello91.SPMElements
 		private Vector<double> Strains => BMatrix * LocalDisplacements;
 
 		#endregion
+
 		#region Constructors
 
 		/// <summary>
@@ -55,6 +58,7 @@ namespace andrefmello91.SPMElements
 			_bMatrix = new Lazy<Matrix<double>>(() => CalculateBMatrix(Geometry.Length));
 
 		#endregion
+
 		#region Methods
 
 		/// <summary>
@@ -120,5 +124,6 @@ namespace andrefmello91.SPMElements
 		public Stringer ToLinear() => new(Grip1, Grip2, Grip3, Geometry.CrossSection, Concrete.Parameters, Concrete.Model, Reinforcement);
 
 		#endregion
+
 	}
 }

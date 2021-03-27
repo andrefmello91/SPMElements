@@ -2,8 +2,6 @@
 using System.Linq;
 using andrefmello91.FEMAnalysis;
 using andrefmello91.OnPlaneComponents;
-using andrefmello91.OnPlaneComponents.Displacement;
-using andrefmello91.OnPlaneComponents.Force;
 using UnitsNet;
 using UnitsNet.Units;
 using static andrefmello91.FEMAnalysis.Extensions;
@@ -17,6 +15,7 @@ namespace andrefmello91.SPMElements
 	/// </summary>
 	public class Node : IGrip, IEquatable<Node>, IComparable<Node>
 	{
+
 		#region Properties
 
 		/// <summary>
@@ -87,6 +86,7 @@ namespace andrefmello91.SPMElements
 		public int Number { get; set; }
 
 		#endregion
+
 		#region Constructors
 
 		/// <summary>
@@ -108,6 +108,7 @@ namespace andrefmello91.SPMElements
 		}
 
 		#endregion
+
 		#region Methods
 
 		/// <summary>
@@ -180,6 +181,7 @@ namespace andrefmello91.SPMElements
 		}
 
 		#endregion
+
 		#region Operators
 
 		/// <summary>
@@ -193,5 +195,6 @@ namespace andrefmello91.SPMElements
 		public static bool operator !=(Node? left, Node? right) => !(left is null) && !left.Equals(right);
 
 		#endregion
+
 	}
 }

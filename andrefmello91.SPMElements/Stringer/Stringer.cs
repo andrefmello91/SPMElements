@@ -2,13 +2,12 @@
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using andrefmello91.Extensions;
 using andrefmello91.FEMAnalysis;
 using andrefmello91.Material.Concrete;
 using andrefmello91.Material.Reinforcement;
 using andrefmello91.OnPlaneComponents;
-using andrefmello91.OnPlaneComponents.Force;
 using andrefmello91.SPMElements.StringerProperties;
-using Extensions;
 using MathNet.Numerics.LinearAlgebra;
 using MathNet.Numerics.LinearAlgebra.Double;
 using UnitsNet;
@@ -21,6 +20,7 @@ namespace andrefmello91.SPMElements
 	/// </summary>
 	public class Stringer : SPMElement, IEquatable<Stringer>, IComparable<Stringer>
 	{
+
 		#region Properties
 
 		/// <summary>
@@ -97,6 +97,7 @@ namespace andrefmello91.SPMElements
 		protected override Vector<double> LocalForces { get; set; }
 
 		#endregion
+
 		#region Constructors
 
 		/// <summary>
@@ -127,6 +128,7 @@ namespace andrefmello91.SPMElements
 		}
 
 		#endregion
+
 		#region Methods
 
 		/// <inheritdoc cref="Stringer(Node, Node, Node, CrossSection, IParameters, ConstitutiveModel, UniaxialReinforcement)" />
@@ -208,6 +210,9 @@ namespace andrefmello91.SPMElements
 		/// <inheritdoc />
 		public override bool Equals(IFiniteElement? other) => other is Stringer stringer && Equals(stringer);
 
+		/// <inheritdoc />
+		public override bool Equals(SPMElement? other) => other is Stringer stringer && Equals(stringer);
+
 		/// <summary>
 		///     Create a <see cref="NLStringer" /> object based in this stringer.
 		/// </summary>
@@ -246,5 +251,6 @@ namespace andrefmello91.SPMElements
 		}
 
 		#endregion
+
 	}
 }

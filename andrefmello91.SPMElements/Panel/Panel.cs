@@ -2,13 +2,12 @@
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using andrefmello91.Extensions;
 using andrefmello91.FEMAnalysis;
 using andrefmello91.Material.Concrete;
 using andrefmello91.Material.Reinforcement;
-using andrefmello91.OnPlaneComponents.Strain;
-using andrefmello91.OnPlaneComponents.Stress;
+using andrefmello91.OnPlaneComponents;
 using andrefmello91.SPMElements.PanelProperties;
-using Extensions;
 using MathNet.Numerics;
 using MathNet.Numerics.LinearAlgebra;
 using UnitsNet;
@@ -21,6 +20,7 @@ namespace andrefmello91.SPMElements
 	/// </summary>
 	public class Panel : SPMElement, IEquatable<Panel>, IComparable<Panel>
 	{
+
 		#region Properties
 
 		/// <summary>
@@ -138,6 +138,7 @@ namespace andrefmello91.SPMElements
 		protected override Vector<double> LocalForces { get; set; }
 
 		#endregion
+
 		#region Constructors
 
 		/// <inheritdoc cref="Panel(Node, Node, Node, Node, PanelGeometry, IParameters, ConstitutiveModel, WebReinforcement)" />
@@ -181,6 +182,7 @@ namespace andrefmello91.SPMElements
 		}
 
 		#endregion
+
 		#region Methods
 
 		/// <summary>
@@ -370,6 +372,9 @@ namespace andrefmello91.SPMElements
 		/// <inheritdoc />
 		public override bool Equals(IFiniteElement? other) => other is Panel panel && Equals(panel);
 
+		/// <inheritdoc />
+		public override bool Equals(SPMElement? other) => other is Panel panel && Equals(panel);
+
 		/// <summary>
 		///     Returns true if <paramref name="obj" /> is <see cref="Panel" /> and <see cref="Geometry" /> is equal.
 		/// </summary>
@@ -433,5 +438,6 @@ namespace andrefmello91.SPMElements
 		}
 
 		#endregion
+
 	}
 }

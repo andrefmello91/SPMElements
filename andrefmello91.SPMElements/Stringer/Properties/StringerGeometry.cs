@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using andrefmello91.Extensions;
 using andrefmello91.OnPlaneComponents;
-using Extensions;
 using UnitsNet;
 using UnitsNet.Units;
 #nullable disable
@@ -238,5 +238,6 @@ namespace andrefmello91.SPMElements.StringerProperties
 		public static bool operator !=(StringerGeometry left, StringerGeometry right) => !left.Equals(right);
 
 		#endregion
+
 	}
 }

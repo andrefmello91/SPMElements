@@ -1,6 +1,6 @@
 ﻿using System;
+using andrefmello91.Extensions;
 using andrefmello91.OnPlaneComponents;
-using Extensions;
 using UnitsNet;
 using UnitsNet.Units;
 
@@ -11,6 +11,7 @@ namespace andrefmello91.SPMElements.StringerProperties
 	/// </summary>
 	public struct CrossSection : IUnitConvertible<CrossSection, LengthUnit>, IApproachable<CrossSection, Length>, IEquatable<CrossSection>, IComparable<CrossSection>, ICloneable<CrossSection>
 	{
+
 		#region Fields
 
 		private Length _width, _height;
@@ -130,5 +131,6 @@ namespace andrefmello91.SPMElements.StringerProperties
 		public static bool operator !=(CrossSection left, CrossSection right) => !left.Equals(right);
 
 		#endregion
+
 	}
 }

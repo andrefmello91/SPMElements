@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using andrefmello91.Extensions;
 using andrefmello91.OnPlaneComponents;
-using Extensions;
 using UnitsNet;
 using UnitsNet.Units;
 #nullable disable
@@ -14,6 +14,7 @@ namespace andrefmello91.SPMElements.PanelProperties
 	/// </summary>
 	public struct Vertices : IUnitConvertible<Vertices, LengthUnit>, IApproachable<Vertices, Length>, IEquatable<Vertices>, IComparable<Vertices>, ICloneable<Vertices>
 	{
+
 		#region Properties
 
 		/// <summary>
@@ -253,5 +254,6 @@ namespace andrefmello91.SPMElements.PanelProperties
 		public static bool operator !=(Vertices left, Vertices right) => !left.Equals(right);
 
 		#endregion
+
 	}
 }

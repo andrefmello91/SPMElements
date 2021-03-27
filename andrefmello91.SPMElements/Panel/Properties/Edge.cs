@@ -1,6 +1,6 @@
 ﻿using System;
+using andrefmello91.Extensions;
 using andrefmello91.OnPlaneComponents;
-using Extensions;
 using UnitsNet;
 using UnitsNet.Units;
 #nullable disable
@@ -151,5 +151,6 @@ namespace andrefmello91.SPMElements.PanelProperties
 		public static bool operator !=(Edge left, Edge right) => !left.Equals(right);
 
 		#endregion
+
 	}
 }

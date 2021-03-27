@@ -9,6 +9,7 @@ namespace andrefmello91.SPMElements
 	/// </summary>
 	public static class Extensions
 	{
+
 		#region Methods
 
 		/// <summary>
@@ -30,5 +31,6 @@ namespace andrefmello91.SPMElements
 		}
 
 		#endregion
+
 	}
 }

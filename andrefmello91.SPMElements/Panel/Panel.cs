@@ -124,7 +124,7 @@ namespace andrefmello91.SPMElements
 		public Node Grip4 { get; }
 
 		/// <inheritdoc />
-		public override IGrip[] Grips => new IGrip[] { Grip1, Grip2, Grip3, Grip4 };
+		public override Node[] Grips => new [] { Grip1, Grip2, Grip3, Grip4 };
 
 		/// <inheritdoc />
 		public override Force MaxForce => Force.FromNewtons(Forces.AbsoluteMaximum());

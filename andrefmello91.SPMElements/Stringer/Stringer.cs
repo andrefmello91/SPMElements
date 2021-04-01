@@ -52,12 +52,10 @@ namespace andrefmello91.SPMElements
 		///     Get the end <see cref="Node" /> of this stringer.
 		/// </summary>
 		public Node Grip3 { get; }
-
-
+		
 		/// <inheritdoc />
-		public override IGrip[] Grips => new IGrip[] { Grip1, Grip2, Grip3 };
-
-
+		public override Node[] Grips => new [] { Grip1, Grip2, Grip3 };
+		
 		/// <inheritdoc />
 		public override Force MaxForce => Force.FromNewtons(LocalForces.AbsoluteMaximum());
 

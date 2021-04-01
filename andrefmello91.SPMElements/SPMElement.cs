@@ -75,7 +75,12 @@ namespace andrefmello91.SPMElements
 		public virtual Vector<double> Forces => TransformationMatrix.Transpose() * LocalForces;
 
 		/// <inheritdoc />
-		public abstract IGrip[] Grips { get; }
+		IGrip[] IFiniteElement.Grips => Grips.Cast<IGrip>().ToArray();
+
+		/// <summary>
+		///		Get the nodes of this element.
+		/// </summary>
+		public abstract Node[] Grips { get; }
 
 		/// <inheritdoc />
 		public virtual Matrix<double> Stiffness => TransformationMatrix.Transpose() * LocalStiffness * TransformationMatrix;

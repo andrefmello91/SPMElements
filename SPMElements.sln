@@ -7,6 +7,14 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "andrefmello91.SPMElements",
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "andrefmello91.FEMAnalysis", "..\FEMAnalysis\andrefmello91.FEMAnalysis\andrefmello91.FEMAnalysis.csproj", "{EAAD398B-BFA4-480C-A72B-7530202EFEEB}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "andrefmello91.Extensions", "..\Extensions\andrefmello91.Extensions\andrefmello91.Extensions.csproj", "{4FE893A3-142C-4592-BADB-D0477444870D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "andrefmello91.OnPlaneComponents", "..\OnPlaneComponents\andrefmello91.OnPlaneComponents\andrefmello91.OnPlaneComponents.csproj", "{B6A2C6E6-7373-48D7-B92D-675E7E89101A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "andrefmello91.Material", "..\Material\andrefmello91.Material\andrefmello91.Material.csproj", "{2A00EFA0-F23F-43FC-A87B-04D155D2A3E5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "andrefmello91.ReinforcedConcreteMembrane", "..\ReinforcedConcreteMembrane\andrefmello91.ReinforcedConcreteMembrane\andrefmello91.ReinforcedConcreteMembrane.csproj", "{9AA1F799-3857-4870-9700-07E07510A377}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +29,22 @@ Global
 		{EAAD398B-BFA4-480C-A72B-7530202EFEEB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EAAD398B-BFA4-480C-A72B-7530202EFEEB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EAAD398B-BFA4-480C-A72B-7530202EFEEB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4FE893A3-142C-4592-BADB-D0477444870D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4FE893A3-142C-4592-BADB-D0477444870D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4FE893A3-142C-4592-BADB-D0477444870D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4FE893A3-142C-4592-BADB-D0477444870D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B6A2C6E6-7373-48D7-B92D-675E7E89101A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B6A2C6E6-7373-48D7-B92D-675E7E89101A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B6A2C6E6-7373-48D7-B92D-675E7E89101A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B6A2C6E6-7373-48D7-B92D-675E7E89101A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2A00EFA0-F23F-43FC-A87B-04D155D2A3E5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2A00EFA0-F23F-43FC-A87B-04D155D2A3E5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2A00EFA0-F23F-43FC-A87B-04D155D2A3E5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2A00EFA0-F23F-43FC-A87B-04D155D2A3E5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9AA1F799-3857-4870-9700-07E07510A377}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9AA1F799-3857-4870-9700-07E07510A377}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9AA1F799-3857-4870-9700-07E07510A377}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9AA1F799-3857-4870-9700-07E07510A377}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

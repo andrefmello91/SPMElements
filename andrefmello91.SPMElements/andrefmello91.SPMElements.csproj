@@ -4,33 +4,43 @@
         <TargetFrameworks>net5.0;netcoreapp3.1;netstandard2.0</TargetFrameworks>
         <LangVersion>9.0</LangVersion>
         <Nullable>enable</Nullable>
-        <PackageId>andrefmello91.SPMElements</PackageId>
         <Version>0.1.5</Version>
         <Authors>andrefmello91</Authors>
-        <PackageDescription>Finite element implementation for Stringer-Panel Method.</PackageDescription>
-        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\$(AssemblyName).xml</DocumentationFile>
-        <PackageVersion>0.1.5</PackageVersion>
         <Description>Finite element implementation for Stringer-Panel Method.</Description>
         <RepositoryUrl>https://github.com/andrefmello91/SPMElements</RepositoryUrl>
         <PackageProjectUrl>https://github.com/andrefmello91/SPMElements</PackageProjectUrl>
-        <PackageReleaseNotes>Updated packages.</PackageReleaseNotes>
         <AssemblyName>andrefmello91.SPMElements</AssemblyName>
         <RootNamespace>andrefmello91.SPMElements</RootNamespace>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(Configuration)'=='Release'">
+        <PackageId>andrefmello91.SPMElements</PackageId>
+        <PackageDescription>Finite element implementation for Stringer-Panel Method.</PackageDescription>
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <PackageVersion>0.1.5</PackageVersion>
+        <PackageReleaseNotes>Updated packages.</PackageReleaseNotes>
     </PropertyGroup>
 
     <ItemGroup>
         <PackageReference Include="MathNet.Numerics" Version="4.15.0" />
         <PackageReference Include="UnitsNet" Version="4.87.0" />
-        <PackageReference Include="andrefmello91.Extensions" Version="1.0.3" />
-        <PackageReference Include="andrefmello91.OnPlaneComponents" Version="1.0.5" />
-        <PackageReference Include="andrefmello91.Material" Version="1.0.6" />
-        <PackageReference Include="andrefmello91.ReinforcedConcreteMembrane" Version="1.0.7" />
+        <ProjectReference Include="..\..\FEMAnalysis\andrefmello91.FEMAnalysis\andrefmello91.FEMAnalysis.csproj" />
+    </ItemGroup>
+    
+    <ItemGroup Condition="'$(Configuration)'=='Release'">
+        <PackageReference Include="andrefmello91.Extensions" Version="1.0.4" />
+        <PackageReference Include="andrefmello91.OnPlaneComponents" Version="1.0.7" />
+        <PackageReference Include="andrefmello91.Material" Version="1.0.7" />
+        <PackageReference Include="andrefmello91.ReinforcedConcreteMembrane" Version="1.0.8" />
     </ItemGroup>
 
-    <ItemGroup>
-      <ProjectReference Include="..\..\FEMAnalysis\andrefmello91.FEMAnalysis\andrefmello91.FEMAnalysis.csproj" />
+    <ItemGroup Condition="'$(Configuration)'=='Debug'">
+        <ProjectReference Include="..\..\Extensions\andrefmello91.Extensions\andrefmello91.Extensions.csproj" />
+        <ProjectReference Include="..\..\OnPlaneComponents\andrefmello91.OnPlaneComponents\andrefmello91.OnPlaneComponents.csproj" />
+        <ProjectReference Include="..\..\Material\andrefmello91.Material\andrefmello91.Material.csproj" />
+        <ProjectReference Include="..\..\ReinforcedConcreteMembrane\andrefmello91.ReinforcedConcreteMembrane\andrefmello91.ReinforcedConcreteMembrane.csproj" />
     </ItemGroup>
 
 </Project>

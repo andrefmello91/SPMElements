@@ -87,7 +87,9 @@ namespace andrefmello91.SPMElements
 					sig2 = -tau.Abs() * (rLambda + 1 / rLambda);
 				}
 
-				var theta1 = tau >= Pressure.Zero ? Constants.PiOver4 : -Constants.PiOver4;
+				var theta1 = tau >= Pressure.Zero 
+					? Constants.PiOver4 
+					: -Constants.PiOver4;
 
 				return new PrincipalStressState(Pressure.Zero, sig2, theta1);
 			}

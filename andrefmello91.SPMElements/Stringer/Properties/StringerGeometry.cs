@@ -219,6 +219,7 @@ namespace andrefmello91.SPMElements.StringerProperties
 		/// <inheritdoc />
 		public override string ToString() =>
 			$"Lenght = {Length}\n" +
+			$"Angle = {Angle.ToDegree():0.00} deg\n" +
 			CrossSection;
 
 		#endregion

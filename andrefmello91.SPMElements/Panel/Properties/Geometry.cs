@@ -228,6 +228,7 @@ namespace andrefmello91.SPMElements.PanelProperties
 		/// <inheritdoc />
 		public override string ToString() =>
 			$"{Vertices}\n" +
+			// Edges.Select(e => $"{nameof(e)}\n{e}\n").Aggregate((i, f) => i + f) +
 			$"Width = {Width}";
 
 		/// <inheritdoc />

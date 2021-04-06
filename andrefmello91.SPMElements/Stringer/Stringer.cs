@@ -62,7 +62,7 @@ namespace andrefmello91.SPMElements
 		/// <summary>
 		///     Get normal forces acting in the stringer.
 		/// </summary>
-		public (Force N1, Force N3) NormalForces => (Force.FromNewtons(LocalForces[0]), Force.FromNewtons(-LocalForces[2]));
+		public (Force N1, Force N3) NormalForces => (Force.FromNewtons(-LocalForces[0]), Force.FromNewtons(LocalForces[2]));
 
 		/// <summary>
 		///     Get the <see cref="UniaxialReinforcement" /> of this element.

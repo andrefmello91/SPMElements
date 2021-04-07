@@ -65,8 +65,8 @@ namespace andrefmello91.SPMElements
 		///     Calculate B Matrix based on stringer length.
 		/// </summary>
 		/// <param name="stringerLength">The length of the stringer.</param>
-		public static Matrix<double> CalculateBMatrix(Length stringerLength) =>
-			1.00 / stringerLength.Millimeters * new double[,]
+		private static Matrix<double> CalculateBMatrix(Length stringerLength) =>
+			1D / stringerLength.Millimeters * new double[,]
 			{
 				{ -3, 4, -1 },
 				{ -1, 0, 1 },
@@ -121,7 +121,7 @@ namespace andrefmello91.SPMElements
 		/// <returns>
 		///     <see cref="Stringer" />
 		/// </returns>
-		public Stringer ToLinear() => new(Grip1, Grip2, Grip3, Geometry.CrossSection, Concrete.Parameters, Concrete.Model, Reinforcement);
+		public Stringer ToLinear() => new(Grip1, Grip2, Grip3, Geometry.CrossSection, Concrete.Parameters, Concrete.Model, Reinforcement?.Clone());
 
 		#endregion
 

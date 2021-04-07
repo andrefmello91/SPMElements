@@ -97,13 +97,13 @@ namespace andrefmello91.SPMElements
 		/// <summary>
 		///     Get <see cref="Membrane" /> integration points.
 		/// </summary>
-		public Membrane[] IntegrationPoints { get; }
+		private Membrane[] IntegrationPoints { get; }
 
 		/// <summary>
 		///     Get/set panel reinforcement stress <see cref="Vector" />.
 		/// </summary>
 		/// <inheritdoc cref="Stresses" />
-		public Vector<double> ReinforcementStresses { get; private set; }
+		private Vector<double> ReinforcementStresses { get; set; }
 
 		/// <inheritdoc />
 		public override Matrix<double> Stiffness => InitialStiffness();
@@ -111,7 +111,7 @@ namespace andrefmello91.SPMElements
 		/// <summary>
 		///     Get panel strain <see cref="Vector" />.
 		/// </summary>
-		public Vector<double> StrainVector => BaMatrix * Displacements;
+		private Vector<double> StrainVector => BaMatrix * Displacements;
 
 		/// <summary>
 		///     Get panel stress <see cref="Vector" />.
@@ -119,7 +119,7 @@ namespace andrefmello91.SPMElements
 		/// <remarks>
 		///     Components in <see cref="PressureUnit.Megapascal" />.
 		/// </remarks>
-		public Vector<double> Stresses => ConcreteStresses + ReinforcementStresses;
+		private Vector<double> Stresses => ConcreteStresses + ReinforcementStresses;
 
 		/// <summary>
 		///     Get B <see cref="Matrix" /> to transform displacements in strains.
@@ -133,6 +133,7 @@ namespace andrefmello91.SPMElements
 		/// <summary>
 		///     Nonlinear panel object.
 		/// </summary>
+		/// <param name="width">Panel width.</param>
 		/// <inheritdoc />
 		public NLPanel(Node grip1, Node grip2, Node grip3, Node grip4, Vertices vertices, Length width, IParameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, WebReinforcement? reinforcement = null)
 			: this(grip1, grip2, grip3, grip4, new PanelGeometry(vertices, width), concreteParameters, model, reinforcement)
@@ -146,7 +147,7 @@ namespace andrefmello91.SPMElements
 		public NLPanel(Node grip1, Node grip2, Node grip3, Node grip4, PanelGeometry geometry, IParameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, WebReinforcement? reinforcement = null)
 			: base(grip1, grip2, grip3, grip4, geometry, concreteParameters, model, reinforcement)
 		{
-			IntegrationPoints = IntPoints().ToArray();
+			IntegrationPoints = IntPoints(concreteParameters, reinforcement, geometry.Width, model).ToArray();
 
 			// Initiate lazy field
 			_baMatrix = new Lazy<Matrix<double>>(() => CalculateBa(Geometry));
@@ -339,6 +340,16 @@ namespace andrefmello91.SPMElements
 				(Dc, Ds);
 		}
 
+		/// <summary>
+		///     Initiate <see cref="Membrane" /> integration points.
+		/// </summary>
+		/// <inheritdoc cref="NLPanel(Node, Node, Node, Node, Vertices, Length, IParameters, ConstitutiveModel, WebReinforcement)" />
+		private static IEnumerable<Membrane> IntPoints(IParameters concreteParameters, WebReinforcement? reinforcement, Length width, ConstitutiveModel model)
+		{
+			for (var i = 0; i < 4; i++)
+				yield return Membrane.Read(concreteParameters, reinforcement?.Clone(), width, model);
+		}
+
 		/// <inheritdoc />
 		public override void CalculateForces()
 		{
@@ -493,15 +504,6 @@ namespace andrefmello91.SPMElements
 			var ks = QPs * Ds * BA;
 
 			return kc + ks;
-		}
-
-		/// <summary>
-		///     Initiate <see cref="Membrane" /> integration points.
-		/// </summary>
-		private IEnumerable<Membrane> IntPoints()
-		{
-			for (var i = 0; i < 4; i++)
-				yield return Membrane.Read(Concrete.Parameters, Reinforcement?.Clone(), Geometry.Width);
 		}
 
 		#endregion

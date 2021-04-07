@@ -30,11 +30,6 @@
 		///     External nodes (mid grip to stringers and grip for panels).
 		/// </summary>
 		Internal,
-
-		/// <summary>
-		///     Displaced nodes (auxiliary, only for result drawing).
-		/// </summary>
-		Displaced
 	}
 
 	/// <summary>

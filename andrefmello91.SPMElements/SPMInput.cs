@@ -32,7 +32,8 @@ namespace andrefmello91.SPMElements
 			: this(stringers, panels, stringers
 				.SelectMany(s => s.Grips)
 				.Concat(panels.SelectMany(p => p.Grips))
-				.Distinct())
+				.Distinct()
+				.ToList())
 		{
 		}
 
@@ -43,11 +44,14 @@ namespace andrefmello91.SPMElements
 		/// <param name="panels">The collection of <see cref="Panels"/>'s.</param>
 		/// <param name="nodes">The collection of <see cref="Nodes"/>'s.</param>
 		public SPMInput(IEnumerable<Stringer> stringers, IEnumerable<Panel> panels, IEnumerable<Node> nodes)
-			: base(stringers.Concat<IFiniteElement>(panels))
+			: base(stringers.Concat<IFiniteElement>(panels).ToList())
 		{
 			Stringers = stringers.ToList();
 			Panels    = panels.ToList();
 			Nodes     = nodes.ToList();
+			
+			// Set stringer dimensions
+			Panels.SetStringerDimensions(Stringers);
 		}
 		
 		/// <inheritdoc />

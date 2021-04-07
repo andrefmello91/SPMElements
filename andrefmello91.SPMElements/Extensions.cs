@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using andrefmello91.OnPlaneComponents;
+using andrefmello91.SPMElements.PanelProperties;
 
 namespace andrefmello91.SPMElements
 {
@@ -20,14 +21,19 @@ namespace andrefmello91.SPMElements
 		public static Node GetByPosition(this IEnumerable<Node> nodes, Point position) => nodes.First(node => position == node.Position);
 
 		/// <summary>
-		///     Set stringer dimensions on edges of each panel.
+		///     Set stringer dimensions on edges of each <see cref="NLPanel"/>.
 		///     <para>See: <see cref="Edge.SetStringerDimension" /></para>
 		/// </summary>
 		/// <param name="stringers">The array containing all of the stringers.</param>
-		public static void SetStringerDimensions(this IEnumerable<NLPanel> panels, IEnumerable<Stringer> stringers)
+		public static void SetStringerDimensions(this IEnumerable<Panel> panels, IEnumerable<Stringer> stringers)
 		{
 			foreach (var panel in panels)
-				panel.SetStringersDimensions(stringers);
+				switch (panel)
+				{
+					case NLPanel nlPanel:
+						nlPanel.SetStringersDimensions(stringers);
+						break;
+				}
 		}
 
 		#endregion

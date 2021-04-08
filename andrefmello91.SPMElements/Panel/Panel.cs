@@ -429,7 +429,7 @@ namespace andrefmello91.SPMElements
 		{
 			var msgstr =
 				$"Panel {Number}\n\n" +
-				$"Grips: ({Grips[0]} - {Grips[1]} - {Grips[2]} - {Grips[3]})\n" +
+				$"Grips: ({GripNumbers[0]} - {GripNumbers[1]} - {GripNumbers[2]} - {GripNumbers[3]})\n" +
 				$"DoFIndex: {DoFIndex.Select(i => i.ToString()).Aggregate((i, f) => $"{i} - {f}")}\n" +
 				$"{Geometry}";
 

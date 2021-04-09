@@ -118,18 +118,17 @@ namespace andrefmello91.SPMElements.StringerProperties
 		/// <summary>
 		///     Divide a <see cref="StringerGeometry" /> in a <paramref name="number" /> of new ones.
 		/// </summary>
-		/// <param name="geometry">The <see cref="StringerGeometry" /> to divide</param>
-		/// <param name="number">The number of new <see cref="StringerGeometry" />'s.</param>
-		public static IEnumerable<StringerGeometry> Divide(StringerGeometry geometry, int number)
+		/// <param name="number">The number of new <see cref="StringerGeometry" />'s. Must be bigger than 1.</param>
+		/// <returns>
+		///		An empty collection if <paramref name="number"/> is smaller than 2. 
+		/// </returns>
+		public IEnumerable<StringerGeometry> Divide(int number)
 		{
 			if (number <= 1)
-			{
-				yield return geometry;
 				yield break;
-			}
 
-			var iPt = geometry.InitialPoint;
-			var ePt = geometry.EndPoint;
+			var iPt = InitialPoint;
+			var ePt = EndPoint;
 
 			// Calculate distances
 			var dx = (ePt.X - iPt.X) / number;
@@ -142,7 +141,7 @@ namespace andrefmello91.SPMElements.StringerProperties
 				ePt = new Point(iPt.X + dx, iPt.Y + dy);
 
 				// Return a divided geometry
-				yield return new StringerGeometry(iPt, ePt, geometry.CrossSection);
+				yield return new StringerGeometry(iPt, ePt, CrossSection);
 
 				// Set initial point
 				iPt = ePt;
@@ -160,12 +159,6 @@ namespace andrefmello91.SPMElements.StringerProperties
 
 		/// <inheritdoc />
 		public StringerGeometry Clone() => new(InitialPoint, EndPoint, CrossSection.Clone());
-
-		/// <summary>
-		///     Divide this <see cref="StringerGeometry" /> in a <paramref name="number" /> of new ones.
-		/// </summary>
-		/// <inheritdoc cref="Divide(StringerGeometry, int)" />
-		public IEnumerable<StringerGeometry> Divide(int number) => Divide(this, number);
 
 		/// <summary>
 		///     Change the <see cref="LengthUnit" /> of this.

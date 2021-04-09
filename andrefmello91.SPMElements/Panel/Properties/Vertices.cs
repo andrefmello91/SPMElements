@@ -133,7 +133,7 @@ namespace andrefmello91.SPMElements.PanelProperties
 		///     Divide a <see cref="Vertices" /> object into new ones.
 		/// </summary>
 		/// <remarks>
-		///     The object must be rectangular, otherwise a collection containing only it is returned.
+		///     This must be rectangular, otherwise an empty collection is returned.
 		/// </remarks>
 		/// <param name="vertices">The <see cref="Vertices" /> object to divide.</param>
 		/// <param name="rows">The required number of rows.</param>

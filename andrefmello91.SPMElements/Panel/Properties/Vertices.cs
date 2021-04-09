@@ -135,25 +135,21 @@ namespace andrefmello91.SPMElements.PanelProperties
 		/// <remarks>
 		///     This must be rectangular, otherwise an empty collection is returned.
 		/// </remarks>
-		/// <param name="vertices">The <see cref="Vertices" /> object to divide.</param>
 		/// <param name="rows">The required number of rows.</param>
 		/// <param name="columns">The required number of columns.</param>
-		public static IEnumerable<Vertices> Divide(Vertices vertices, int rows, int columns)
+		public IEnumerable<Vertices> Divide(int rows, int columns)
 		{
-			if (!vertices.IsRectangular)
-			{
-				yield return vertices;
+			if (!IsRectangular)
 				yield break;
-			}
 
 			// Get distances
-			var dx = (vertices.Vertex2.X - vertices.Vertex1.X) / columns;
-			var dy = (vertices.Vertex4.Y - vertices.Vertex1.Y) / rows;
+			var dx = (Vertex2.X - Vertex1.X) / columns;
+			var dy = (Vertex4.Y - Vertex1.Y) / rows;
 
 			for (var r = 0; r < rows; r++)
 			{
 				// Get initial vertex for this row
-				var v1 = new Point(vertices.Vertex1.X, vertices.Vertex1.Y + r * dy);
+				var v1 = new Point(Vertex1.X, Vertex1.Y + r * dy);
 
 				for (var c = 0; c < columns; c++)
 				{
@@ -170,12 +166,6 @@ namespace andrefmello91.SPMElements.PanelProperties
 				}
 			}
 		}
-
-		/// <summary>
-		///     Divide this object into new ones.
-		/// </summary>
-		/// <inheritdoc cref="Divide(Vertices, int, int)" />
-		public IEnumerable<Vertices> Divide(int rows, int columns) => Divide(this, rows, columns);
 
 		/// <summary>
 		///     Get vertices as an array.

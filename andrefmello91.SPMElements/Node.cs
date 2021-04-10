@@ -122,13 +122,13 @@ namespace andrefmello91.SPMElements
 		///     radians).
 		/// </summary>
 		/// <inheritdoc cref="GetDistance" />
-		public double GetAngle(Node? otherNode) => !(otherNode is null) ? Position.GetAngle(otherNode.Position) : 0;
+		public double GetAngle(Node? otherNode) => otherNode is not null ? Position.GetAngle(otherNode.Position) : 0;
 
 		/// <summary>
 		///     Return the distance to another <see cref="Node" />.
 		/// </summary>
 		/// <param name="otherNode">The other <see cref="Node" /> object.</param>
-		public Length GetDistance(Node? otherNode) => !(otherNode is null) ? Position.GetDistance(otherNode.Position) : Length.Zero;
+		public Length GetDistance(Node? otherNode) => otherNode is not null ? Position.GetDistance(otherNode.Position) : Length.Zero;
 
 		public int CompareTo(IGrip? other) => other is Node node
 			? CompareTo(node)
@@ -144,7 +144,7 @@ namespace andrefmello91.SPMElements
 		///     Returns true if both nodes positions are equal.
 		/// </summary>
 		/// <param name="other">The other <see cref="Node" /> object.</param>
-		public bool Equals(Node? other) => !(other is null) && Position == other.Position;
+		public bool Equals(Node? other) => other is not null && Position == other.Position;
 
 		/// <inheritdoc />
 		public override int GetHashCode() => Position.GetHashCode();
@@ -187,12 +187,12 @@ namespace andrefmello91.SPMElements
 		/// <summary>
 		///     Returns true if both nodes positions are equal.
 		/// </summary>
-		public static bool operator ==(Node? left, Node? right) => !(left is null) && left.Equals(right);
+		public static bool operator ==(Node? left, Node? right) => left is not null && left.Equals(right);
 
 		/// <summary>
 		///     Returns true if both nodes positions are different.
 		/// </summary>
-		public static bool operator !=(Node? left, Node? right) => !(left is null) && !left.Equals(right);
+		public static bool operator !=(Node? left, Node? right) => left is not null && !left.Equals(right);
 
 		#endregion
 

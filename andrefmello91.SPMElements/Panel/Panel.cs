@@ -175,7 +175,7 @@ namespace andrefmello91.SPMElements
 
 			Reinforcement = reinforcement;
 
-			if (!(Reinforcement is null))
+			if (Reinforcement is not null)
 				Reinforcement.Width = Geometry.Width;
 
 			// Initiate lazy members
@@ -419,7 +419,7 @@ namespace andrefmello91.SPMElements
 		///     Returns true if <paramref name="other" />'s <see cref="Geometry" /> is equal.
 		/// </summary>
 		/// <param name="other">The other <see cref="Panel" /> object to compare.</param>
-		public bool Equals(Panel? other) => !(other is null) && Geometry == other.Geometry;
+		public bool Equals(Panel? other) => other is not null && Geometry == other.Geometry;
 
 		/// <inheritdoc />
 		public override int GetHashCode() => Geometry.GetHashCode();
@@ -433,7 +433,7 @@ namespace andrefmello91.SPMElements
 				$"DoFIndex: {DoFIndex.Select(i => i.ToString()).Aggregate((i, f) => $"{i} - {f}")}\n" +
 				$"{Geometry}";
 
-			if (!(Reinforcement is null))
+			if (Reinforcement is not null)
 				msgstr += $"\n\n{Reinforcement}";
 
 			return msgstr;

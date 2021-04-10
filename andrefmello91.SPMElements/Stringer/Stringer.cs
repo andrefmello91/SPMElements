@@ -117,7 +117,7 @@ namespace andrefmello91.SPMElements
 			Reinforcement = reinforcement;
 			Concrete      = new UniaxialConcrete(concreteParameters, GetConcreteArea(this), model);
 
-			if (!(Reinforcement is null))
+			if (Reinforcement is not null)
 				Reinforcement.ConcreteArea = Concrete.Area;
 
 			// Initiate lazy members
@@ -228,7 +228,7 @@ namespace andrefmello91.SPMElements
 		///     Returns true if <see cref="Geometry" /> of <paramref name="other" /> is equal to this.
 		/// </summary>
 		/// <param name="other"></param>
-		public bool Equals(Stringer? other) => !(other is null) && Geometry == other.Geometry;
+		public bool Equals(Stringer? other) => other is not null && Geometry == other.Geometry;
 
 		/// <inheritdoc />
 		public override int GetHashCode() => Geometry.GetHashCode();
@@ -242,7 +242,7 @@ namespace andrefmello91.SPMElements
 				$"DoFIndex: {DoFIndex.Select(i => i.ToString()).Aggregate((i, f) => $"{i} - {f}")}\n" +
 				$"{Geometry}";
 
-			if (!(Reinforcement is null))
+			if (Reinforcement is not null)
 				msgstr += $"\n\n{Reinforcement}";
 
 			return msgstr;

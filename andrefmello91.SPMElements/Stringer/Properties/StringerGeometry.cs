@@ -75,7 +75,7 @@ namespace andrefmello91.SPMElements.StringerProperties
 		///     <para>Default: <seealso cref="LengthUnit.Millimeter" />.</para>
 		/// </param>
 		public StringerGeometry(Point initialPoint, Point endPoint, double width, double height, LengthUnit unit = LengthUnit.Millimeter)
-			: this(initialPoint.Convert(unit), endPoint, Length.From(width, unit), Length.From(height, unit))
+			: this(initialPoint.Convert(unit), endPoint, (Length) width.As(unit), (Length) height.As(unit))
 		{
 		}
 

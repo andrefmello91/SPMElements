@@ -72,7 +72,7 @@ namespace andrefmello91.SPMElements.StringerProperties
 		/// </param>
 		/// <inheritdoc cref="CrossSection(Length, Length)" />
 		public CrossSection(double width, double height, LengthUnit unit = LengthUnit.Millimeter)
-			: this(Length.From(width, unit), Length.From(height, unit))
+			: this((Length) width.As(unit), (Length) height.As(unit))
 		{
 		}
 

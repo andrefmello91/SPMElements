@@ -130,14 +130,17 @@ namespace andrefmello91.SPMElements
 		/// <param name="otherNode">The other <see cref="Node" /> object.</param>
 		public Length GetDistance(Node? otherNode) => otherNode is not null ? Position.GetDistance(otherNode.Position) : Length.Zero;
 
+		/// <inheritdoc />
 		public int CompareTo(IGrip? other) => other is Node node
 			? CompareTo(node)
 			: 0;
 
+		/// <inheritdoc />
 		public int CompareTo(Node? other) => other is null
 			? 1
 			: Position.CompareTo(other.Position);
 
+		/// <inheritdoc />
 		public bool Equals(IGrip? other) => other is Node node && Equals(node);
 
 		/// <summary>

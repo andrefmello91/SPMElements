@@ -347,7 +347,7 @@ namespace andrefmello91.SPMElements
 		private static IEnumerable<Membrane> IntPoints(IParameters concreteParameters, WebReinforcement? reinforcement, Length width, ConstitutiveModel model)
 		{
 			for (var i = 0; i < 4; i++)
-				yield return Membrane.Read(concreteParameters, reinforcement?.Clone(), width, model);
+				yield return Membrane.From(concreteParameters, reinforcement?.Clone(), width, model);
 		}
 
 		/// <inheritdoc />

@@ -100,7 +100,7 @@ namespace andrefmello91.SPMElements.PanelProperties
 		/// <param name="height">The height of the <seealso cref="Stringer" />, in <paramref name="unit" /> considered.</param>
 		/// <param name="unit">The <see cref="LengthUnit" /> of <paramref name="height" />.</param>
 		public void SetStringerDimension(double height, LengthUnit unit = LengthUnit.Millimeter) =>
-			SetStringerDimension(Length.From(height, unit));
+			SetStringerDimension((Length) height.As(unit));
 
 		/// <param name="height">The height of the <seealso cref="Stringer" />.</param>
 		/// <inheritdoc cref="SetStringerDimension(double, LengthUnit)" />

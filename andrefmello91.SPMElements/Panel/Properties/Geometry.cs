@@ -123,7 +123,7 @@ namespace andrefmello91.SPMElements.PanelProperties
 		/// <param name="vertices">Panel <see cref="PanelProperties.Vertices" /> object.</param>
 		/// <inheritdoc cref="PanelGeometry(IEnumerable{Point}, double, LengthUnit)" />
 		public PanelGeometry(Vertices vertices, double width, LengthUnit unit = LengthUnit.Millimeter)
-			: this(vertices, Length.From(width, unit))
+			: this(vertices, (Length) width.As(unit))
 		{
 		}
 
@@ -170,16 +170,14 @@ namespace andrefmello91.SPMElements.PanelProperties
 		/// <remarks>
 		///     The object must be rectangular, otherwise a collection containing only it is returned.
 		/// </remarks>
-		/// <param name="geometry">The <see cref="PanelGeometry" /> object to divide.</param>
 		/// <param name="rows">The required number of rows.</param>
 		/// <param name="columns">The required number of columns.</param>
-		public static IEnumerable<PanelGeometry> Divide(PanelGeometry geometry, int rows, int columns) => geometry.Vertices.Divide(rows, columns).Select(v => new PanelGeometry(v, geometry.Width));
-
-		/// <summary>
-		///     Divide this object into new ones.
-		/// </summary>
-		/// <inheritdoc cref="Divide(PanelGeometry, int, int)" />
-		public IEnumerable<PanelGeometry> Divide(int rows, int columns) => Divide(this, rows, columns);
+		public IEnumerable<PanelGeometry> Divide(int rows, int columns)
+		{
+			var width = Width;
+			
+			return Vertices.Divide(rows, columns).Select(v => new PanelGeometry(v, width));
+		}
 
 		/// <summary>
 		///     Change the <see cref="LengthUnit" /> of this.

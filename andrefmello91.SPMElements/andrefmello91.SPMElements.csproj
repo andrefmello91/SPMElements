@@ -19,21 +19,20 @@
         <PackageId>andrefmello91.SPMElements</PackageId>
         <PackageDescription>Finite element implementation for Stringer-Panel Method.</PackageDescription>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <PackageVersion>0.1.5</PackageVersion>
         <PackageReleaseNotes>Updated packages.</PackageReleaseNotes>
     </PropertyGroup>
 
     <ItemGroup>
         <PackageReference Include="MathNet.Numerics" Version="4.15.0" />
-        <PackageReference Include="UnitsNet" Version="4.87.0" />
+        <PackageReference Include="UnitsNet" Version="4.89.0" />
         <ProjectReference Include="..\..\FEMAnalysis\andrefmello91.FEMAnalysis\andrefmello91.FEMAnalysis.csproj" />
     </ItemGroup>
     
     <ItemGroup Condition="'$(Configuration)'=='Release'">
-        <PackageReference Include="andrefmello91.Extensions" Version="1.0.4" />
-        <PackageReference Include="andrefmello91.OnPlaneComponents" Version="1.0.8" />
-        <PackageReference Include="andrefmello91.Material" Version="1.0.7" />
-        <PackageReference Include="andrefmello91.ReinforcedConcreteMembrane" Version="1.0.8" />
+        <PackageReference Include="andrefmello91.Extensions" Version="1.0.6" />
+        <PackageReference Include="andrefmello91.OnPlaneComponents" Version="1.0.9" />
+        <PackageReference Include="andrefmello91.Material" Version="1.0.8" />
+        <PackageReference Include="andrefmello91.ReinforcedConcreteMembrane" Version="1.0.9" />
     </ItemGroup>
 
     <ItemGroup Condition="'$(Configuration)'=='Debug'">

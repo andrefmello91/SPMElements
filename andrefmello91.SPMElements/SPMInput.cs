@@ -7,7 +7,7 @@ namespace andrefmello91.SPMElements
 	/// <summary>
 	///		SPMInput class.
 	/// </summary>
-	public class SPMInput : FEMInput
+	public class SPMInput : FEMInput<SPMElement>
 	{
 		/// <summary>
 		///		Get the collection of stringers.
@@ -44,7 +44,7 @@ namespace andrefmello91.SPMElements
 		/// <param name="panels">The collection of <see cref="Panels"/>'s.</param>
 		/// <param name="nodes">The collection of <see cref="Nodes"/>'s.</param>
 		public SPMInput(IEnumerable<Stringer> stringers, IEnumerable<Panel> panels, IEnumerable<Node> nodes)
-			: base(stringers.Concat<IFiniteElement>(panels).ToList(), nodes)
+			: base(stringers.Concat<SPMElement>(panels).ToList(), nodes)
 		{
 			Stringers = stringers.ToList();
 			Panels    = panels.ToList();

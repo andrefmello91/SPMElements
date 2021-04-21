@@ -120,9 +120,10 @@ namespace andrefmello91.SPMElements
 			if (Reinforcement is not null)
 				Reinforcement.ConcreteArea = Concrete.Area;
 
-			// Initiate lazy members
-			TransMatrix  = new Lazy<Matrix<double>>(() => CalculateTransformationMatrix(Geometry.Angle));
-			LocStiffness = new Lazy<Matrix<double>>(() => CalculateStiffness(Concrete.Stiffness, Geometry.Length));
+			// Calculate matrices
+			TransformationMatrix = CalculateTransformationMatrix(Geometry.Angle);
+			LocalStiffness       = CalculateStiffness(Concrete.Stiffness, Geometry.Length);
+			Stiffness            = TransformationMatrix.Transpose() * LocalStiffness * TransformationMatrix;
 		}
 
 		#endregion

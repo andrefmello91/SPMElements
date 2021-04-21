@@ -1,7 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using andrefmello91.Extensions;
+using andrefmello91.FEMAnalysis;
 using andrefmello91.Material.Concrete;
 using andrefmello91.Material.Reinforcement;
 using andrefmello91.OnPlaneComponents;
@@ -15,14 +15,13 @@ using UnitsNet.Units;
 
 namespace andrefmello91.SPMElements
 {
-	public class NLPanel : Panel
+	public class NLPanel : Panel, INonlinearElement
 	{
 
 		#region Fields
 
 		// Auxiliary fields
-		private readonly Lazy<Matrix<double>> _baMatrix;
-		private Vector<double> _forces;
+		private readonly Matrix<double> _baMatrix;
 
 		#endregion
 
@@ -91,9 +90,6 @@ namespace andrefmello91.SPMElements
 		/// <inheritdoc />
 		public override Length CrackOpening => Membrane.CrackOpening(Reinforcement, ConcretePrincipalStrains);
 
-		/// <inheritdoc />
-		public override Vector<double> Forces => _forces;
-
 		/// <summary>
 		///     Get <see cref="Membrane" /> integration points.
 		/// </summary>
@@ -105,13 +101,10 @@ namespace andrefmello91.SPMElements
 		/// <inheritdoc cref="Stresses" />
 		private Vector<double> ReinforcementStresses { get; set; }
 
-		/// <inheritdoc />
-		public override Matrix<double> Stiffness => InitialStiffness();
-
 		/// <summary>
 		///     Get panel strain <see cref="Vector" />.
 		/// </summary>
-		private Vector<double> StrainVector => BaMatrix * Displacements;
+		private Vector<double> StrainVector => _baMatrix * Displacements;
 
 		/// <summary>
 		///     Get panel stress <see cref="Vector" />.
@@ -121,10 +114,11 @@ namespace andrefmello91.SPMElements
 		/// </remarks>
 		private Vector<double> Stresses => ConcreteStresses + ReinforcementStresses;
 
-		/// <summary>
-		///     Get B <see cref="Matrix" /> to transform displacements in strains.
-		/// </summary>
-		private Matrix<double> BaMatrix => _baMatrix.Value;
+		/// <inheritdoc />
+		public IterationResult CurrentIterationResult { get; set; }
+
+		/// <inheritdoc />
+		public IterationResult LastIterationResult { get; set; }
 
 		#endregion
 
@@ -148,9 +142,8 @@ namespace andrefmello91.SPMElements
 			: base(grip1, grip2, grip3, grip4, geometry, concreteParameters, model, reinforcement)
 		{
 			IntegrationPoints = IntPoints(concreteParameters, reinforcement, geometry.Width, model).ToArray();
-
-			// Initiate lazy field
-			_baMatrix = new Lazy<Matrix<double>>(() => CalculateBa(Geometry));
+			_baMatrix         = CalculateBa(Geometry);
+			Stiffness         = InitialStiffness();
 		}
 
 		#endregion
@@ -350,14 +343,6 @@ namespace andrefmello91.SPMElements
 				yield return Membrane.From(concreteParameters, reinforcement?.Clone(), width, model);
 		}
 
-		/// <inheritdoc />
-		public override void CalculateForces()
-		{
-			// Calculate stresses, forces and update stiffness
-			CalculateStresses();
-			CalculateGripForces();
-		}
-
 		/// <summary>
 		///     Create a <see cref="Panel" /> object based in this nonlinear stringer.
 		/// </summary>
@@ -365,6 +350,14 @@ namespace andrefmello91.SPMElements
 		///     <see cref="Panel" />
 		/// </returns>
 		public Panel ToLinear() => new(Grip1, Grip2, Grip3, Grip4, Geometry, Concrete.Parameters, Concrete.Model, Reinforcement?.Clone());
+
+		/// <inheritdoc />
+		public override void CalculateForces()
+		{
+			// Calculate stresses, forces and update stiffness
+			CalculateStresses();
+			CalculateGripForces();
+		}
 
 		/// <summary>
 		///     Calculate and set global force vector.
@@ -440,7 +433,7 @@ namespace andrefmello91.SPMElements
 			f5 = -a * t1 - b * t2 - t3;
 			f8 = b * t1 - a * t2 - t4;
 
-			_forces =
+			Forces =
 				new[]
 				{
 					f1, f2, f3, f4, f5, f6, f7, f8
@@ -494,7 +487,7 @@ namespace andrefmello91.SPMElements
 			var (Pc, Ps) = CalculateP(Geometry);
 
 			Matrix<double>
-				BA = BaMatrix,
+				BA = _baMatrix,
 				Q  = CalculateQ(Geometry);
 
 			var QPs = Q * Ps;

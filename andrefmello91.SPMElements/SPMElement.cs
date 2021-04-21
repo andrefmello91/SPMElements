@@ -16,20 +16,6 @@ namespace andrefmello91.SPMElements
 	public abstract class SPMElement : IFiniteElement, IEquatable<SPMElement>
 	{
 
-		#region Fields
-
-		/// <summary>
-		///     Auxiliary field to <see cref="LocalStiffness" />.
-		/// </summary>
-		protected Lazy<Matrix<double>> LocStiffness;
-
-		/// <summary>
-		///     Auxiliary field to <see cref="TransformationMatrix" />.
-		/// </summary>
-		protected Lazy<Matrix<double>> TransMatrix;
-
-		#endregion
-
 		#region Properties
 
 		/// <summary>
@@ -61,18 +47,18 @@ namespace andrefmello91.SPMElements
 		/// <summary>
 		///     Get the local stiffness <see cref="Matrix" />.
 		/// </summary>
-		protected Matrix<double> LocalStiffness => LocStiffness.Value;
+		protected Matrix<double> LocalStiffness { get; set; }
 
 		/// <summary>
 		///     Get the transformation matrix to transform from local to global coordinate systems.
 		/// </summary>
-		protected Matrix<double> TransformationMatrix => TransMatrix.Value;
+		protected Matrix<double> TransformationMatrix { get; set; }
 
 		/// <inheritdoc />
-		public Vector<double> Displacements => this.GetDisplacementsFromGrips();
+		public Vector<double> Displacements { get; set; }
 
 		/// <inheritdoc />
-		public virtual Vector<double> Forces => TransformationMatrix.Transpose() * LocalForces;
+		public Vector<double> Forces { get; set; }
 
 		/// <inheritdoc />
 		IGrip[] IFiniteElement.Grips => Grips.Cast<IGrip>().ToArray();
@@ -83,7 +69,7 @@ namespace andrefmello91.SPMElements
 		public abstract Node[] Grips { get; }
 
 		/// <inheritdoc />
-		public virtual Matrix<double> Stiffness => TransformationMatrix.Transpose() * LocalStiffness * TransformationMatrix;
+		public Matrix<double> Stiffness { get; set; }
 
 		/// <inheritdoc />
 		public int[] DoFIndex => GlobalIndexes(Grips).ToArray();
@@ -112,8 +98,9 @@ namespace andrefmello91.SPMElements
 
 			// Approximate small values to zero
 			LocalForces.CoerceZero(0.001);
+			Forces = TransformationMatrix.Transpose() * LocalForces;
 		}
-
+		
 		#endregion
 
 		#region Operators

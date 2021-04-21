@@ -1,7 +1,7 @@
-﻿using System;
-using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using andrefmello91.Extensions;
+using andrefmello91.FEMAnalysis;
 using andrefmello91.Material.Concrete;
 using andrefmello91.Material.Reinforcement;
 using andrefmello91.OnPlaneComponents;
@@ -16,13 +16,13 @@ namespace andrefmello91.SPMElements
 	/// <summary>
 	///     Nonlinear stringer class.
 	/// </summary>
-	public class NLStringer : Stringer
+	public class NLStringer : Stringer, INonlinearElement
 	{
 
 		#region Fields
 
 		// Auxiliary fields
-		private readonly Lazy<Matrix<double>> _bMatrix;
+		private readonly Matrix<double> _bMatrix;
 		private Force _n1, _n3;
 
 		#endregion
@@ -36,14 +36,15 @@ namespace andrefmello91.SPMElements
 		protected override Vector<double> LocalForces => new[] { -_n1.Newtons, _n1.Newtons - _n3.Newtons, _n3.Newtons }.ToVector();
 
 		/// <summary>
-		///     Get B <see cref="Matrix" /> to transform displacements in strains.
-		/// </summary>
-		private Matrix<double> BMatrix => _bMatrix.Value;
-
-		/// <summary>
 		///     Get the strain <see cref="Vector" />.
 		/// </summary>
-		private Vector<double> Strains => BMatrix * LocalDisplacements;
+		private Vector<double> Strains => _bMatrix * LocalDisplacements;
+
+		/// <inheritdoc />
+		public IterationResult CurrentIterationResult { get; set; }
+
+		/// <inheritdoc />
+		public IterationResult LastIterationResult { get; set; }
 
 		#endregion
 
@@ -55,7 +56,7 @@ namespace andrefmello91.SPMElements
 		/// <inheritdoc cref="Stringer(Node, Node, Node, CrossSection, IParameters, ConstitutiveModel, UniaxialReinforcement)" />
 		public NLStringer(Node grip1, Node grip2, Node grip3, CrossSection crossSection, IParameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, UniaxialReinforcement? reinforcement = null)
 			: base(grip1, grip2, grip3, crossSection, concreteParameters, model, reinforcement) =>
-			_bMatrix = new Lazy<Matrix<double>>(() => CalculateBMatrix(Geometry.Length));
+			_bMatrix = CalculateBMatrix(Geometry.Length);
 
 		#endregion
 
@@ -104,6 +105,14 @@ namespace andrefmello91.SPMElements
 				? Length.FromMillimeters(21)
 				: Length.FromMillimeters(21) + 0.155 * reinforcement.BarDiameter / reinforcement.Ratio;
 
+		/// <summary>
+		///     Create a <see cref="Stringer" /> object based in this nonlinear stringer.
+		/// </summary>
+		/// <returns>
+		///     <see cref="Stringer" />
+		/// </returns>
+		public Stringer ToLinear() => new(Grip1, Grip2, Grip3, Geometry.CrossSection, Concrete.Parameters, Concrete.Model, Reinforcement?.Clone());
+
 		/// <inheritdoc />
 		public override void CalculateForces()
 		{
@@ -114,14 +123,6 @@ namespace andrefmello91.SPMElements
 			_n1 = CalculateForce(eps[0], Concrete, Reinforcement);
 			_n3 = CalculateForce(eps[2], Concrete, Reinforcement);
 		}
-
-		/// <summary>
-		///     Create a <see cref="Stringer" /> object based in this nonlinear stringer.
-		/// </summary>
-		/// <returns>
-		///     <see cref="Stringer" />
-		/// </returns>
-		public Stringer ToLinear() => new(Grip1, Grip2, Grip3, Geometry.CrossSection, Concrete.Parameters, Concrete.Model, Reinforcement?.Clone());
 
 		#endregion
 

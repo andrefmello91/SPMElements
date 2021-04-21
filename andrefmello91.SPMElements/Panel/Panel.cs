@@ -179,8 +179,9 @@ namespace andrefmello91.SPMElements
 				Reinforcement.Width = Geometry.Width;
 
 			// Initiate lazy members
-			TransMatrix  = new Lazy<Matrix<double>>(() => CalculateTransformationMatrix(Geometry));
-			LocStiffness = new Lazy<Matrix<double>>(() => CalculateStiffness(Geometry, Concrete.Parameters.TransverseModule));
+			TransformationMatrix = CalculateTransformationMatrix(Geometry);
+			LocalStiffness       = CalculateStiffness(Geometry, Concrete.Parameters.TransverseModule);
+			Stiffness            = TransformationMatrix.Transpose() * LocalStiffness * TransformationMatrix;
 		}
 
 		#endregion

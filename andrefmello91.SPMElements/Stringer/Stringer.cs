@@ -218,7 +218,9 @@ namespace andrefmello91.SPMElements
 		/// <returns>
 		///     <see cref="NLStringer" />
 		/// </returns>
-		public NLStringer ToNonlinear() => new(Grip1, Grip2, Grip3, Geometry.CrossSection, Concrete.Parameters, Concrete.Model, Reinforcement?.Clone());
+		public NLStringer ToNonlinear() => this is NLStringer nlStringer 
+			? nlStringer 
+			: new NLStringer(Grip1, Grip2, Grip3, Geometry.CrossSection, Concrete.Parameters, Concrete.Model, Reinforcement?.Clone());
 
 		/// <inheritdoc />
 		public int CompareTo(Stringer? other) => other is null

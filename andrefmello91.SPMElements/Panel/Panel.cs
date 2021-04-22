@@ -409,7 +409,9 @@ namespace andrefmello91.SPMElements
 		/// <returns>
 		///     <see cref="NLPanel" />
 		/// </returns>
-		public Panel ToNonlinear() => new NLPanel(Grip1, Grip2, Grip3, Grip4, Geometry, Concrete.Parameters, Concrete.Model, Reinforcement?.Clone());
+		public NLPanel ToNonlinear() => this is NLPanel nlPanel
+			? nlPanel
+			: new NLPanel(Grip1, Grip2, Grip3, Grip4, Geometry, Concrete.Parameters, Concrete.Model, Reinforcement?.Clone());
 
 		/// <inheritdoc />
 		public int CompareTo(Panel? other) => other is null

@@ -91,9 +91,6 @@ namespace andrefmello91.SPMElements
 			}
 		}
 
-		/// <inheritdoc />
-		protected override Vector<double> LocalForces { get; set; }
-
 		#endregion
 
 		#region Constructors

@@ -42,7 +42,7 @@ namespace andrefmello91.SPMElements
 		/// <remarks>
 		///     Components in <see cref="ForceUnit.Newton" />.
 		/// </remarks>
-		protected abstract Vector<double> LocalForces { get; set; }
+		protected Vector<double> LocalForces { get; set; }
 
 		/// <summary>
 		///     Get the local stiffness <see cref="Matrix" />.

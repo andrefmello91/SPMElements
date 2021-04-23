@@ -141,9 +141,11 @@ namespace andrefmello91.SPMElements
 		public NLPanel(Node grip1, Node grip2, Node grip3, Node grip4, PanelGeometry geometry, IParameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, WebReinforcement? reinforcement = null)
 			: base(grip1, grip2, grip3, grip4, geometry, concreteParameters, model, reinforcement)
 		{
-			IntegrationPoints = IntPoints(concreteParameters, reinforcement, geometry.Width, model).ToArray();
-			_baMatrix         = CalculateBa(Geometry);
-			Stiffness         = InitialStiffness();
+			IntegrationPoints      = IntPoints(concreteParameters, reinforcement, geometry.Width, model).ToArray();
+			_baMatrix              = CalculateBa(Geometry);
+			Stiffness              = InitialStiffness();
+			CurrentIterationResult = new IterationResult(Vector<double>.Build.Dense(8), Vector<double>.Build.Dense(8), Stiffness);
+			LastIterationResult    = CurrentIterationResult.Clone();
 		}
 
 		#endregion

@@ -32,9 +32,6 @@ namespace andrefmello91.SPMElements
 		/// <inheritdoc />
 		public override Length[] CrackOpenings => Strains.Select(eps => CrackOpening(Reinforcement, eps)).ToArray();
 
-		/// <inheritdoc />
-		protected override Vector<double> LocalForces => new[] { -_n1.Newtons, _n1.Newtons - _n3.Newtons, _n3.Newtons }.ToVector();
-
 		/// <summary>
 		///     Get the strain <see cref="Vector" />.
 		/// </summary>
@@ -55,8 +52,12 @@ namespace andrefmello91.SPMElements
 		/// </summary>
 		/// <inheritdoc cref="Stringer(Node, Node, Node, CrossSection, IParameters, ConstitutiveModel, UniaxialReinforcement)" />
 		public NLStringer(Node grip1, Node grip2, Node grip3, CrossSection crossSection, IParameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, UniaxialReinforcement? reinforcement = null)
-			: base(grip1, grip2, grip3, crossSection, concreteParameters, model, reinforcement) =>
-			_bMatrix = CalculateBMatrix(Geometry.Length);
+			: base(grip1, grip2, grip3, crossSection, concreteParameters, model, reinforcement)
+		{
+			_bMatrix               = CalculateBMatrix(Geometry.Length);
+			CurrentIterationResult = new IterationResult(Vector<double>.Build.Dense(6), Vector<double>.Build.Dense(6), Stiffness);
+			LastIterationResult    = CurrentIterationResult.Clone();
+		}
 
 		#endregion
 
@@ -122,6 +123,14 @@ namespace andrefmello91.SPMElements
 			// Calculate normal forces
 			_n1 = CalculateForce(eps[0], Concrete, Reinforcement);
 			_n3 = CalculateForce(eps[2], Concrete, Reinforcement);
+			
+			// Update forces
+			LocalForces = new[] { -_n1.Newtons, _n1.Newtons - _n3.Newtons, _n3.Newtons }.ToVector();
+			
+			// Approximate small values to zero
+			LocalForces.CoerceZero(0.001);
+			
+			Forces = TransformationMatrix.Transpose() * LocalForces;
 		}
 
 		#endregion

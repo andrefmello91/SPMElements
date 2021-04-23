@@ -136,9 +136,6 @@ namespace andrefmello91.SPMElements
 		/// </summary>
 		public WebReinforcement? Reinforcement { get; }
 
-		/// <inheritdoc />
-		protected override Vector<double> LocalForces { get; set; }
-
 		#endregion
 
 		#region Constructors

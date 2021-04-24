@@ -34,7 +34,7 @@ namespace andrefmello91.SPMElements
 		/// <remarks>
 		///     Components in <see cref="LengthUnit.Millimeter" />.
 		/// </remarks>
-		protected Vector<double> LocalDisplacements => TransformationMatrix * Displacements;
+		protected virtual Vector<double> LocalDisplacements { get; set; }
 
 		/// <summary>
 		///     Get the force <see cref="Vector" />, in local coordinate system.
@@ -42,12 +42,12 @@ namespace andrefmello91.SPMElements
 		/// <remarks>
 		///     Components in <see cref="ForceUnit.Newton" />.
 		/// </remarks>
-		protected Vector<double> LocalForces { get; set; }
+		protected virtual Vector<double> LocalForces { get; set; }
 
 		/// <summary>
 		///     Get the local stiffness <see cref="Matrix" />.
 		/// </summary>
-		protected Matrix<double> LocalStiffness { get; set; }
+		protected virtual Matrix<double> LocalStiffness { get; set; }
 
 		/// <summary>
 		///     Get the transformation matrix to transform from local to global coordinate systems.
@@ -55,10 +55,10 @@ namespace andrefmello91.SPMElements
 		protected Matrix<double> TransformationMatrix { get; set; }
 
 		/// <inheritdoc />
-		public Vector<double> Displacements { get; set; }
+		public virtual Vector<double> Displacements { get; set; }
 
 		/// <inheritdoc />
-		public Vector<double> Forces { get; set; }
+		public virtual Vector<double> Forces { get; set; }
 
 		/// <inheritdoc />
 		IGrip[] IFiniteElement.Grips => Grips.Cast<IGrip>().ToArray();
@@ -69,7 +69,7 @@ namespace andrefmello91.SPMElements
 		public abstract Node[] Grips { get; }
 
 		/// <inheritdoc />
-		public Matrix<double> Stiffness { get; set; }
+		public virtual Matrix<double> Stiffness { get; set; }
 
 		/// <inheritdoc />
 		public int[] DoFIndex => GlobalIndexes(Grips).ToArray();
@@ -100,7 +100,17 @@ namespace andrefmello91.SPMElements
 			LocalForces.CoerceZero(0.001);
 			Forces = TransformationMatrix.Transpose() * LocalForces;
 		}
-		
+
+		/// <inheritdoc />
+		public virtual void UpdateDisplacements()
+		{
+			Displacements      = this.GetDisplacementsFromGrips();
+			LocalDisplacements = TransformationMatrix * Displacements;
+		}
+
+		/// <inheritdoc />
+		public abstract void UpdateStiffness();
+
 		#endregion
 
 		#region Operators

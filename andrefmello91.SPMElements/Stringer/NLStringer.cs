@@ -16,7 +16,7 @@ namespace andrefmello91.SPMElements
 	/// <summary>
 	///     Nonlinear stringer class.
 	/// </summary>
-	public class NLStringer : Stringer, INonlinearElement
+	public class NLStringer : Stringer
 	{
 
 		#region Fields
@@ -24,6 +24,20 @@ namespace andrefmello91.SPMElements
 		// Auxiliary fields
 		private readonly Matrix<double> _bMatrix;
 		private Force _n1, _n3;
+		
+		/// <summary>
+		///		Results of current iteration.
+		/// </summary>
+		/// <remarks>
+		///		In local coordinate system.
+		/// </remarks>
+		private readonly IterationResult _currentIteration;
+
+		/// <summary>
+		///		Results of the last iteration.
+		/// </summary>
+		/// <inheritdoc cref="_currentIteration"/>
+		private readonly IterationResult _lastIteration;
 
 		#endregion
 
@@ -38,10 +52,26 @@ namespace andrefmello91.SPMElements
 		private Vector<double> Strains => _bMatrix * LocalDisplacements;
 
 		/// <inheritdoc />
-		public IterationResult CurrentIterationResult { get; set; }
+		protected override Vector<double> LocalDisplacements
+		{
+			get => _currentIteration.Displacements;
+			set
+			{
+				_lastIteration.Displacements    = _currentIteration.Displacements;
+				_currentIteration.Displacements = value;
+			}
+		}
 
 		/// <inheritdoc />
-		public IterationResult LastIterationResult { get; set; }
+		protected override Matrix<double> LocalStiffness
+		{
+			get => _currentIteration.Stiffness;
+			set
+			{
+				_lastIteration.Stiffness    = _currentIteration.Stiffness;
+				_currentIteration.Stiffness = value;
+			}
+		}
 
 		#endregion
 
@@ -52,11 +82,19 @@ namespace andrefmello91.SPMElements
 		/// </summary>
 		/// <inheritdoc cref="Stringer(Node, Node, Node, CrossSection, IParameters, ConstitutiveModel, UniaxialReinforcement)" />
 		public NLStringer(Node grip1, Node grip2, Node grip3, CrossSection crossSection, IParameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, UniaxialReinforcement? reinforcement = null)
-			: base(grip1, grip2, grip3, crossSection, concreteParameters, model, reinforcement)
+			: base(grip1, grip2, grip3, crossSection)
 		{
-			_bMatrix               = CalculateBMatrix(Geometry.Length);
-			CurrentIterationResult = new IterationResult(Vector<double>.Build.Dense(6), Vector<double>.Build.Dense(6), Stiffness);
-			LastIterationResult    = CurrentIterationResult.Clone();
+			Reinforcement = reinforcement;
+			Concrete      = new UniaxialConcrete(concreteParameters, GetConcreteArea(this), model);
+
+			if (Reinforcement is not null)
+				Reinforcement.ConcreteArea = Concrete.Area;
+			
+			_bMatrix          = CalculateBMatrix(Geometry.Length);
+			_currentIteration = new IterationResult(Vector<double>.Build.Dense(3), Vector<double>.Build.Dense(3), Matrix<double>.Build.Dense(3, 3));
+			_lastIteration    = _currentIteration.Clone();
+			
+			InitiateStiffness();
 		}
 
 		#endregion
@@ -131,6 +169,14 @@ namespace andrefmello91.SPMElements
 			LocalForces.CoerceZero(0.001);
 			
 			Forces = TransformationMatrix.Transpose() * LocalForces;
+		}
+
+		/// <inheritdoc />
+		public override void UpdateStiffness()
+		{
+			LocalStiffness += NonlinearAnalysis.TangentIncrement(LocalStiffness, _lastIteration.Stiffness, LocalDisplacements, _lastIteration.Displacements);
+
+			Stiffness = TransformationMatrix.Transpose() * LocalStiffness * TransformationMatrix;
 		}
 
 		#endregion

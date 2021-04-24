@@ -89,7 +89,7 @@ namespace andrefmello91.SPMElements
 			analysisType switch
 			{
 				AnalysisType.Linear => new SPMInput(stringers, panels, nodes),
-				_                   => new NLSPMInput(stringers.Select(s => s.ToNonlinear()).ToList(), panels.Select(p => p.ToNonlinear()).ToList(), nodes)
+				_                   => new SPMInput(stringers.Select(s => s.ToNonlinear()).ToList(), panels.Select(p => p.ToNonlinear()).ToList(), nodes)
 			};
 
 		/// <inheritdoc cref="From(IEnumerable{Stringer},IEnumerable{Panel},IEnumerable{Node},AnalysisType)" />
@@ -97,7 +97,7 @@ namespace andrefmello91.SPMElements
 			analysisType switch
 			{
 				AnalysisType.Linear => new SPMInput(stringers, panels),
-				_                   => new NLSPMInput(stringers.Select(s => s.ToNonlinear()).ToList(), panels.Select(p => p.ToNonlinear()).ToList())
+				_                   => new SPMInput(stringers.Select(s => s.ToNonlinear()).ToList(), panels.Select(p => p.ToNonlinear()).ToList())
 			};
 
 		/// <inheritdoc />
@@ -107,41 +107,6 @@ namespace andrefmello91.SPMElements
 			$"Number of panels: {Panels.Count}\n" +
 			$"Force vector: \n{ForceVector}\n" +
 			$"Constraint Index: {ConstraintIndex.Select(i => i.ToString()).Aggregate((i, f) => $"{i} - {f}")}";
-
-		#endregion
-
-	}
-
-	/// <summary>
-	///     Nonlinear SPM input class.
-	/// </summary>
-	public class NLSPMInput : SPMInput, IFEMInput<INonlinearElement>
-	{
-
-		#region Fields
-
-		private readonly List<INonlinearElement> _elements;
-
-		#endregion
-
-		#region Properties
-
-		/// <inheritdoc />
-		List<INonlinearElement> IFEMInput<INonlinearElement>.Elements => _elements;
-
-		#endregion
-
-		#region Constructors
-
-		/// <inheritdoc />
-		public NLSPMInput(IEnumerable<NLStringer> stringers, IEnumerable<NLPanel> panels)
-			: base(stringers, panels) =>
-			_elements = stringers.Concat<INonlinearElement>(panels).ToList();
-
-		/// <inheritdoc />
-		public NLSPMInput(IEnumerable<NLStringer> stringers, IEnumerable<NLPanel> panels, IEnumerable<Node> nodes)
-			: base(stringers, panels, nodes) =>
-			_elements = stringers.Concat<INonlinearElement>(panels).ToList();
 
 		#endregion
 

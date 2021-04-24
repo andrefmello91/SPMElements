@@ -26,7 +26,7 @@ namespace andrefmello91.SPMElements
 		/// <summary>
 		///     Get the <see cref="UniaxialConcrete" /> of this stringer.
 		/// </summary>
-		public UniaxialConcrete Concrete { get; }
+		public UniaxialConcrete Concrete { get; protected set; }
 
 		/// <summary>
 		///     Get crack openings in start, mid and end nodes.
@@ -67,7 +67,7 @@ namespace andrefmello91.SPMElements
 		/// <summary>
 		///     Get the <see cref="UniaxialReinforcement" /> of this element.
 		/// </summary>
-		public UniaxialReinforcement? Reinforcement { get; }
+		public UniaxialReinforcement? Reinforcement { get; protected set; }
 
 		/// <summary>
 		///     Get the state of forces acting at this stringer.
@@ -102,31 +102,46 @@ namespace andrefmello91.SPMElements
 		/// <param name="grip2">The center <see cref="Node" /> of the <see cref="Stringer" />.</param>
 		/// <param name="grip3">The final <see cref="Node" /> of the <see cref="Stringer" />.</param>
 		/// <param name="crossSection">The stringer cross-section.</param>
+		protected Stringer(Node grip1, Node grip2, Node grip3, CrossSection crossSection)
+		{
+			Geometry = new StringerGeometry(grip1.Position, grip3.Position, crossSection);
+			Grip1    = grip1;
+			Grip2    = grip2;
+			Grip3    = grip3;
+		}
+		
+		
+		/// <inheritdoc cref="Stringer(Node, Node, Node, CrossSection)"/>
 		/// <param name="concreteParameters">The concrete <see cref="IParameters" />.</param>
 		/// <param name="model">The concrete <see cref="ConstitutiveModel" />.</param>
 		/// <param name="reinforcement">The <see cref="UniaxialReinforcement" /> of this stringer.</param>
 		public Stringer(Node grip1, Node grip2, Node grip3, CrossSection crossSection, IParameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, UniaxialReinforcement? reinforcement = null)
+			: this(grip1, grip2, grip3, crossSection)
 		{
-			Geometry      = new StringerGeometry(grip1.Position, grip3.Position, crossSection);
-			Grip1         = grip1;
-			Grip2         = grip2;
-			Grip3         = grip3;
 			Reinforcement = reinforcement;
 			Concrete      = new UniaxialConcrete(concreteParameters, GetConcreteArea(this), model);
 
 			if (Reinforcement is not null)
 				Reinforcement.ConcreteArea = Concrete.Area;
-
-			// Calculate matrices
-			TransformationMatrix = CalculateTransformationMatrix(Geometry.Angle);
-			LocalStiffness       = CalculateStiffness(Concrete.Stiffness, Geometry.Length);
-			Stiffness            = TransformationMatrix.Transpose() * LocalStiffness * TransformationMatrix;
+			
+			InitiateStiffness();
 		}
 
 		#endregion
 
 		#region Methods
 
+		/// <summary>
+		///		Calculate initial stiffness elements.
+		/// </summary>
+		protected void InitiateStiffness()
+		{
+			// Calculate matrices
+            TransformationMatrix = CalculateTransformationMatrix(Geometry.Angle);
+            LocalStiffness       = CalculateStiffness(Concrete.Stiffness, Geometry.Length);
+            Stiffness            = TransformationMatrix.Transpose() * LocalStiffness * TransformationMatrix;
+		}
+		
 		/// <inheritdoc cref="Stringer(Node, Node, Node, CrossSection, IParameters, ConstitutiveModel, UniaxialReinforcement)" />
 		/// <summary>
 		///     Create a <see cref="Stringer" /> from a collection of <paramref name="nodes" /> and known positions of initial and
@@ -185,7 +200,7 @@ namespace andrefmello91.SPMElements
 		/// <summary>
 		///     Get the proper concrete area for a <paramref name="stringer" />.
 		/// </summary>
-		private static Area GetConcreteArea(Stringer stringer) =>
+		internal static Area GetConcreteArea(Stringer stringer) =>
 			stringer switch
 			{
 				NLStringer => stringer.Geometry.CrossSection.Area - (stringer.Reinforcement?.Area ?? Area.Zero),
@@ -208,6 +223,12 @@ namespace andrefmello91.SPMElements
 
 		/// <inheritdoc />
 		public override bool Equals(SPMElement? other) => other is Stringer stringer && Equals(stringer);
+
+		/// <inheritdoc />
+		public override void UpdateStiffness()
+		{
+			// Not needed in linear element.
+		}
 
 		/// <summary>
 		///     Create a <see cref="NLStringer" /> object based in this stringer.

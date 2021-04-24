@@ -15,13 +15,28 @@ using UnitsNet.Units;
 
 namespace andrefmello91.SPMElements
 {
-	public class NLPanel : Panel, INonlinearElement
+	public class NLPanel : Panel
 	{
 
 		#region Fields
 
 		// Auxiliary fields
 		private readonly Matrix<double> _baMatrix;
+
+				
+		/// <summary>
+		///		Results of current iteration.
+		/// </summary>
+		/// <remarks>
+		///		In global coordinate system.
+		/// </remarks>
+		private readonly IterationResult _currentIteration;
+
+		/// <summary>
+		///		Results of the last iteration.
+		/// </summary>
+		/// <inheritdoc cref="_currentIteration"/>
+		private readonly IterationResult _lastIteration;
 
 		#endregion
 
@@ -115,10 +130,26 @@ namespace andrefmello91.SPMElements
 		private Vector<double> Stresses => ConcreteStresses + ReinforcementStresses;
 
 		/// <inheritdoc />
-		public IterationResult CurrentIterationResult { get; set; }
+		public override Vector<double> Displacements
+		{
+			get => _currentIteration.Displacements;
+			set
+			{
+				_lastIteration.Displacements    = _currentIteration.Displacements;
+				_currentIteration.Displacements = value;
+			}
+		}
 
 		/// <inheritdoc />
-		public IterationResult LastIterationResult { get; set; }
+		public override Matrix<double> Stiffness
+		{
+			get => _currentIteration.Stiffness;
+			set
+			{
+				_lastIteration.Stiffness    = _currentIteration.Stiffness;
+				_currentIteration.Stiffness = value;
+			}
+		}
 
 		#endregion
 
@@ -139,13 +170,19 @@ namespace andrefmello91.SPMElements
 		/// </summary>
 		/// <inheritdoc />
 		public NLPanel(Node grip1, Node grip2, Node grip3, Node grip4, PanelGeometry geometry, IParameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, WebReinforcement? reinforcement = null)
-			: base(grip1, grip2, grip3, grip4, geometry, concreteParameters, model, reinforcement)
+			: base(grip1, grip2, grip3, grip4, geometry)
 		{
-			IntegrationPoints      = IntPoints(concreteParameters, reinforcement, geometry.Width, model).ToArray();
-			_baMatrix              = CalculateBa(Geometry);
-			Stiffness              = InitialStiffness();
-			CurrentIterationResult = new IterationResult(Vector<double>.Build.Dense(8), Vector<double>.Build.Dense(8), Stiffness);
-			LastIterationResult    = CurrentIterationResult.Clone();
+			Concrete = new BiaxialConcrete(concreteParameters, model);
+
+			Reinforcement = reinforcement;
+
+			if (Reinforcement is not null)
+				Reinforcement.Width = Geometry.Width;
+
+			IntegrationPoints = IntPoints(concreteParameters, reinforcement, geometry.Width, model).ToArray();
+			_baMatrix         = CalculateBa(Geometry);
+			_currentIteration = new IterationResult(Vector<double>.Build.Dense(8), Vector<double>.Build.Dense(8), InitialStiffness());
+			_lastIteration    = _currentIteration.Clone();
 		}
 
 		#endregion
@@ -480,6 +517,14 @@ namespace andrefmello91.SPMElements
 			}
 		}
 
+		/// <inheritdoc />
+		public override void UpdateDisplacements() =>
+			Displacements = this.GetDisplacementsFromGrips();
+
+		/// <inheritdoc />
+		public override void UpdateStiffness() =>
+			Stiffness += NonlinearAnalysis.TangentIncrement(Stiffness, _lastIteration.Stiffness, Displacements, _lastIteration.Displacements);
+
 		/// <summary>
 		///     Calculate initial stiffness <see cref="Matrix" />.
 		/// </summary>
@@ -488,15 +533,13 @@ namespace andrefmello91.SPMElements
 			var (Dc, Ds) = InitialMaterialStiffness(IntegrationPoints);
 			var (Pc, Ps) = CalculateP(Geometry);
 
-			Matrix<double>
-				BA = _baMatrix,
-				Q  = CalculateQ(Geometry);
+			var Q = CalculateQ(Geometry);
 
 			var QPs = Q * Ps;
 			var QPc = Q * Pc;
 
-			var kc = QPc * Dc * BA;
-			var ks = QPs * Ds * BA;
+			var kc = QPc * Dc * _baMatrix;
+			var ks = QPs * Ds * _baMatrix;
 
 			return kc + ks;
 		}

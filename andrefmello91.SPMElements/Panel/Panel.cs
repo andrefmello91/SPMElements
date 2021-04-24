@@ -51,7 +51,7 @@ namespace andrefmello91.SPMElements
 		/// <summary>
 		///     Get <see cref="BiaxialConcrete" /> of this.
 		/// </summary>
-		public BiaxialConcrete Concrete { get; }
+		public BiaxialConcrete Concrete { get; protected set; }
 
 		/// <summary>
 		///     Get average concrete <see cref="PrincipalStrainState" />.
@@ -134,18 +134,28 @@ namespace andrefmello91.SPMElements
 		/// <summary>
 		///     Get <see cref="WebReinforcement" /> of this.
 		/// </summary>
-		public WebReinforcement? Reinforcement { get; }
+		public WebReinforcement? Reinforcement { get; protected set; }
 
 		#endregion
 
 		#region Constructors
 
-		/// <inheritdoc cref="Panel(Node, Node, Node, Node, PanelGeometry, IParameters, ConstitutiveModel, WebReinforcement)" />
-		/// <param name="vertices">Panel <see cref="Vertices" /> object.</param>
-		/// <param name="width">Panel width.</param>
-		public Panel(Node grip1, Node grip2, Node grip3, Node grip4, Vertices vertices, Length width, IParameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, WebReinforcement? reinforcement = null)
-			: this(grip1, grip2, grip3, grip4, new PanelGeometry(vertices, width), concreteParameters, model, reinforcement)
+		/// <summary>
+		///     Elastic panel object.
+		/// </summary>
+		/// <param name="grip1">The center <see cref="Node" /> of bottom edge</param>
+		/// <param name="grip2">The center <see cref="Node" /> of right edge</param>
+		/// <param name="grip3">The center <see cref="Node" /> of top edge</param>
+		/// <param name="grip4">The center <see cref="Node" /> of left edge</param>
+		/// <param name="geometry">The <seealso cref="PanelGeometry" />.</param>
+		protected Panel(Node grip1, Node grip2, Node grip3, Node grip4, PanelGeometry geometry)
 		{
+			Grip1 = grip1;
+			Grip2 = grip2;
+			Grip3 = grip3;
+			Grip4 = grip4;
+
+			Geometry = geometry;
 		}
 
 		/// <summary>
@@ -160,14 +170,8 @@ namespace andrefmello91.SPMElements
 		/// <param name="model">The concrete <see cref="ConstitutiveModel" />.</param>
 		/// <param name="reinforcement">The <see cref="WebReinforcement" />.</param>
 		public Panel(Node grip1, Node grip2, Node grip3, Node grip4, PanelGeometry geometry, IParameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, WebReinforcement? reinforcement = null)
+			: this (grip1, grip2, grip3, grip4, geometry)
 		{
-			Grip1 = grip1;
-			Grip2 = grip2;
-			Grip3 = grip3;
-			Grip4 = grip4;
-
-			Geometry = geometry;
-
 			Concrete = new BiaxialConcrete(concreteParameters, model);
 
 			Reinforcement = reinforcement;
@@ -175,15 +179,30 @@ namespace andrefmello91.SPMElements
 			if (Reinforcement is not null)
 				Reinforcement.Width = Geometry.Width;
 
-			// Initiate lazy members
+			InitiateStiffness();
+		}
+
+		/// <inheritdoc cref="Panel(Node, Node, Node, Node, PanelGeometry, IParameters, ConstitutiveModel, WebReinforcement)" />
+		/// <param name="vertices">Panel <see cref="Vertices" /> object.</param>
+		/// <param name="width">Panel width.</param>
+		public Panel(Node grip1, Node grip2, Node grip3, Node grip4, Vertices vertices, Length width, IParameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, WebReinforcement? reinforcement = null)
+			: this(grip1, grip2, grip3, grip4, new PanelGeometry(vertices, width), concreteParameters, model, reinforcement)
+		{
+		}
+		
+		#endregion
+
+		#region Methods
+		
+		/// <summary>
+		///		Calculate initial stiffness elements.
+		/// </summary>
+		private void InitiateStiffness()
+		{
 			TransformationMatrix = CalculateTransformationMatrix(Geometry);
 			LocalStiffness       = CalculateStiffness(Geometry, Concrete.Parameters.TransverseModule);
 			Stiffness            = TransformationMatrix.Transpose() * LocalStiffness * TransformationMatrix;
 		}
-
-		#endregion
-
-		#region Methods
 
 		/// <summary>
 		///     Create a <see cref="Panel" /> from a collection of <paramref name="nodes" /> and tha panel geometry.
@@ -374,6 +393,12 @@ namespace andrefmello91.SPMElements
 
 		/// <inheritdoc />
 		public override bool Equals(SPMElement? other) => other is Panel panel && Equals(panel);
+
+		/// <inheritdoc />
+		public override void UpdateStiffness()
+		{
+			// Not needed in linear element.
+		}
 
 		/// <summary>
 		///     Returns true if <paramref name="obj" /> is <see cref="Panel" /> and <see cref="Geometry" /> is equal.

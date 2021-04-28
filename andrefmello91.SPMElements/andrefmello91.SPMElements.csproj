@@ -27,7 +27,12 @@
         <PackageReference Include="UnitsNet" Version="4.89.0" />
         <ProjectReference Include="..\..\FEMAnalysis\andrefmello91.FEMAnalysis\andrefmello91.FEMAnalysis.csproj" />
     </ItemGroup>
-    
+
+    <ItemGroup Condition="'$(TargetFramework)'=='netstandard2.0'">
+        <PackageReference Include="IndexRange" Version="1.0.0" />
+        <PackageReference Include="System.Memory" Version="4.5.4" />
+    </ItemGroup>
+
     <ItemGroup Condition="'$(Configuration)'=='Release'">
         <PackageReference Include="andrefmello91.Extensions" Version="1.0.6" />
         <PackageReference Include="andrefmello91.OnPlaneComponents" Version="1.0.9" />

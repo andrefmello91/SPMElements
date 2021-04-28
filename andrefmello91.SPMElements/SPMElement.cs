@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using andrefmello91.Extensions;
 using andrefmello91.FEMAnalysis;
@@ -22,6 +23,11 @@ namespace andrefmello91.SPMElements
 		///     Get the grip numbers of this element.
 		/// </summary>
 		public int[] GripNumbers => Grips.Select(g => g.Number).ToArray();
+
+		/// <summary>
+		///     Get the nodes of this element.
+		/// </summary>
+		public abstract Node[] Grips { get; }
 
 		/// <summary>
 		///     Get the maximum local force at this element.
@@ -61,15 +67,10 @@ namespace andrefmello91.SPMElements
 		public virtual Vector<double> Forces { get; set; }
 
 		/// <inheritdoc />
-		IGrip[] IFiniteElement.Grips => Grips.Cast<IGrip>().ToArray();
-
-		/// <summary>
-		///		Get the nodes of this element.
-		/// </summary>
-		public abstract Node[] Grips { get; }
+		public virtual Matrix<double> Stiffness { get; set; }
 
 		/// <inheritdoc />
-		public virtual Matrix<double> Stiffness { get; set; }
+		IGrip[] IFiniteElement.Grips => Grips.Cast<IGrip>().ToArray();
 
 		/// <inheritdoc />
 		public int[] DoFIndex => GlobalIndexes(Grips).ToArray();
@@ -80,6 +81,16 @@ namespace andrefmello91.SPMElements
 		#endregion
 
 		#region Methods
+
+		/// <summary>
+		///     The initial iteration values for SPM elements.
+		/// </summary>
+		/// <param name="size">The size of element's matrices and vectors.</param>
+		internal static IEnumerable<IterationResult> InitialValues(int size)
+		{
+			for (var i = 0; i < 3; i++)
+				yield return new IterationResult(size);
+		}
 
 		/// <inheritdoc />
 		public abstract int CompareTo(IFiniteElement? other);

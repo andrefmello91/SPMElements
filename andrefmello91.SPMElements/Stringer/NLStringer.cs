@@ -1,4 +1,5 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using andrefmello91.Extensions;
 using andrefmello91.FEMAnalysis;
@@ -23,21 +24,15 @@ namespace andrefmello91.SPMElements
 
 		// Auxiliary fields
 		private readonly Matrix<double> _bMatrix;
-		private Force _n1, _n3;
-		
-		/// <summary>
-		///		Results of current iteration.
-		/// </summary>
-		/// <remarks>
-		///		In local coordinate system.
-		/// </remarks>
-		private readonly IterationResult _currentIteration;
 
 		/// <summary>
-		///		Results of the last iteration.
+		///     The list of the last 20 iterations.
 		/// </summary>
-		/// <inheritdoc cref="_currentIteration"/>
-		private readonly IterationResult _lastIteration;
+		/// <remarks>
+		///     It's cleared when count achieves 20 elements.
+		/// </remarks>
+		private readonly List<IterationResult> _iterations = InitialValues(3).ToList();
+		private Force _n1, _n3;
 
 		#endregion
 
@@ -46,32 +41,44 @@ namespace andrefmello91.SPMElements
 		/// <inheritdoc />
 		public override Length[] CrackOpenings => Strains.Select(eps => CrackOpening(Reinforcement, eps)).ToArray();
 
-		/// <summary>
-		///     Get the strain <see cref="Vector" />.
-		/// </summary>
-		private Vector<double> Strains => _bMatrix * LocalDisplacements;
-
 		/// <inheritdoc />
 		protected override Vector<double> LocalDisplacements
 		{
-			get => _currentIteration.Displacements;
-			set
-			{
-				_lastIteration.Displacements    = _currentIteration.Displacements;
-				_currentIteration.Displacements = value;
-			}
+			get => OngoingIteration.Displacements;
+			set => OngoingIteration.Displacements = value;
 		}
 
 		/// <inheritdoc />
 		protected override Matrix<double> LocalStiffness
 		{
-			get => _currentIteration.Stiffness;
-			set
-			{
-				_lastIteration.Stiffness    = _currentIteration.Stiffness;
-				_currentIteration.Stiffness = value;
-			}
+			get => OngoingIteration.Stiffness;
+			set => OngoingIteration.Stiffness = value;
 		}
+
+		/// <summary>
+		///     The results of the current solution (last solved iteration [i - 1]).
+		/// </summary>
+		/// <inheritdoc cref="OngoingIteration" />
+		private IterationResult CurrentSolution => _iterations[^2];
+
+		/// <summary>
+		///     The results of the last solution (penultimate solved iteration [i - 2]).
+		/// </summary>
+		/// <inheritdoc cref="OngoingIteration" />
+		private IterationResult LastSolution => _iterations[^3];
+
+		/// <summary>
+		///     Results of the ongoing iteration.
+		/// </summary>
+		/// <remarks>
+		///     In local coordinate system.
+		/// </remarks>
+		private IterationResult OngoingIteration => _iterations[^1];
+
+		/// <summary>
+		///     Get the strain <see cref="Vector" />.
+		/// </summary>
+		private Vector<double> Strains => _bMatrix * LocalDisplacements;
 
 		#endregion
 
@@ -89,11 +96,9 @@ namespace andrefmello91.SPMElements
 
 			if (Reinforcement is not null)
 				Reinforcement.ConcreteArea = Concrete.Area;
-			
-			_bMatrix          = CalculateBMatrix(Geometry.Length);
-			_currentIteration = new IterationResult(Vector<double>.Build.Dense(3), Vector<double>.Build.Dense(3), Matrix<double>.Build.Dense(3, 3));
-			_lastIteration    = _currentIteration.Clone();
-			
+
+			_bMatrix = CalculateBMatrix(Geometry.Length);
+
 			InitiateStiffness();
 		}
 
@@ -144,14 +149,6 @@ namespace andrefmello91.SPMElements
 				? Length.FromMillimeters(21)
 				: Length.FromMillimeters(21) + 0.155 * reinforcement.BarDiameter / reinforcement.Ratio;
 
-		/// <summary>
-		///     Create a <see cref="Stringer" /> object based in this nonlinear stringer.
-		/// </summary>
-		/// <returns>
-		///     <see cref="Stringer" />
-		/// </returns>
-		public Stringer ToLinear() => new(Grip1, Grip2, Grip3, Geometry.CrossSection, Concrete.Parameters, Concrete.Model, Reinforcement?.Clone());
-
 		/// <inheritdoc />
 		public override void CalculateForces()
 		{
@@ -161,22 +158,37 @@ namespace andrefmello91.SPMElements
 			// Calculate normal forces
 			_n1 = CalculateForce(eps[0], Concrete, Reinforcement);
 			_n3 = CalculateForce(eps[2], Concrete, Reinforcement);
-			
+
 			// Update forces
 			LocalForces = new[] { -_n1.Newtons, _n1.Newtons - _n3.Newtons, _n3.Newtons }.ToVector();
-			
+
 			// Approximate small values to zero
 			LocalForces.CoerceZero(0.001);
-			
+
 			Forces = TransformationMatrix.Transpose() * LocalForces;
 		}
+
+		/// <summary>
+		///     Create a <see cref="Stringer" /> object based in this nonlinear stringer.
+		/// </summary>
+		/// <returns>
+		///     <see cref="Stringer" />
+		/// </returns>
+		public Stringer ToLinear() => new(Grip1, Grip2, Grip3, Geometry.CrossSection, Concrete.Parameters, Concrete.Model, Reinforcement?.Clone());
 
 		/// <inheritdoc />
 		public override void UpdateStiffness()
 		{
-			LocalStiffness += NonlinearAnalysis.TangentIncrement(LocalStiffness, _lastIteration.Stiffness, LocalDisplacements, _lastIteration.Displacements);
+			LocalStiffness += NonlinearAnalysis.TangentIncrement(CurrentSolution.Stiffness, LastSolution.Stiffness, CurrentSolution.Displacements, LastSolution.Displacements);
 
 			Stiffness = TransformationMatrix.Transpose() * LocalStiffness * TransformationMatrix;
+
+			// Increase iteration
+			_iterations.Add(OngoingIteration.Clone());
+			OngoingIteration.Number++;
+			
+			// Clear iterations leaving the last 3
+			_iterations.ClearIf(l => l.Count > 5, ^3..^1);
 		}
 
 		#endregion

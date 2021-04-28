@@ -23,20 +23,13 @@ namespace andrefmello91.SPMElements
 		// Auxiliary fields
 		private readonly Matrix<double> _baMatrix;
 
-				
 		/// <summary>
-		///		Results of current iteration.
+		///     The list of the last 20 iterations.
 		/// </summary>
 		/// <remarks>
-		///		In global coordinate system.
+		///     It's cleared when count achieves 20 elements.
 		/// </remarks>
-		private readonly IterationResult _currentIteration;
-
-		/// <summary>
-		///		Results of the last iteration.
-		/// </summary>
-		/// <inheritdoc cref="_currentIteration"/>
-		private readonly IterationResult _lastIteration;
+		private readonly List<IterationResult> _iterations = InitialValues(8).ToList();
 
 		#endregion
 
@@ -105,10 +98,44 @@ namespace andrefmello91.SPMElements
 		/// <inheritdoc />
 		public override Length CrackOpening => Membrane.CrackOpening(Reinforcement, ConcretePrincipalStrains);
 
+		/// <inheritdoc />
+		public override Vector<double> Displacements
+		{
+			get => OngoingIteration.Displacements;
+			set => OngoingIteration.Displacements = value;
+		}
+
+		/// <inheritdoc />
+		public override Matrix<double> Stiffness
+		{
+			get => OngoingIteration.Stiffness;
+			set => OngoingIteration.Stiffness = value;
+		}
+
+		/// <summary>
+		///     The results of the current solution (last solved iteration [i - 1]).
+		/// </summary>
+		/// <inheritdoc cref="OngoingIteration" />
+		private IterationResult CurrentSolution => _iterations[^2];
+
 		/// <summary>
 		///     Get <see cref="Membrane" /> integration points.
 		/// </summary>
 		private Membrane[] IntegrationPoints { get; }
+
+		/// <summary>
+		///     The results of the last solution (penultimate solved iteration [i - 2]).
+		/// </summary>
+		/// <inheritdoc cref="OngoingIteration" />
+		private IterationResult LastSolution => _iterations[^3];
+
+		/// <summary>
+		///     Results of the ongoing iteration.
+		/// </summary>
+		/// <remarks>
+		///     In local coordinate system.
+		/// </remarks>
+		private IterationResult OngoingIteration => _iterations[^1];
 
 		/// <summary>
 		///     Get/set panel reinforcement stress <see cref="Vector" />.
@@ -128,28 +155,6 @@ namespace andrefmello91.SPMElements
 		///     Components in <see cref="PressureUnit.Megapascal" />.
 		/// </remarks>
 		private Vector<double> Stresses => ConcreteStresses + ReinforcementStresses;
-
-		/// <inheritdoc />
-		public override Vector<double> Displacements
-		{
-			get => _currentIteration.Displacements;
-			set
-			{
-				_lastIteration.Displacements    = _currentIteration.Displacements;
-				_currentIteration.Displacements = value;
-			}
-		}
-
-		/// <inheritdoc />
-		public override Matrix<double> Stiffness
-		{
-			get => _currentIteration.Stiffness;
-			set
-			{
-				_lastIteration.Stiffness    = _currentIteration.Stiffness;
-				_currentIteration.Stiffness = value;
-			}
-		}
 
 		#endregion
 
@@ -181,8 +186,8 @@ namespace andrefmello91.SPMElements
 
 			IntegrationPoints = IntPoints(concreteParameters, reinforcement, geometry.Width, model).ToArray();
 			_baMatrix         = CalculateBa(Geometry);
-			_currentIteration = new IterationResult(Vector<double>.Build.Dense(8), Vector<double>.Build.Dense(8), InitialStiffness());
-			_lastIteration    = _currentIteration.Clone();
+
+			InitiateStiffness();
 		}
 
 		#endregion
@@ -382,6 +387,14 @@ namespace andrefmello91.SPMElements
 				yield return Membrane.From(concreteParameters, reinforcement?.Clone(), width, model);
 		}
 
+		/// <inheritdoc />
+		public override void CalculateForces()
+		{
+			// Calculate stresses, forces and update stiffness
+			CalculateStresses();
+			CalculateGripForces();
+		}
+
 		/// <summary>
 		///     Create a <see cref="Panel" /> object based in this nonlinear stringer.
 		/// </summary>
@@ -391,11 +404,20 @@ namespace andrefmello91.SPMElements
 		public Panel ToLinear() => new(Grip1, Grip2, Grip3, Grip4, Geometry, Concrete.Parameters, Concrete.Model, Reinforcement?.Clone());
 
 		/// <inheritdoc />
-		public override void CalculateForces()
+		public override void UpdateDisplacements() =>
+			Displacements = this.GetDisplacementsFromGrips();
+
+		/// <inheritdoc />
+		public override void UpdateStiffness()
 		{
-			// Calculate stresses, forces and update stiffness
-			CalculateStresses();
-			CalculateGripForces();
+			Stiffness += NonlinearAnalysis.TangentIncrement(CurrentSolution.Stiffness, LastSolution.Stiffness, CurrentSolution.Displacements, LastSolution.Displacements);
+
+			// Increase iteration
+			_iterations.Add(OngoingIteration.Clone());
+			OngoingIteration.Number++;
+
+			// Clear iteration list
+			_iterations.ClearIf(l => l.Count > 5, ^3..^1);
 		}
 
 		/// <summary>
@@ -517,18 +539,10 @@ namespace andrefmello91.SPMElements
 			}
 		}
 
-		/// <inheritdoc />
-		public override void UpdateDisplacements() =>
-			Displacements = this.GetDisplacementsFromGrips();
-
-		/// <inheritdoc />
-		public override void UpdateStiffness() =>
-			Stiffness += NonlinearAnalysis.TangentIncrement(Stiffness, _lastIteration.Stiffness, Displacements, _lastIteration.Displacements);
-
 		/// <summary>
-		///     Calculate initial stiffness <see cref="Matrix" />.
+		///     Calculate initial stiffness matrix.
 		/// </summary>
-		private Matrix<double> InitialStiffness()
+		private void InitiateStiffness()
 		{
 			var (Dc, Ds) = InitialMaterialStiffness(IntegrationPoints);
 			var (Pc, Ps) = CalculateP(Geometry);
@@ -541,7 +555,7 @@ namespace andrefmello91.SPMElements
 			var kc = QPc * Dc * _baMatrix;
 			var ks = QPs * Ds * _baMatrix;
 
-			return kc + ks;
+			Stiffness = kc + ks;
 		}
 
 		#endregion

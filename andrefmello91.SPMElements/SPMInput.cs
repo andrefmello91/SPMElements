@@ -44,7 +44,7 @@ namespace andrefmello91.SPMElements
 		/// <remarks>
 		///     Nodes are taken from <paramref name="stringers" /> and <paramref name="panels" />.
 		/// </remarks>
-		public SPMInput(IEnumerable<Stringer> stringers, IEnumerable<Panel> panels)
+		private SPMInput(IEnumerable<Stringer> stringers, IEnumerable<Panel> panels)
 			: this(stringers, panels, stringers
 				.SelectMany(s => s.Grips)
 				.Concat(panels.SelectMany(p => p.Grips))
@@ -56,10 +56,7 @@ namespace andrefmello91.SPMElements
 		/// <summary>
 		///     SPMInput constructor.
 		/// </summary>
-		/// <param name="stringers">The collection of <see cref="Stringer" />'s.</param>
-		/// <param name="panels">The collection of <see cref="Panels" />'s.</param>
-		/// <param name="nodes">The collection of <see cref="Nodes" />'s.</param>
-		public SPMInput(IEnumerable<Stringer> stringers, IEnumerable<Panel> panels, IEnumerable<Node> nodes)
+		private SPMInput(IEnumerable<Stringer> stringers, IEnumerable<Panel> panels, IEnumerable<Node> nodes)
 			: base(stringers.Concat<SPMElement>(panels).ToList(), nodes)
 		{
 			Stringers = stringers.ToList();
@@ -76,29 +73,35 @@ namespace andrefmello91.SPMElements
 
 		#region Methods
 
+		/// <inheritdoc cref="From(IEnumerable{Stringer},IEnumerable{Panel},AnalysisType)"/>
+		/// <param name="nodes">The collection of <see cref="Nodes" />'s.</param>
+		public static SPMInput From(IEnumerable<Stringer> stringers, IEnumerable<Panel> panels, IEnumerable<Node> nodes, AnalysisType analysisType = AnalysisType.Linear)
+		{
+			var model = analysisType.AsElementModel();
+			
+			return analysisType switch
+			{
+				AnalysisType.Linear => new SPMInput(stringers, panels, nodes),
+				_                   => new SPMInput(stringers.Select(s => s.As(model)).ToList(), panels.Select(p => p.As(model)).ToList(), nodes)
+			};
+		}
+
 		/// <summary>
 		///     Create a <see cref="SPMInput" /> from element collections.
 		/// </summary>
-		/// <inheritdoc cref="SPMInput(IEnumerable{Stringer}, IEnumerable{Panel}, IEnumerable{Node})" />
+		/// <param name="stringers">The collection of <see cref="Stringer" />'s.</param>
+		/// <param name="panels">The collection of <see cref="Panels" />'s.</param>
 		/// <param name="analysisType">The <see cref="AnalysisType" /> to perform.</param>
-		/// <returns>
-		///     <see cref="SPMInput" /> if <paramref name="analysisType" /> is <see cref="AnalysisType.Linear" />,
-		///     <see cref="NLSPMInput" /> otherwise.
-		/// </returns>
-		public static SPMInput From(IEnumerable<Stringer> stringers, IEnumerable<Panel> panels, IEnumerable<Node> nodes, AnalysisType analysisType = AnalysisType.Linear) =>
-			analysisType switch
-			{
-				AnalysisType.Linear => new SPMInput(stringers, panels, nodes),
-				_                   => new SPMInput(stringers.Select(s => s.ToNonlinear()).ToList(), panels.Select(p => p.ToNonlinear()).ToList(), nodes)
-			};
+		public static SPMInput From(IEnumerable<Stringer> stringers, IEnumerable<Panel> panels, AnalysisType analysisType = AnalysisType.Linear)
+		{
+			var model = analysisType.AsElementModel();
 
-		/// <inheritdoc cref="From(IEnumerable{Stringer},IEnumerable{Panel},IEnumerable{Node},AnalysisType)" />
-		public static SPMInput From(IEnumerable<Stringer> stringers, IEnumerable<Panel> panels, AnalysisType analysisType = AnalysisType.Linear) =>
-			analysisType switch
+			return analysisType switch
 			{
 				AnalysisType.Linear => new SPMInput(stringers, panels),
-				_                   => new SPMInput(stringers.Select(s => s.ToNonlinear()).ToList(), panels.Select(p => p.ToNonlinear()).ToList())
+				_                   => new SPMInput(stringers.Select(s => s.As(model)).ToList(), panels.Select(p => p.As(model)).ToList())
 			};
+		}
 
 		/// <inheritdoc />
 		public override string ToString() =>

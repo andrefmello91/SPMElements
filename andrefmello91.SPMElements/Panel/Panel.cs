@@ -143,11 +143,7 @@ namespace andrefmello91.SPMElements
 		/// <summary>
 		///     Elastic panel object.
 		/// </summary>
-		/// <param name="grip1">The center <see cref="Node" /> of bottom edge</param>
-		/// <param name="grip2">The center <see cref="Node" /> of right edge</param>
-		/// <param name="grip3">The center <see cref="Node" /> of top edge</param>
-		/// <param name="grip4">The center <see cref="Node" /> of left edge</param>
-		/// <param name="geometry">The <seealso cref="PanelGeometry" />.</param>
+		/// <inheritdoc cref="From"/>
 		protected Panel(Node grip1, Node grip2, Node grip3, Node grip4, PanelGeometry geometry)
 		{
 			Grip1 = grip1;
@@ -161,15 +157,8 @@ namespace andrefmello91.SPMElements
 		/// <summary>
 		///     Elastic panel object.
 		/// </summary>
-		/// <param name="grip1">The center <see cref="Node" /> of bottom edge</param>
-		/// <param name="grip2">The center <see cref="Node" /> of right edge</param>
-		/// <param name="grip3">The center <see cref="Node" /> of top edge</param>
-		/// <param name="grip4">The center <see cref="Node" /> of left edge</param>
-		/// <param name="geometry">The <seealso cref="PanelGeometry" />.</param>
-		/// <param name="concreteParameters">The concrete parameters <see cref="Parameters" />.</param>
-		/// <param name="model">The concrete <see cref="ConstitutiveModel" />.</param>
-		/// <param name="reinforcement">The <see cref="WebReinforcement" />.</param>
-		public Panel(Node grip1, Node grip2, Node grip3, Node grip4, PanelGeometry geometry, IParameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, WebReinforcement? reinforcement = null)
+		/// <inheritdoc cref="From"/>
+		protected Panel(Node grip1, Node grip2, Node grip3, Node grip4, PanelGeometry geometry, IParameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, WebReinforcement? reinforcement = null)
 			: this (grip1, grip2, grip3, grip4, geometry)
 		{
 			Concrete = new BiaxialConcrete(concreteParameters, model);
@@ -182,14 +171,6 @@ namespace andrefmello91.SPMElements
 			InitiateStiffness();
 		}
 
-		/// <inheritdoc cref="Panel(Node, Node, Node, Node, PanelGeometry, IParameters, ConstitutiveModel, WebReinforcement)" />
-		/// <param name="vertices">Panel <see cref="Vertices" /> object.</param>
-		/// <param name="width">Panel width.</param>
-		public Panel(Node grip1, Node grip2, Node grip3, Node grip4, Vertices vertices, Length width, IParameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, WebReinforcement? reinforcement = null)
-			: this(grip1, grip2, grip3, grip4, new PanelGeometry(vertices, width), concreteParameters, model, reinforcement)
-		{
-		}
-		
 		#endregion
 
 		#region Methods
@@ -205,18 +186,34 @@ namespace andrefmello91.SPMElements
 		}
 
 		/// <summary>
+		///     Create a <see cref="Panel" /> from an element model.
+		/// </summary>
+		/// <param name="grip1">The center <see cref="Node" /> of bottom edge</param>
+		/// <param name="grip2">The center <see cref="Node" /> of right edge</param>
+		/// <param name="grip3">The center <see cref="Node" /> of top edge</param>
+		/// <param name="grip4">The center <see cref="Node" /> of left edge</param>
+		/// <param name="geometry">The <seealso cref="PanelGeometry" />.</param>
+		/// <param name="concreteParameters">The concrete parameters <see cref="Parameters" />.</param>
+		/// <param name="model">The concrete <see cref="ConstitutiveModel" />.</param>
+		/// <param name="reinforcement">The <see cref="WebReinforcement" />.</param>
+		/// <inheritdoc cref="As"/>
+		public static Panel From(Node grip1, Node grip2, Node grip3, Node grip4, PanelGeometry geometry, IParameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, WebReinforcement? reinforcement = null, ElementModel elementModel = ElementModel.Elastic) =>
+			elementModel switch
+			{
+				ElementModel.Elastic => new   Panel(grip1, grip2, grip3, grip4, geometry, concreteParameters, model, reinforcement),
+				_                    => new NLPanel(grip1, grip2, grip3, grip4, geometry, concreteParameters, model, reinforcement)
+			};
+		
+		/// <summary>
 		///     Create a <see cref="Panel" /> from a collection of <paramref name="nodes" /> and tha panel geometry.
 		/// </summary>
 		/// <param name="nodes">The collection containing all <see cref="Node" />'s in SPM model.</param>
+		/// <inheritdoc cref="From"/>
 		public static Panel FromNodes(IEnumerable<Node> nodes, PanelGeometry geometry, IParameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, WebReinforcement? reinforcement = null, ElementModel elementModel = ElementModel.Elastic)
 		{
 			var nds = geometry.Edges.Select(e => nodes.GetByPosition(e.CenterPoint)).ToArray();
 
-			var panel = new Panel(nds[0], nds[1], nds[2], nds[3], geometry, concreteParameters, model, reinforcement);
-
-			return elementModel is ElementModel.Elastic
-				? panel
-				: panel.ToNonlinear();
+			return From(nds[0], nds[1], nds[2], nds[3], geometry, concreteParameters, model, reinforcement, elementModel);
 		}
 
 		/// <summary>
@@ -426,14 +423,18 @@ namespace andrefmello91.SPMElements
 		}
 
 		/// <summary>
-		///     Create a <see cref="NLPanel" /> object based in this nonlinear stringer.
+		///     Create a <see cref="Stringer" /> object based in this nonlinear stringer.
 		/// </summary>
 		/// <returns>
-		///     <see cref="NLPanel" />
+		///     <see cref="Panel" />
 		/// </returns>
-		public NLPanel ToNonlinear() => this is NLPanel nlPanel
-			? nlPanel
-			: new NLPanel(Grip1, Grip2, Grip3, Grip4, Geometry, Concrete.Parameters, Concrete.Model, Reinforcement?.Clone());
+		public Panel As(ElementModel model) =>
+			model switch
+			{
+				ElementModel.Elastic   when this is     NLPanel => new   Panel(Grip1, Grip2, Grip3, Grip4, Geometry, Concrete.Parameters, Concrete.Model, Reinforcement?.Clone()),
+				ElementModel.Nonlinear when this is not NLPanel => new NLPanel(Grip1, Grip2, Grip3, Grip4, Geometry, Concrete.Parameters, Concrete.Model, Reinforcement?.Clone()),
+				_                                               => this
+			};
 
 		/// <inheritdoc />
 		public int CompareTo(Panel? other) => other is null

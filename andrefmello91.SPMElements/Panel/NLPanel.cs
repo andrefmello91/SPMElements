@@ -15,7 +15,10 @@ using UnitsNet.Units;
 
 namespace andrefmello91.SPMElements
 {
-	public class NLPanel : Panel
+	/// <summary>
+	///		Nonlinear panel class.
+	/// </summary>
+	internal class NLPanel : Panel
 	{
 
 		#region Fields
@@ -163,18 +166,8 @@ namespace andrefmello91.SPMElements
 		/// <summary>
 		///     Nonlinear panel object.
 		/// </summary>
-		/// <param name="width">Panel width.</param>
 		/// <inheritdoc />
-		public NLPanel(Node grip1, Node grip2, Node grip3, Node grip4, Vertices vertices, Length width, IParameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, WebReinforcement? reinforcement = null)
-			: this(grip1, grip2, grip3, grip4, new PanelGeometry(vertices, width), concreteParameters, model, reinforcement)
-		{
-		}
-
-		/// <summary>
-		///     Nonlinear panel object.
-		/// </summary>
-		/// <inheritdoc />
-		public NLPanel(Node grip1, Node grip2, Node grip3, Node grip4, PanelGeometry geometry, IParameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, WebReinforcement? reinforcement = null)
+		internal NLPanel(Node grip1, Node grip2, Node grip3, Node grip4, PanelGeometry geometry, IParameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, WebReinforcement? reinforcement = null)
 			: base(grip1, grip2, grip3, grip4, geometry)
 		{
 			Concrete = new BiaxialConcrete(concreteParameters, model);
@@ -380,7 +373,6 @@ namespace andrefmello91.SPMElements
 		/// <summary>
 		///     Initiate <see cref="Membrane" /> integration points.
 		/// </summary>
-		/// <inheritdoc cref="NLPanel(Node, Node, Node, Node, Vertices, Length, IParameters, ConstitutiveModel, WebReinforcement)" />
 		private static IEnumerable<Membrane> IntPoints(IParameters concreteParameters, WebReinforcement? reinforcement, Length width, ConstitutiveModel model)
 		{
 			for (var i = 0; i < 4; i++)
@@ -394,14 +386,6 @@ namespace andrefmello91.SPMElements
 			CalculateStresses();
 			CalculateGripForces();
 		}
-
-		/// <summary>
-		///     Create a <see cref="Panel" /> object based in this nonlinear stringer.
-		/// </summary>
-		/// <returns>
-		///     <see cref="Panel" />
-		/// </returns>
-		public Panel ToLinear() => new(Grip1, Grip2, Grip3, Grip4, Geometry, Concrete.Parameters, Concrete.Model, Reinforcement?.Clone());
 
 		/// <inheritdoc />
 		public override void UpdateDisplacements() =>

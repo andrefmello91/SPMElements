@@ -98,10 +98,7 @@ namespace andrefmello91.SPMElements
 		/// <summary>
 		///     Elastic stringer object.
 		/// </summary>
-		/// <param name="grip1">The initial <see cref="Node" /> of the <see cref="Stringer" />.</param>
-		/// <param name="grip2">The center <see cref="Node" /> of the <see cref="Stringer" />.</param>
-		/// <param name="grip3">The final <see cref="Node" /> of the <see cref="Stringer" />.</param>
-		/// <param name="crossSection">The stringer cross-section.</param>
+		/// <inheritdoc cref="From"/>
 		protected Stringer(Node grip1, Node grip2, Node grip3, CrossSection crossSection)
 		{
 			Geometry = new StringerGeometry(grip1.Position, grip3.Position, crossSection);
@@ -112,10 +109,8 @@ namespace andrefmello91.SPMElements
 		
 		
 		/// <inheritdoc cref="Stringer(Node, Node, Node, CrossSection)"/>
-		/// <param name="concreteParameters">The concrete <see cref="IParameters" />.</param>
-		/// <param name="model">The concrete <see cref="ConstitutiveModel" />.</param>
-		/// <param name="reinforcement">The <see cref="UniaxialReinforcement" /> of this stringer.</param>
-		public Stringer(Node grip1, Node grip2, Node grip3, CrossSection crossSection, IParameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, UniaxialReinforcement? reinforcement = null)
+		/// <inheritdoc cref="From"/>
+		protected Stringer(Node grip1, Node grip2, Node grip3, CrossSection crossSection, IParameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, UniaxialReinforcement? reinforcement = null)
 			: this(grip1, grip2, grip3, crossSection)
 		{
 			Reinforcement = reinforcement;
@@ -141,8 +136,25 @@ namespace andrefmello91.SPMElements
             LocalStiffness       = CalculateStiffness(Concrete.Stiffness, Geometry.Length);
             Stiffness            = TransformationMatrix.Transpose() * LocalStiffness * TransformationMatrix;
 		}
-		
-		/// <inheritdoc cref="Stringer(Node, Node, Node, CrossSection, IParameters, ConstitutiveModel, UniaxialReinforcement)" />
+
+		/// <summary>
+		///     Create a <see cref="Stringer" /> based on element model.
+		/// </summary>
+		/// <param name="grip1">The initial <see cref="Node" /> of the <see cref="Stringer" />.</param>
+		/// <param name="grip2">The center <see cref="Node" /> of the <see cref="Stringer" />.</param>
+		/// <param name="grip3">The final <see cref="Node" /> of the <see cref="Stringer" />.</param>
+		/// <param name="crossSection">The stringer cross-section.</param>
+		/// <param name="concreteParameters">The concrete <see cref="IParameters" />.</param>
+		/// <param name="model">The concrete <see cref="ConstitutiveModel" />.</param>
+		/// <param name="reinforcement">The <see cref="UniaxialReinforcement" /> of this stringer.</param>
+		/// <inheritdoc cref="As"/>
+		public static Stringer From(Node grip1, Node grip2, Node grip3, CrossSection crossSection, IParameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, UniaxialReinforcement? reinforcement = null, ElementModel elementModel = ElementModel.Elastic) =>
+			elementModel switch
+			{
+				ElementModel.Elastic => new Stringer(grip1, grip2, grip3, crossSection, concreteParameters, model, reinforcement),
+				_                    => new NLStringer(grip1, grip2, grip3, crossSection, concreteParameters, model, reinforcement)
+			};
+
 		/// <summary>
 		///     Create a <see cref="Stringer" /> from a collection of <paramref name="nodes" /> and known positions of initial and
 		///     final grips.
@@ -150,14 +162,9 @@ namespace andrefmello91.SPMElements
 		/// <param name="nodes">The collection containing all <see cref="Node" />'s of SPM model.</param>
 		/// <param name="grip1Position">The position of initial <see cref="Node" /> of the <see cref="Stringer" />.</param>
 		/// <param name="grip3Position">The position of final <see cref="Node" /> of the <see cref="Stringer" />.</param>
-		public static Stringer FromNodes([NotNull] IEnumerable<Node> nodes, Point grip1Position, Point grip3Position, CrossSection crossSection, IParameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, UniaxialReinforcement? reinforcement = null, ElementModel elementModel = ElementModel.Elastic)
-		{
-			var stringer = new Stringer(nodes.GetByPosition(grip1Position), nodes.GetByPosition(grip1Position.MidPoint(grip3Position)), nodes.GetByPosition(grip3Position), crossSection, concreteParameters, model, reinforcement);
-
-			return elementModel is ElementModel.Elastic
-				? stringer
-				: stringer.ToNonlinear();
-		}
+		/// <inheritdoc cref="From"/>
+		public static Stringer FromNodes([NotNull] IEnumerable<Node> nodes, Point grip1Position, Point grip3Position, CrossSection crossSection, IParameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, UniaxialReinforcement? reinforcement = null, ElementModel elementModel = ElementModel.Elastic) => 
+			From(nodes.GetByPosition(grip1Position), nodes.GetByPosition(grip1Position.MidPoint(grip3Position)), nodes.GetByPosition(grip3Position), crossSection, concreteParameters, model, reinforcement, elementModel);
 
 		/// <summary>
 		///     Calculate local stiffness <see cref="Matrix" />.
@@ -231,15 +238,20 @@ namespace andrefmello91.SPMElements
 		}
 
 		/// <summary>
-		///     Create a <see cref="NLStringer" /> object based in this stringer.
+		///     Create a <see cref="Stringer" /> object based in this nonlinear stringer.
 		/// </summary>
+		/// <param name="elementModel">The <see cref="ElementModel"/>.</param>
 		/// <returns>
-		///     <see cref="NLStringer" />
+		///     <see cref="Stringer" />
 		/// </returns>
-		public NLStringer ToNonlinear() => this is NLStringer nlStringer 
-			? nlStringer 
-			: new NLStringer(Grip1, Grip2, Grip3, Geometry.CrossSection, Concrete.Parameters, Concrete.Model, Reinforcement?.Clone());
-
+		public Stringer As(ElementModel elementModel) =>
+			elementModel switch
+			{
+				ElementModel.Elastic   when this is     NLStringer => new   Stringer(Grip1, Grip2, Grip3, Geometry.CrossSection, Concrete.Parameters, Concrete.Model, Reinforcement?.Clone()),
+				ElementModel.Nonlinear when this is not NLStringer => new NLStringer(Grip1, Grip2, Grip3, Geometry.CrossSection, Concrete.Parameters, Concrete.Model, Reinforcement?.Clone()),
+				_                                                  => this
+			};
+			
 		/// <inheritdoc />
 		public int CompareTo(Stringer? other) => other is null
 			? 1

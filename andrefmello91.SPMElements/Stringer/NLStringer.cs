@@ -17,7 +17,7 @@ namespace andrefmello91.SPMElements
 	/// <summary>
 	///     Nonlinear stringer class.
 	/// </summary>
-	public class NLStringer : Stringer
+	internal class NLStringer : Stringer
 	{
 
 		#region Fields
@@ -88,7 +88,7 @@ namespace andrefmello91.SPMElements
 		///     Nonlinear stringer object.
 		/// </summary>
 		/// <inheritdoc cref="Stringer(Node, Node, Node, CrossSection, IParameters, ConstitutiveModel, UniaxialReinforcement)" />
-		public NLStringer(Node grip1, Node grip2, Node grip3, CrossSection crossSection, IParameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, UniaxialReinforcement? reinforcement = null)
+		internal NLStringer(Node grip1, Node grip2, Node grip3, CrossSection crossSection, IParameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, UniaxialReinforcement? reinforcement = null)
 			: base(grip1, grip2, grip3, crossSection)
 		{
 			Reinforcement = reinforcement;
@@ -167,14 +167,6 @@ namespace andrefmello91.SPMElements
 
 			Forces = TransformationMatrix.Transpose() * LocalForces;
 		}
-
-		/// <summary>
-		///     Create a <see cref="Stringer" /> object based in this nonlinear stringer.
-		/// </summary>
-		/// <returns>
-		///     <see cref="Stringer" />
-		/// </returns>
-		public Stringer ToLinear() => new(Grip1, Grip2, Grip3, Geometry.CrossSection, Concrete.Parameters, Concrete.Model, Reinforcement?.Clone());
 
 		/// <inheritdoc />
 		public override void UpdateStiffness()

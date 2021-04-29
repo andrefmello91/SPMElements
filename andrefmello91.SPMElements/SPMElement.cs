@@ -35,6 +35,15 @@ namespace andrefmello91.SPMElements
 		public abstract Force MaxForce { get; }
 
 		/// <summary>
+		///		The <see cref="ElementModel"/> of this SPM element.
+		/// </summary>
+		public ElementModel Model => this switch
+		{
+			NLStringer or NLPanel => ElementModel.Nonlinear,
+			_                     => ElementModel.Elastic
+		};
+
+		/// <summary>
 		///     Get the displacement <see cref="Vector" />, in local coordinate system.
 		/// </summary>
 		/// <remarks>

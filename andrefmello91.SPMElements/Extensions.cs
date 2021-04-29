@@ -1,5 +1,7 @@
 ﻿using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
+using andrefmello91.FEMAnalysis;
 using andrefmello91.OnPlaneComponents;
 using andrefmello91.SPMElements.PanelProperties;
 
@@ -35,6 +37,32 @@ namespace andrefmello91.SPMElements
 						break;
 				}
 		}
+
+		/// <summary>
+		///		Get the <see cref="ElementModel"/> from this <see cref="AnalysisType"/>.
+		/// </summary>
+		/// <returns>
+		///		<see cref="ElementModel.Elastic"/> if <paramref name="type"/> is <see cref="AnalysisType.Linear"/>, <see cref="ElementModel.Nonlinear"/> otherwise.
+		/// </returns>
+		public static ElementModel AsElementModel(this AnalysisType type) =>
+			type switch
+			{
+				AnalysisType.Linear => ElementModel.Elastic,
+				_                   => ElementModel.Nonlinear
+			};
+		
+		/// <summary>
+		///		Get the <see cref="AnalysisType"/> from this <see cref="ElementModel"/>.
+		/// </summary>
+		/// <returns>
+		///		<see cref="AnalysisType.Linear"/> if <paramref name="model"/> is <see cref="ElementModel.Elastic"/>, <see cref="AnalysisType.Nonlinear"/> otherwise.
+		/// </returns>
+		public static AnalysisType AsAnalysisType(this ElementModel model) =>
+			model switch
+			{
+				ElementModel.Elastic => AnalysisType.Linear,
+				_                    => AnalysisType.Nonlinear
+			};
 
 		#endregion
 

@@ -178,7 +178,7 @@ namespace andrefmello91.SPMElements
 			// Increase iteration
 			_iterations.Add(OngoingIteration.Clone());
 			OngoingIteration.Number++;
-			
+
 			// Clear iterations leaving the last 3
 			_iterations.ClearIf(l => l.Count > 5, ^3..^1);
 		}

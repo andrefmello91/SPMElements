@@ -12,44 +12,54 @@ using static andrefmello91.FEMAnalysis.Extensions;
 namespace andrefmello91.SPMElements
 {
 	/// <summary>
-	///		Interface for SPM elements
+	///     Interface for SPM elements
 	/// </summary>
 	public interface ISPMElement : IFiniteElement
 	{
+
+		#region Properties
+
 		/// <summary>
 		///     The nodes of this element.
 		/// </summary>
 		new Node[] Grips { get; }
-		
+
 		/// <summary>
 		///     The <see cref="ElementModel" /> of this SPM element.
 		/// </summary>
 		ElementModel Model { get; }
+
+		#endregion
+
 	}
-		
+
 	/// <summary>
-	///		Generic interface for SPM elements
+	///     Generic interface for SPM elements
 	/// </summary>
 	/// <typeparam name="TGeometry">The struct that represents the geometry of the element.</typeparam>
 	public interface ISPMElement<out TGeometry> : ISPMElement
 		where TGeometry : struct, IEquatable<TGeometry>, IComparable<TGeometry>
 	{
+
+		#region Properties
+
 		/// <summary>
-		///		The geometry of this element.
+		///     The geometry of this element.
 		/// </summary>
 		TGeometry Geometry { get; }
+
+		#endregion
+
 	}
-	
+
 	/// <summary>
 	///     Base class for SPM elements.
 	/// </summary>
-	/// <inheritdoc cref="ISPMElement{TGeometry}"/>
+	/// <inheritdoc cref="ISPMElement{TGeometry}" />
 	public abstract class SPMElement<TGeometry> : ISPMElement<TGeometry>, IEquatable<SPMElement<TGeometry>>, IComparable<SPMElement<TGeometry>>
 		where TGeometry : struct, IEquatable<TGeometry>, IComparable<TGeometry>
 	{
-		/// <inheritdoc/>
-		public TGeometry Geometry { get; }
-		
+
 		#region Properties
 
 		/// <summary>
@@ -57,22 +67,10 @@ namespace andrefmello91.SPMElements
 		/// </summary>
 		public int[] GripNumbers => Grips.Select(g => g.Number).ToArray();
 
-		/// <inheritdoc/>
-		public abstract Node[] Grips { get; }
-
 		/// <summary>
 		///     Get the maximum local force at this element.
 		/// </summary>
 		public abstract Force MaxForce { get; }
-
-		/// <summary>
-		///     The <see cref="ElementModel" /> of this SPM element.
-		/// </summary>
-		public ElementModel Model => this switch
-		{
-			NLStringer or NLPanel => ElementModel.Nonlinear,
-			_                     => ElementModel.Elastic
-		};
 
 		/// <summary>
 		///     Get the displacement <see cref="Vector" />, in local coordinate system.
@@ -112,7 +110,22 @@ namespace andrefmello91.SPMElements
 		public virtual Vector<double> Forces { get; set; }
 
 		/// <inheritdoc />
+		public TGeometry Geometry { get; }
+
+		/// <inheritdoc />
+		public abstract Node[] Grips { get; }
+
+		/// <inheritdoc />
 		IGrip[] IFiniteElement.Grips => Grips.Cast<IGrip>().ToArray();
+
+		/// <summary>
+		///     The <see cref="ElementModel" /> of this SPM element.
+		/// </summary>
+		public ElementModel Model => this switch
+		{
+			NLStringer or NLPanel => ElementModel.Nonlinear,
+			_                     => ElementModel.Elastic
+		};
 
 		/// <inheritdoc />
 		public int Number { get; set; }
@@ -124,12 +137,16 @@ namespace andrefmello91.SPMElements
 
 		#endregion
 
+		#region Constructors
+
 		/// <summary>
-		///		SPM element base constructor.
+		///     SPM element base constructor.
 		/// </summary>
 		/// <param name="geometry">The element's geometry.</param>
 		protected SPMElement(TGeometry geometry) => Geometry = geometry;
-		
+
+		#endregion
+
 		#region Methods
 
 		/// <summary>
@@ -170,12 +187,6 @@ namespace andrefmello91.SPMElements
 		bool IEquatable<IFiniteElement>.Equals(IFiniteElement? other) => other is SPMElement<TGeometry> spmElement && Equals(spmElement);
 
 		/// <inheritdoc />
-		public override bool Equals(object? obj) => obj is SPMElement<TGeometry> spmElement && Equals(spmElement);
-
-		/// <inheritdoc />
-		public override int GetHashCode() => Geometry.GetHashCode();
-
-		/// <inheritdoc />
 		public virtual void UpdateDisplacements()
 		{
 			Displacements      = this.GetDisplacementsFromGrips();
@@ -184,6 +195,16 @@ namespace andrefmello91.SPMElements
 
 		/// <inheritdoc />
 		public abstract void UpdateStiffness();
+
+		#endregion
+
+		#region Object override
+
+		/// <inheritdoc />
+		public override bool Equals(object? obj) => obj is SPMElement<TGeometry> spmElement && Equals(spmElement);
+
+		/// <inheritdoc />
+		public override int GetHashCode() => Geometry.GetHashCode();
 
 		#endregion
 

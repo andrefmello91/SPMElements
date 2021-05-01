@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using andrefmello91.FEMAnalysis;
 using andrefmello91.OnPlaneComponents;
@@ -16,6 +15,34 @@ namespace andrefmello91.SPMElements
 		#region Methods
 
 		/// <summary>
+		///     Get the <see cref="AnalysisType" /> from this <see cref="ElementModel" />.
+		/// </summary>
+		/// <returns>
+		///     <see cref="AnalysisType.Linear" /> if <paramref name="model" /> is <see cref="ElementModel.Elastic" />,
+		///     <see cref="AnalysisType.Nonlinear" /> otherwise.
+		/// </returns>
+		public static AnalysisType AsAnalysisType(this ElementModel model) =>
+			model switch
+			{
+				ElementModel.Elastic => AnalysisType.Linear,
+				_                    => AnalysisType.Nonlinear
+			};
+
+		/// <summary>
+		///     Get the <see cref="ElementModel" /> from this <see cref="AnalysisType" />.
+		/// </summary>
+		/// <returns>
+		///     <see cref="ElementModel.Elastic" /> if <paramref name="type" /> is <see cref="AnalysisType.Linear" />,
+		///     <see cref="ElementModel.Nonlinear" /> otherwise.
+		/// </returns>
+		public static ElementModel AsElementModel(this AnalysisType type) =>
+			type switch
+			{
+				AnalysisType.Linear => ElementModel.Elastic,
+				_                   => ElementModel.Nonlinear
+			};
+
+		/// <summary>
 		///     Return the <see cref="Node" /> of an array, in given <paramref name="position" />.
 		/// </summary>
 		/// <param name="nodes">The collection of <see cref="Node" />'s.</param>
@@ -23,7 +50,7 @@ namespace andrefmello91.SPMElements
 		public static Node GetByPosition(this IEnumerable<Node> nodes, Point position) => nodes.First(node => position == node.Position);
 
 		/// <summary>
-		///     Set stringer dimensions on edges of each <see cref="NLPanel"/>.
+		///     Set stringer dimensions on edges of each <see cref="NLPanel" />.
 		///     <para>See: <see cref="Edge.SetStringerDimension" /></para>
 		/// </summary>
 		/// <param name="stringers">The array containing all of the stringers.</param>
@@ -37,32 +64,6 @@ namespace andrefmello91.SPMElements
 						break;
 				}
 		}
-
-		/// <summary>
-		///		Get the <see cref="ElementModel"/> from this <see cref="AnalysisType"/>.
-		/// </summary>
-		/// <returns>
-		///		<see cref="ElementModel.Elastic"/> if <paramref name="type"/> is <see cref="AnalysisType.Linear"/>, <see cref="ElementModel.Nonlinear"/> otherwise.
-		/// </returns>
-		public static ElementModel AsElementModel(this AnalysisType type) =>
-			type switch
-			{
-				AnalysisType.Linear => ElementModel.Elastic,
-				_                   => ElementModel.Nonlinear
-			};
-		
-		/// <summary>
-		///		Get the <see cref="AnalysisType"/> from this <see cref="ElementModel"/>.
-		/// </summary>
-		/// <returns>
-		///		<see cref="AnalysisType.Linear"/> if <paramref name="model"/> is <see cref="ElementModel.Elastic"/>, <see cref="AnalysisType.Nonlinear"/> otherwise.
-		/// </returns>
-		public static AnalysisType AsAnalysisType(this ElementModel model) =>
-			model switch
-			{
-				ElementModel.Elastic => AnalysisType.Linear,
-				_                    => AnalysisType.Nonlinear
-			};
 
 		#endregion
 

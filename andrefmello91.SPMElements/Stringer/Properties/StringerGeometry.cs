@@ -120,7 +120,7 @@ namespace andrefmello91.SPMElements.StringerProperties
 		/// </summary>
 		/// <param name="number">The number of new <see cref="StringerGeometry" />'s. Must be bigger than 1.</param>
 		/// <returns>
-		///		An empty collection if <paramref name="number"/> is smaller than 2. 
+		///     An empty collection if <paramref name="number" /> is smaller than 2.
 		/// </returns>
 		public IEnumerable<StringerGeometry> Divide(int number)
 		{
@@ -158,7 +158,7 @@ namespace andrefmello91.SPMElements.StringerProperties
 				: new StringerGeometry(InitialPoint.Convert(unit), EndPoint.Convert(unit), CrossSection.Convert(unit));
 
 		IUnitConvertible<LengthUnit> IUnitConvertible<LengthUnit>.Convert(LengthUnit unit) => Convert(unit);
-		
+
 		/// <inheritdoc />
 		public StringerGeometry Clone() => new(InitialPoint, EndPoint, CrossSection.Clone());
 

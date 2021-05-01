@@ -401,7 +401,7 @@ namespace andrefmello91.SPMElements
 		{
 			// Not needed in linear element.
 		}
-		
+
 		/// <summary>
 		///     Calculate initial stiffness elements.
 		/// </summary>
@@ -411,6 +411,8 @@ namespace andrefmello91.SPMElements
 			LocalStiffness       = CalculateStiffness(Geometry, Concrete.Parameters.TransverseModule);
 			Stiffness            = TransformationMatrix.Transpose() * LocalStiffness * TransformationMatrix;
 		}
+
+		#region Object override
 
 		/// <inheritdoc />
 		public override int GetHashCode() => Geometry.GetHashCode();
@@ -429,6 +431,8 @@ namespace andrefmello91.SPMElements
 
 			return msgstr;
 		}
+
+		#endregion
 
 		#endregion
 

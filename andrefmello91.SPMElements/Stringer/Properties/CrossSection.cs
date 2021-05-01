@@ -94,7 +94,7 @@ namespace andrefmello91.SPMElements.StringerProperties
 		public CrossSection Convert(LengthUnit unit) => new(Width.ToUnit(unit), Height.ToUnit(unit));
 
 		IUnitConvertible<LengthUnit> IUnitConvertible<LengthUnit>.Convert(LengthUnit unit) => Convert(unit);
-		
+
 		/// <inheritdoc />
 		public bool Approaches(CrossSection other, Length tolerance) => Width.Approx(other.Width, tolerance) && Height.Approx(other.Width, tolerance);
 

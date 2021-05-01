@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using andrefmello91.Extensions;
@@ -94,11 +93,11 @@ namespace andrefmello91.SPMElements
 		/// </summary>
 		/// <inheritdoc cref="From" />
 		protected Stringer(Node grip1, Node grip2, Node grip3, CrossSection crossSection)
-			:base(new StringerGeometry(grip1.Position, grip3.Position, crossSection))
+			: base(new StringerGeometry(grip1.Position, grip3.Position, crossSection))
 		{
-			Grip1    = grip1;
-			Grip2    = grip2;
-			Grip3    = grip3;
+			Grip1 = grip1;
+			Grip2 = grip2;
+			Grip3 = grip3;
 		}
 
 
@@ -229,6 +228,8 @@ namespace andrefmello91.SPMElements
 			Stiffness            = TransformationMatrix.Transpose() * LocalStiffness * TransformationMatrix;
 		}
 
+		#region Object override
+
 		/// <inheritdoc />
 		public override string ToString()
 		{
@@ -243,6 +244,8 @@ namespace andrefmello91.SPMElements
 
 			return msgstr;
 		}
+
+		#endregion
 
 		#endregion
 

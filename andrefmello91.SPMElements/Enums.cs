@@ -29,7 +29,7 @@
 		/// <summary>
 		///     External nodes (mid grip to stringers and grip for panels).
 		/// </summary>
-		Internal,
+		Internal
 	}
 
 	/// <summary>

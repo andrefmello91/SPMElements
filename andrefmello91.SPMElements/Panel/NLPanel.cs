@@ -16,7 +16,7 @@ using UnitsNet.Units;
 namespace andrefmello91.SPMElements
 {
 	/// <summary>
-	///		Nonlinear panel class.
+	///     Nonlinear panel class.
 	/// </summary>
 	internal class NLPanel : Panel
 	{

@@ -197,7 +197,7 @@ namespace andrefmello91.SPMElements.PanelProperties
 			unit == Unit
 				? this
 				: new Vertices(Vertex1.Convert(unit), Vertex2.Convert(unit), Vertex3.Convert(unit), Vertex4.Convert(unit));
-		
+
 		IUnitConvertible<LengthUnit> IUnitConvertible<LengthUnit>.Convert(LengthUnit unit) => Convert(unit);
 
 		/// <inheritdoc />

@@ -175,7 +175,7 @@ namespace andrefmello91.SPMElements.PanelProperties
 		public IEnumerable<PanelGeometry> Divide(int rows, int columns)
 		{
 			var width = Width;
-			
+
 			return Vertices.Divide(rows, columns).Select(v => new PanelGeometry(v, width));
 		}
 
@@ -228,6 +228,7 @@ namespace andrefmello91.SPMElements.PanelProperties
 		/// <inheritdoc />
 		public override string ToString() =>
 			$"{Vertices}\n" +
+
 			// Edges.Select(e => $"{nameof(e)}\n{e}\n").Aggregate((i, f) => i + f) +
 			$"Width = {Width}";
 

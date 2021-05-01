@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using andrefmello91.FEMAnalysis;
 
@@ -34,8 +33,12 @@ namespace andrefmello91.SPMElements
 		/// </summary>
 		public List<Stringer> Stringers { get; }
 
+		#region Interface Implementations
+
 		/// <inheritdoc />
 		List<IFiniteElement> IFEMInput<IFiniteElement>.Elements => _elements;
+
+		#endregion
 
 		#endregion
 
@@ -74,12 +77,12 @@ namespace andrefmello91.SPMElements
 
 		#region Methods
 
-		/// <inheritdoc cref="From(IEnumerable{Stringer},IEnumerable{Panel},AnalysisType)"/>
+		/// <inheritdoc cref="From(IEnumerable{Stringer},IEnumerable{Panel},AnalysisType)" />
 		/// <param name="nodes">The collection of <see cref="Nodes" />'s.</param>
 		public static SPMInput From(IEnumerable<Stringer> stringers, IEnumerable<Panel> panels, IEnumerable<Node> nodes, AnalysisType analysisType = AnalysisType.Linear)
 		{
 			var model = analysisType.AsElementModel();
-			
+
 			return analysisType switch
 			{
 				AnalysisType.Linear => new SPMInput(stringers, panels, nodes),
@@ -104,6 +107,8 @@ namespace andrefmello91.SPMElements
 			};
 		}
 
+		#region Object override
+
 		/// <inheritdoc />
 		public override string ToString() =>
 			$"Number of nodes: {Nodes.Count}\n" +
@@ -111,6 +116,8 @@ namespace andrefmello91.SPMElements
 			$"Number of panels: {Panels.Count}\n" +
 			$"Force vector: \n{ForceVector}\n" +
 			$"Constraint Index: {ConstraintIndex.Select(i => i.ToString()).Aggregate((i, f) => $"{i} - {f}")}";
+
+		#endregion
 
 		#endregion
 

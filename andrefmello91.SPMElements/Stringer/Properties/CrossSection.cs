@@ -9,7 +9,7 @@ namespace andrefmello91.SPMElements.StringerProperties
 	/// <summary>
 	///     Stringer cross-section struct.
 	/// </summary>
-	public struct CrossSection : IUnitConvertible<CrossSection, LengthUnit>, IApproachable<CrossSection, Length>, IEquatable<CrossSection>, IComparable<CrossSection>, ICloneable<CrossSection>
+	public struct CrossSection : IUnitConvertible<LengthUnit>, IApproachable<CrossSection, Length>, IEquatable<CrossSection>, IComparable<CrossSection>, ICloneable<CrossSection>
 	{
 
 		#region Fields
@@ -90,9 +90,11 @@ namespace andrefmello91.SPMElements.StringerProperties
 			_height = _height.ToUnit(unit);
 		}
 
-		/// <inheritdoc />
+		/// <inheritdoc cref="IUnitConvertible{TUnit}.Convert" />
 		public CrossSection Convert(LengthUnit unit) => new(Width.ToUnit(unit), Height.ToUnit(unit));
 
+		IUnitConvertible<LengthUnit> IUnitConvertible<LengthUnit>.Convert(LengthUnit unit) => Convert(unit);
+		
 		/// <inheritdoc />
 		public bool Approaches(CrossSection other, Length tolerance) => Width.Approx(other.Width, tolerance) && Height.Approx(other.Width, tolerance);
 

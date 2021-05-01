@@ -10,7 +10,7 @@ namespace andrefmello91.SPMElements.PanelProperties
 	/// <summary>
 	///     Panel edge struct.
 	/// </summary>
-	public struct Edge : IUnitConvertible<Edge, LengthUnit>, IApproachable<Edge, Length>, IEquatable<Edge>, IComparable<Edge>
+	public struct Edge : IUnitConvertible<LengthUnit>, IApproachable<Edge, Length>, IEquatable<Edge>, IComparable<Edge>
 	{
 
 		#region Properties
@@ -106,8 +106,10 @@ namespace andrefmello91.SPMElements.PanelProperties
 		/// <inheritdoc cref="SetStringerDimension(double, LengthUnit)" />
 		public void SetStringerDimension(Length height) => StringerDimension = height.ToUnit(Unit);
 
-		/// <inheritdoc />
+		/// <inheritdoc cref="IUnitConvertible{TUnit}.Convert" />
 		public Edge Convert(LengthUnit unit) => new(InitialVertex.Convert(unit), FinalVertex.Convert(unit));
+
+		IUnitConvertible<LengthUnit> IUnitConvertible<LengthUnit>.Convert(LengthUnit unit) => Convert(unit);
 
 		/// <inheritdoc />
 		public bool Approaches(Edge other, Length tolerance) =>

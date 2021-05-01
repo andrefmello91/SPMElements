@@ -12,7 +12,7 @@ namespace andrefmello91.SPMElements.PanelProperties
 	/// <summary>
 	///     Panel vertices struct.
 	/// </summary>
-	public struct Vertices : IUnitConvertible<Vertices, LengthUnit>, IApproachable<Vertices, Length>, IEquatable<Vertices>, IComparable<Vertices>, ICloneable<Vertices>
+	public struct Vertices : IUnitConvertible<LengthUnit>, IApproachable<Vertices, Length>, IEquatable<Vertices>, IComparable<Vertices>, ICloneable<Vertices>
 	{
 
 		#region Properties
@@ -197,6 +197,8 @@ namespace andrefmello91.SPMElements.PanelProperties
 			unit == Unit
 				? this
 				: new Vertices(Vertex1.Convert(unit), Vertex2.Convert(unit), Vertex3.Convert(unit), Vertex4.Convert(unit));
+		
+		IUnitConvertible<LengthUnit> IUnitConvertible<LengthUnit>.Convert(LengthUnit unit) => Convert(unit);
 
 		/// <inheritdoc />
 		public Vertices Clone() => new(AsArray());

@@ -12,7 +12,7 @@ namespace andrefmello91.SPMElements.PanelProperties
 	/// <summary>
 	///     Panel geometry struct.
 	/// </summary>
-	public struct PanelGeometry : IUnitConvertible<PanelGeometry, LengthUnit>, IApproachable<PanelGeometry, Length>, IEquatable<PanelGeometry>, IComparable<PanelGeometry>, ICloneable<PanelGeometry>
+	public struct PanelGeometry : IUnitConvertible<LengthUnit>, IApproachable<PanelGeometry, Length>, IEquatable<PanelGeometry>, IComparable<PanelGeometry>, ICloneable<PanelGeometry>
 	{
 
 		#region Fields
@@ -205,8 +205,10 @@ namespace andrefmello91.SPMElements.PanelProperties
 		/// </summary>
 		public (double a, double b, double c, double d) DimensionsInMillimeters() => (Dimensions.a.Millimeters, Dimensions.b.Millimeters, Dimensions.c.Millimeters, Dimensions.d.Millimeters);
 
-		/// <inheritdoc />
+		/// <inheritdoc cref="IUnitConvertible{TUnit}.Convert" />
 		public PanelGeometry Convert(LengthUnit unit) => new(Vertices.Convert(unit), Width.ToUnit(unit));
+
+		IUnitConvertible<LengthUnit> IUnitConvertible<LengthUnit>.Convert(LengthUnit unit) => Convert(unit);
 
 		/// <inheritdoc />
 		public bool Approaches(PanelGeometry other, Length tolerance) => Vertices.Approaches(other.Vertices, tolerance);

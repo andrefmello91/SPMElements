@@ -11,7 +11,7 @@ namespace andrefmello91.SPMElements.StringerProperties
 	/// <summary>
 	///     Stringer geometry struct.
 	/// </summary>
-	public struct StringerGeometry : IUnitConvertible<StringerGeometry, LengthUnit>, IApproachable<StringerGeometry, Length>, IEquatable<StringerGeometry>, IComparable<StringerGeometry>, ICloneable<StringerGeometry>
+	public struct StringerGeometry : IUnitConvertible<LengthUnit>, IApproachable<StringerGeometry, Length>, IEquatable<StringerGeometry>, IComparable<StringerGeometry>, ICloneable<StringerGeometry>
 	{
 		private CrossSection _section;
 
@@ -157,6 +157,8 @@ namespace andrefmello91.SPMElements.StringerProperties
 				? this
 				: new StringerGeometry(InitialPoint.Convert(unit), EndPoint.Convert(unit), CrossSection.Convert(unit));
 
+		IUnitConvertible<LengthUnit> IUnitConvertible<LengthUnit>.Convert(LengthUnit unit) => Convert(unit);
+		
 		/// <inheritdoc />
 		public StringerGeometry Clone() => new(InitialPoint, EndPoint, CrossSection.Clone());
 

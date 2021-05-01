@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using andrefmello91.Extensions;
-using andrefmello91.FEMAnalysis;
 using andrefmello91.Material.Concrete;
 using andrefmello91.Material.Reinforcement;
 using andrefmello91.OnPlaneComponents;
@@ -52,10 +51,10 @@ namespace andrefmello91.SPMElements
 		///     Get the end <see cref="Node" /> of this stringer.
 		/// </summary>
 		public Node Grip3 { get; }
-		
+
 		/// <inheritdoc />
-		public override Node[] Grips => new [] { Grip1, Grip2, Grip3 };
-		
+		public override Node[] Grips => new[] { Grip1, Grip2, Grip3 };
+
 		/// <inheritdoc />
 		public override Force MaxForce => Force.FromNewtons(LocalForces.AbsoluteMaximum());
 
@@ -98,7 +97,7 @@ namespace andrefmello91.SPMElements
 		/// <summary>
 		///     Elastic stringer object.
 		/// </summary>
-		/// <inheritdoc cref="From"/>
+		/// <inheritdoc cref="From" />
 		protected Stringer(Node grip1, Node grip2, Node grip3, CrossSection crossSection)
 		{
 			Geometry = new StringerGeometry(grip1.Position, grip3.Position, crossSection);
@@ -106,10 +105,10 @@ namespace andrefmello91.SPMElements
 			Grip2    = grip2;
 			Grip3    = grip3;
 		}
-		
-		
-		/// <inheritdoc cref="Stringer(Node, Node, Node, CrossSection)"/>
-		/// <inheritdoc cref="From"/>
+
+
+		/// <inheritdoc cref="Stringer(Node, Node, Node, CrossSection)" />
+		/// <inheritdoc cref="From" />
 		protected Stringer(Node grip1, Node grip2, Node grip3, CrossSection crossSection, IParameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, UniaxialReinforcement? reinforcement = null)
 			: this(grip1, grip2, grip3, crossSection)
 		{
@@ -118,24 +117,13 @@ namespace andrefmello91.SPMElements
 
 			if (Reinforcement is not null)
 				Reinforcement.ConcreteArea = Concrete.Area;
-			
+
 			InitiateStiffness();
 		}
 
 		#endregion
 
 		#region Methods
-
-		/// <summary>
-		///		Calculate initial stiffness elements.
-		/// </summary>
-		protected void InitiateStiffness()
-		{
-			// Calculate matrices
-            TransformationMatrix = CalculateTransformationMatrix(Geometry.Angle);
-            LocalStiffness       = CalculateStiffness(Concrete.Stiffness, Geometry.Length);
-            Stiffness            = TransformationMatrix.Transpose() * LocalStiffness * TransformationMatrix;
-		}
 
 		/// <summary>
 		///     Create a <see cref="Stringer" /> based on element model.
@@ -147,7 +135,7 @@ namespace andrefmello91.SPMElements
 		/// <param name="concreteParameters">The concrete <see cref="IParameters" />.</param>
 		/// <param name="model">The concrete <see cref="ConstitutiveModel" />.</param>
 		/// <param name="reinforcement">The <see cref="UniaxialReinforcement" /> of this stringer.</param>
-		/// <inheritdoc cref="As"/>
+		/// <inheritdoc cref="As" />
 		public static Stringer From(Node grip1, Node grip2, Node grip3, CrossSection crossSection, IParameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, UniaxialReinforcement? reinforcement = null, ElementModel elementModel = ElementModel.Elastic) =>
 			elementModel switch
 			{
@@ -162,9 +150,19 @@ namespace andrefmello91.SPMElements
 		/// <param name="nodes">The collection containing all <see cref="Node" />'s of SPM model.</param>
 		/// <param name="grip1Position">The position of initial <see cref="Node" /> of the <see cref="Stringer" />.</param>
 		/// <param name="grip3Position">The position of final <see cref="Node" /> of the <see cref="Stringer" />.</param>
-		/// <inheritdoc cref="From"/>
-		public static Stringer FromNodes([NotNull] IEnumerable<Node> nodes, Point grip1Position, Point grip3Position, CrossSection crossSection, IParameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, UniaxialReinforcement? reinforcement = null, ElementModel elementModel = ElementModel.Elastic) => 
+		/// <inheritdoc cref="From" />
+		public static Stringer FromNodes([NotNull] IEnumerable<Node> nodes, Point grip1Position, Point grip3Position, CrossSection crossSection, IParameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, UniaxialReinforcement? reinforcement = null, ElementModel elementModel = ElementModel.Elastic) =>
 			From(nodes.GetByPosition(grip1Position), nodes.GetByPosition(grip1Position.MidPoint(grip3Position)), nodes.GetByPosition(grip3Position), crossSection, concreteParameters, model, reinforcement, elementModel);
+
+		/// <summary>
+		///     Get the proper concrete area for a <paramref name="stringer" />.
+		/// </summary>
+		internal static Area GetConcreteArea(Stringer stringer) =>
+			stringer switch
+			{
+				NLStringer => stringer.Geometry.CrossSection.Area - (stringer.Reinforcement?.Area ?? Area.Zero),
+				_          => stringer.Geometry.CrossSection.Area
+			};
 
 		/// <summary>
 		///     Calculate local stiffness <see cref="Matrix" />.
@@ -205,17 +203,22 @@ namespace andrefmello91.SPMElements
 		}
 
 		/// <summary>
-		///     Get the proper concrete area for a <paramref name="stringer" />.
+		///     Create a <see cref="Stringer" /> object based in this nonlinear stringer.
 		/// </summary>
-		internal static Area GetConcreteArea(Stringer stringer) =>
-			stringer switch
+		/// <param name="elementModel">The <see cref="ElementModel" />.</param>
+		/// <returns>
+		///     <see cref="Stringer" />
+		/// </returns>
+		public Stringer As(ElementModel elementModel) =>
+			elementModel switch
 			{
-				NLStringer => stringer.Geometry.CrossSection.Area - (stringer.Reinforcement?.Area ?? Area.Zero),
-				_          => stringer.Geometry.CrossSection.Area
+				ElementModel.Elastic when this is NLStringer       => new Stringer(Grip1, Grip2, Grip3, Geometry.CrossSection, Concrete.Parameters, Concrete.Model, Reinforcement?.Clone()),
+				ElementModel.Nonlinear when this is not NLStringer => new NLStringer(Grip1, Grip2, Grip3, Geometry.CrossSection, Concrete.Parameters, Concrete.Model, Reinforcement?.Clone()),
+				_                                                  => this
 			};
 
 		/// <inheritdoc />
-		public override int CompareTo(IFiniteElement? other) => other is Stringer stringer
+		public override int CompareTo(SPMElement? other) => other is Stringer stringer
 			? CompareTo(stringer)
 			: 0;
 
@@ -226,9 +229,6 @@ namespace andrefmello91.SPMElements
 		public override bool Equals(object? obj) => obj is Stringer other && Equals(other);
 
 		/// <inheritdoc />
-		public override bool Equals(IFiniteElement? other) => other is Stringer stringer && Equals(stringer);
-
-		/// <inheritdoc />
 		public override bool Equals(SPMElement? other) => other is Stringer stringer && Equals(stringer);
 
 		/// <inheritdoc />
@@ -237,21 +237,6 @@ namespace andrefmello91.SPMElements
 			// Not needed in linear element.
 		}
 
-		/// <summary>
-		///     Create a <see cref="Stringer" /> object based in this nonlinear stringer.
-		/// </summary>
-		/// <param name="elementModel">The <see cref="ElementModel"/>.</param>
-		/// <returns>
-		///     <see cref="Stringer" />
-		/// </returns>
-		public Stringer As(ElementModel elementModel) =>
-			elementModel switch
-			{
-				ElementModel.Elastic   when this is     NLStringer => new   Stringer(Grip1, Grip2, Grip3, Geometry.CrossSection, Concrete.Parameters, Concrete.Model, Reinforcement?.Clone()),
-				ElementModel.Nonlinear when this is not NLStringer => new NLStringer(Grip1, Grip2, Grip3, Geometry.CrossSection, Concrete.Parameters, Concrete.Model, Reinforcement?.Clone()),
-				_                                                  => this
-			};
-			
 		/// <inheritdoc />
 		public int CompareTo(Stringer? other) => other is null
 			? 1
@@ -262,6 +247,17 @@ namespace andrefmello91.SPMElements
 		/// </summary>
 		/// <param name="other"></param>
 		public bool Equals(Stringer? other) => other is not null && Geometry == other.Geometry;
+
+		/// <summary>
+		///     Calculate initial stiffness elements.
+		/// </summary>
+		protected void InitiateStiffness()
+		{
+			// Calculate matrices
+			TransformationMatrix = CalculateTransformationMatrix(Geometry.Angle);
+			LocalStiffness       = CalculateStiffness(Concrete.Stiffness, Geometry.Length);
+			Stiffness            = TransformationMatrix.Transpose() * LocalStiffness * TransformationMatrix;
+		}
 
 		/// <inheritdoc />
 		public override int GetHashCode() => Geometry.GetHashCode();

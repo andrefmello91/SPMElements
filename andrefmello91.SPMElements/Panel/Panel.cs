@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using andrefmello91.Extensions;
-using andrefmello91.FEMAnalysis;
 using andrefmello91.Material.Concrete;
 using andrefmello91.Material.Reinforcement;
 using andrefmello91.OnPlaneComponents;
@@ -87,8 +86,8 @@ namespace andrefmello91.SPMElements
 					sig2 = -tau.Abs() * (rLambda + 1 / rLambda);
 				}
 
-				var theta1 = tau >= Pressure.Zero 
-					? Constants.PiOver4 
+				var theta1 = tau >= Pressure.Zero
+					? Constants.PiOver4
 					: -Constants.PiOver4;
 
 				return new PrincipalStressState(Pressure.Zero, sig2, theta1);
@@ -126,7 +125,7 @@ namespace andrefmello91.SPMElements
 		public Node Grip4 { get; }
 
 		/// <inheritdoc />
-		public override Node[] Grips => new [] { Grip1, Grip2, Grip3, Grip4 };
+		public override Node[] Grips => new[] { Grip1, Grip2, Grip3, Grip4 };
 
 		/// <inheritdoc />
 		public override Force MaxForce => Force.FromNewtons(Forces.AbsoluteMaximum());
@@ -143,7 +142,7 @@ namespace andrefmello91.SPMElements
 		/// <summary>
 		///     Elastic panel object.
 		/// </summary>
-		/// <inheritdoc cref="From"/>
+		/// <inheritdoc cref="From" />
 		protected Panel(Node grip1, Node grip2, Node grip3, Node grip4, PanelGeometry geometry)
 		{
 			Grip1 = grip1;
@@ -157,9 +156,9 @@ namespace andrefmello91.SPMElements
 		/// <summary>
 		///     Elastic panel object.
 		/// </summary>
-		/// <inheritdoc cref="From"/>
+		/// <inheritdoc cref="From" />
 		protected Panel(Node grip1, Node grip2, Node grip3, Node grip4, PanelGeometry geometry, IParameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, WebReinforcement? reinforcement = null)
-			: this (grip1, grip2, grip3, grip4, geometry)
+			: this(grip1, grip2, grip3, grip4, geometry)
 		{
 			Concrete = new BiaxialConcrete(concreteParameters, model);
 
@@ -174,16 +173,6 @@ namespace andrefmello91.SPMElements
 		#endregion
 
 		#region Methods
-		
-		/// <summary>
-		///		Calculate initial stiffness elements.
-		/// </summary>
-		private void InitiateStiffness()
-		{
-			TransformationMatrix = CalculateTransformationMatrix(Geometry);
-			LocalStiffness       = CalculateStiffness(Geometry, Concrete.Parameters.TransverseModule);
-			Stiffness            = TransformationMatrix.Transpose() * LocalStiffness * TransformationMatrix;
-		}
 
 		/// <summary>
 		///     Create a <see cref="Panel" /> from an element model.
@@ -196,19 +185,19 @@ namespace andrefmello91.SPMElements
 		/// <param name="concreteParameters">The concrete parameters <see cref="Parameters" />.</param>
 		/// <param name="model">The concrete <see cref="ConstitutiveModel" />.</param>
 		/// <param name="reinforcement">The <see cref="WebReinforcement" />.</param>
-		/// <inheritdoc cref="As"/>
+		/// <inheritdoc cref="As" />
 		public static Panel From(Node grip1, Node grip2, Node grip3, Node grip4, PanelGeometry geometry, IParameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, WebReinforcement? reinforcement = null, ElementModel elementModel = ElementModel.Elastic) =>
 			elementModel switch
 			{
-				ElementModel.Elastic => new   Panel(grip1, grip2, grip3, grip4, geometry, concreteParameters, model, reinforcement),
+				ElementModel.Elastic => new Panel(grip1, grip2, grip3, grip4, geometry, concreteParameters, model, reinforcement),
 				_                    => new NLPanel(grip1, grip2, grip3, grip4, geometry, concreteParameters, model, reinforcement)
 			};
-		
+
 		/// <summary>
 		///     Create a <see cref="Panel" /> from a collection of <paramref name="nodes" /> and tha panel geometry.
 		/// </summary>
 		/// <param name="nodes">The collection containing all <see cref="Node" />'s in SPM model.</param>
-		/// <inheritdoc cref="From"/>
+		/// <inheritdoc cref="From" />
 		public static Panel FromNodes(IEnumerable<Node> nodes, PanelGeometry geometry, IParameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, WebReinforcement? reinforcement = null, ElementModel elementModel = ElementModel.Elastic)
 		{
 			var nds = geometry.Edges.Select(e => nodes.GetByPosition(e.CenterPoint)).ToArray();
@@ -380,22 +369,27 @@ namespace andrefmello91.SPMElements
 				}.ToMatrix();
 		}
 
+		/// <summary>
+		///     Create a <see cref="Stringer" /> object based in this nonlinear stringer.
+		/// </summary>
+		/// <returns>
+		///     <see cref="Panel" />
+		/// </returns>
+		public Panel As(ElementModel model) =>
+			model switch
+			{
+				ElementModel.Elastic when this is NLPanel       => new Panel(Grip1, Grip2, Grip3, Grip4, Geometry, Concrete.Parameters, Concrete.Model, Reinforcement?.Clone()),
+				ElementModel.Nonlinear when this is not NLPanel => new NLPanel(Grip1, Grip2, Grip3, Grip4, Geometry, Concrete.Parameters, Concrete.Model, Reinforcement?.Clone()),
+				_                                               => this
+			};
+
 		/// <inheritdoc />
-		public override int CompareTo(IFiniteElement? other) => other is Panel panel
+		public override int CompareTo(SPMElement? other) => other is Panel panel
 			? CompareTo(panel)
 			: 0;
 
 		/// <inheritdoc />
-		public override bool Equals(IFiniteElement? other) => other is Panel panel && Equals(panel);
-
-		/// <inheritdoc />
 		public override bool Equals(SPMElement? other) => other is Panel panel && Equals(panel);
-
-		/// <inheritdoc />
-		public override void UpdateStiffness()
-		{
-			// Not needed in linear element.
-		}
 
 		/// <summary>
 		///     Returns true if <paramref name="obj" /> is <see cref="Panel" /> and <see cref="Geometry" /> is equal.
@@ -422,19 +416,11 @@ namespace andrefmello91.SPMElements
 			Geometry.Edge4.SetStringerDimension(hs[3]);
 		}
 
-		/// <summary>
-		///     Create a <see cref="Stringer" /> object based in this nonlinear stringer.
-		/// </summary>
-		/// <returns>
-		///     <see cref="Panel" />
-		/// </returns>
-		public Panel As(ElementModel model) =>
-			model switch
-			{
-				ElementModel.Elastic   when this is     NLPanel => new   Panel(Grip1, Grip2, Grip3, Grip4, Geometry, Concrete.Parameters, Concrete.Model, Reinforcement?.Clone()),
-				ElementModel.Nonlinear when this is not NLPanel => new NLPanel(Grip1, Grip2, Grip3, Grip4, Geometry, Concrete.Parameters, Concrete.Model, Reinforcement?.Clone()),
-				_                                               => this
-			};
+		/// <inheritdoc />
+		public override void UpdateStiffness()
+		{
+			// Not needed in linear element.
+		}
 
 		/// <inheritdoc />
 		public int CompareTo(Panel? other) => other is null
@@ -446,6 +432,16 @@ namespace andrefmello91.SPMElements
 		/// </summary>
 		/// <param name="other">The other <see cref="Panel" /> object to compare.</param>
 		public bool Equals(Panel? other) => other is not null && Geometry == other.Geometry;
+
+		/// <summary>
+		///     Calculate initial stiffness elements.
+		/// </summary>
+		private void InitiateStiffness()
+		{
+			TransformationMatrix = CalculateTransformationMatrix(Geometry);
+			LocalStiffness       = CalculateStiffness(Geometry, Concrete.Parameters.TransverseModule);
+			Stiffness            = TransformationMatrix.Transpose() * LocalStiffness * TransformationMatrix;
+		}
 
 		/// <inheritdoc />
 		public override int GetHashCode() => Geometry.GetHashCode();

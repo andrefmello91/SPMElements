@@ -14,7 +14,7 @@ namespace andrefmello91.SPMElements
 	/// <summary>
 	///     Base class for SPM elements.
 	/// </summary>
-	public abstract class SPMElement : IFiniteElement, IEquatable<SPMElement>
+	public abstract class SPMElement : IFiniteElement, IEquatable<SPMElement>, IComparable<SPMElement>
 	{
 
 		#region Properties
@@ -102,13 +102,10 @@ namespace andrefmello91.SPMElements
 		}
 
 		/// <inheritdoc />
-		public abstract int CompareTo(IFiniteElement? other);
-
-		/// <inheritdoc />
-		public abstract bool Equals(IFiniteElement? other);
-
-		/// <inheritdoc />
 		public abstract bool Equals(SPMElement? other);
+
+		/// <inheritdoc />
+		public abstract int CompareTo(SPMElement? other);
 
 		/// <inheritdoc />
 		public virtual void CalculateForces()
@@ -147,5 +144,12 @@ namespace andrefmello91.SPMElements
 
 		#endregion
 
+		/// <inheritdoc />
+		bool IEquatable<IFiniteElement>.Equals(IFiniteElement? other) => other is SPMElement spmElement && Equals(spmElement);
+
+		/// <inheritdoc />
+		int IComparable<IFiniteElement>.CompareTo(IFiniteElement? other) => other is SPMElement spmElement
+			? CompareTo(spmElement)
+			: 0;
 	}
 }

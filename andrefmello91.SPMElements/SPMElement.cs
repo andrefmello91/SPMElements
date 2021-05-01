@@ -12,11 +12,44 @@ using static andrefmello91.FEMAnalysis.Extensions;
 namespace andrefmello91.SPMElements
 {
 	/// <summary>
+	///		Interface for SPM elements
+	/// </summary>
+	public interface ISPMElement : IFiniteElement
+	{
+		/// <summary>
+		///     The nodes of this element.
+		/// </summary>
+		new Node[] Grips { get; }
+		
+		/// <summary>
+		///     The <see cref="ElementModel" /> of this SPM element.
+		/// </summary>
+		ElementModel Model { get; }
+	}
+		
+	/// <summary>
+	///		Generic interface for SPM elements
+	/// </summary>
+	/// <typeparam name="TGeometry">The struct that represents the geometry of the element.</typeparam>
+	public interface ISPMElement<out TGeometry> : ISPMElement
+		where TGeometry : struct, IEquatable<TGeometry>, IComparable<TGeometry>
+	{
+		/// <summary>
+		///		The geometry of this element.
+		/// </summary>
+		TGeometry Geometry { get; }
+	}
+	
+	/// <summary>
 	///     Base class for SPM elements.
 	/// </summary>
-	public abstract class SPMElement : IFiniteElement, IEquatable<SPMElement>, IComparable<SPMElement>
+	/// <inheritdoc cref="ISPMElement{TGeometry}"/>
+	public abstract class SPMElement<TGeometry> : ISPMElement<TGeometry>, IEquatable<SPMElement<TGeometry>>, IComparable<SPMElement<TGeometry>>
+		where TGeometry : struct, IEquatable<TGeometry>, IComparable<TGeometry>
 	{
-
+		/// <inheritdoc/>
+		public TGeometry Geometry { get; }
+		
 		#region Properties
 
 		/// <summary>
@@ -24,9 +57,7 @@ namespace andrefmello91.SPMElements
 		/// </summary>
 		public int[] GripNumbers => Grips.Select(g => g.Number).ToArray();
 
-		/// <summary>
-		///     Get the nodes of this element.
-		/// </summary>
+		/// <inheritdoc/>
 		public abstract Node[] Grips { get; }
 
 		/// <summary>
@@ -35,7 +66,7 @@ namespace andrefmello91.SPMElements
 		public abstract Force MaxForce { get; }
 
 		/// <summary>
-		///		The <see cref="ElementModel"/> of this SPM element.
+		///     The <see cref="ElementModel" /> of this SPM element.
 		/// </summary>
 		public ElementModel Model => this switch
 		{
@@ -69,26 +100,36 @@ namespace andrefmello91.SPMElements
 		/// </summary>
 		protected Matrix<double> TransformationMatrix { get; set; }
 
+		#region Interface Implementations
+
 		/// <inheritdoc />
 		public virtual Vector<double> Displacements { get; set; }
-
-		/// <inheritdoc />
-		public virtual Vector<double> Forces { get; set; }
-
-		/// <inheritdoc />
-		public virtual Matrix<double> Stiffness { get; set; }
-
-		/// <inheritdoc />
-		IGrip[] IFiniteElement.Grips => Grips.Cast<IGrip>().ToArray();
 
 		/// <inheritdoc />
 		public int[] DoFIndex => GlobalIndexes(Grips).ToArray();
 
 		/// <inheritdoc />
+		public virtual Vector<double> Forces { get; set; }
+
+		/// <inheritdoc />
+		IGrip[] IFiniteElement.Grips => Grips.Cast<IGrip>().ToArray();
+
+		/// <inheritdoc />
 		public int Number { get; set; }
+
+		/// <inheritdoc />
+		public virtual Matrix<double> Stiffness { get; set; }
 
 		#endregion
 
+		#endregion
+
+		/// <summary>
+		///		SPM element base constructor.
+		/// </summary>
+		/// <param name="geometry">The element's geometry.</param>
+		protected SPMElement(TGeometry geometry) => Geometry = geometry;
+		
 		#region Methods
 
 		/// <summary>
@@ -101,11 +142,7 @@ namespace andrefmello91.SPMElements
 				yield return new IterationResult(size);
 		}
 
-		/// <inheritdoc />
-		public abstract bool Equals(SPMElement? other);
-
-		/// <inheritdoc />
-		public abstract int CompareTo(SPMElement? other);
+		#region Interface Implementations
 
 		/// <inheritdoc />
 		public virtual void CalculateForces()
@@ -119,6 +156,26 @@ namespace andrefmello91.SPMElements
 		}
 
 		/// <inheritdoc />
+		public int CompareTo(SPMElement<TGeometry>? other) => other?.Geometry.CompareTo(other.Geometry) ?? 0;
+
+		/// <inheritdoc />
+		int IComparable<IFiniteElement>.CompareTo(IFiniteElement? other) => other is SPMElement<TGeometry> spmElement
+			? CompareTo(spmElement)
+			: 0;
+
+		/// <inheritdoc />
+		public bool Equals(SPMElement<TGeometry>? other) => other is not null && Geometry.Equals(other.Geometry);
+
+		/// <inheritdoc />
+		bool IEquatable<IFiniteElement>.Equals(IFiniteElement? other) => other is SPMElement<TGeometry> spmElement && Equals(spmElement);
+
+		/// <inheritdoc />
+		public override bool Equals(object? obj) => obj is SPMElement<TGeometry> spmElement && Equals(spmElement);
+
+		/// <inheritdoc />
+		public override int GetHashCode() => Geometry.GetHashCode();
+
+		/// <inheritdoc />
 		public virtual void UpdateDisplacements()
 		{
 			Displacements      = this.GetDisplacementsFromGrips();
@@ -130,26 +187,21 @@ namespace andrefmello91.SPMElements
 
 		#endregion
 
+		#endregion
+
 		#region Operators
 
 		/// <summary>
 		///     Returns true if arguments are equal.
 		/// </summary>
-		public static bool operator ==(SPMElement? left, SPMElement? right) => left.IsEqualTo(right);
+		public static bool operator ==(SPMElement<TGeometry>? left, SPMElement<TGeometry>? right) => left.IsEqualTo(right);
 
 		/// <summary>
 		///     Returns true if arguments are different.
 		/// </summary>
-		public static bool operator !=(SPMElement? left, SPMElement? right) => left.IsNotEqualTo(right);
+		public static bool operator !=(SPMElement<TGeometry>? left, SPMElement<TGeometry>? right) => left.IsNotEqualTo(right);
 
 		#endregion
 
-		/// <inheritdoc />
-		bool IEquatable<IFiniteElement>.Equals(IFiniteElement? other) => other is SPMElement spmElement && Equals(spmElement);
-
-		/// <inheritdoc />
-		int IComparable<IFiniteElement>.CompareTo(IFiniteElement? other) => other is SPMElement spmElement
-			? CompareTo(spmElement)
-			: 0;
 	}
 }

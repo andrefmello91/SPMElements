@@ -17,7 +17,7 @@ namespace andrefmello91.SPMElements
 	/// <summary>
 	///     Base panel class with linear properties.
 	/// </summary>
-	public class Panel : SPMElement, IEquatable<Panel>, IComparable<Panel>
+	public class Panel : SPMElement<PanelGeometry>
 	{
 
 		#region Properties
@@ -100,11 +100,6 @@ namespace andrefmello91.SPMElements
 		public virtual Length CrackOpening { get; }
 
 		/// <summary>
-		///     Get <see cref="PanelGeometry" /> of this element.
-		/// </summary>
-		public PanelGeometry Geometry { get; }
-
-		/// <summary>
 		///     Get the center <see cref="SPMElements.Node" /> of bottom edge.
 		/// </summary>
 		public Node Grip1 { get; }
@@ -144,13 +139,12 @@ namespace andrefmello91.SPMElements
 		/// </summary>
 		/// <inheritdoc cref="From" />
 		protected Panel(Node grip1, Node grip2, Node grip3, Node grip4, PanelGeometry geometry)
+			: base(geometry)
 		{
 			Grip1 = grip1;
 			Grip2 = grip2;
 			Grip3 = grip3;
 			Grip4 = grip4;
-
-			Geometry = geometry;
 		}
 
 		/// <summary>
@@ -383,20 +377,6 @@ namespace andrefmello91.SPMElements
 				_                                               => this
 			};
 
-		/// <inheritdoc />
-		public override int CompareTo(SPMElement? other) => other is Panel panel
-			? CompareTo(panel)
-			: 0;
-
-		/// <inheritdoc />
-		public override bool Equals(SPMElement? other) => other is Panel panel && Equals(panel);
-
-		/// <summary>
-		///     Returns true if <paramref name="obj" /> is <see cref="Panel" /> and <see cref="Geometry" /> is equal.
-		/// </summary>
-		/// <param name="obj">The other <see cref="object" /> to compare.</param>
-		public override bool Equals(object? obj) => obj is Panel other && Equals(other);
-
 		/// <summary>
 		///     Set stringer dimensions on edges.
 		///     <para>See: <see cref="Edge.SetStringerDimension" /></para>
@@ -421,18 +401,7 @@ namespace andrefmello91.SPMElements
 		{
 			// Not needed in linear element.
 		}
-
-		/// <inheritdoc />
-		public int CompareTo(Panel? other) => other is null
-			? 0
-			: Geometry.CompareTo(other.Geometry);
-
-		/// <summary>
-		///     Returns true if <paramref name="other" />'s <see cref="Geometry" /> is equal.
-		/// </summary>
-		/// <param name="other">The other <see cref="Panel" /> object to compare.</param>
-		public bool Equals(Panel? other) => other is not null && Geometry == other.Geometry;
-
+		
 		/// <summary>
 		///     Calculate initial stiffness elements.
 		/// </summary>

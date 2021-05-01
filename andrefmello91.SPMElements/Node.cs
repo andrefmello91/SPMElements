@@ -61,6 +61,8 @@ namespace andrefmello91.SPMElements
 		/// </summary>
 		public NodeType Type { get; }
 
+		#region Interface Implementations
+
 		/// <summary>
 		///     Get/set <see cref="OnPlaneComponents.Constraint" /> condition.
 		/// </summary>
@@ -71,19 +73,21 @@ namespace andrefmello91.SPMElements
 		/// </summary>
 		public PlaneDisplacement Displacement { get; set; } = PlaneDisplacement.Zero;
 
+		/// <inheritdoc />
+		public int[] DoFIndex => GlobalIndexes(this).ToArray();
+
 		/// <summary>
 		///     Get/set applied <see cref="Force" />.
 		/// </summary>
 		public PlaneForce Force { get; set; } = PlaneForce.Zero;
 
 		/// <inheritdoc />
+		public int Number { get; set; }
+
+		/// <inheritdoc />
 		public PlaneForce Reaction { get; set; }
 
-		/// <inheritdoc />
-		public int[] DoFIndex => GlobalIndexes(this).ToArray();
-
-		/// <inheritdoc />
-		public int Number { get; set; }
+		#endregion
 
 		#endregion
 
@@ -112,12 +116,6 @@ namespace andrefmello91.SPMElements
 		#region Methods
 
 		/// <summary>
-		///     Returns true if <paramref name="other" /> is a <see cref="Node" /> and both positions are equal.
-		/// </summary>
-		/// <param name="other">The other <see cref="Node" /> object.</param>
-		public override bool Equals(object? other) => other is Node otherNode && Equals(otherNode);
-
-		/// <summary>
 		///     Return the angle, related to horizontal axis, of a line that connects this to <paramref name="otherNode" /> (in
 		///     radians).
 		/// </summary>
@@ -130,10 +128,7 @@ namespace andrefmello91.SPMElements
 		/// <param name="otherNode">The other <see cref="Node" /> object.</param>
 		public Length GetDistance(Node? otherNode) => otherNode is not null ? Position.GetDistance(otherNode.Position) : Length.Zero;
 
-		/// <inheritdoc />
-		public int CompareTo(IGrip? other) => other is Node node
-			? CompareTo(node)
-			: 0;
+		#region Interface Implementations
 
 		/// <inheritdoc />
 		public int CompareTo(Node? other) => other is null
@@ -141,13 +136,28 @@ namespace andrefmello91.SPMElements
 			: Position.CompareTo(other.Position);
 
 		/// <inheritdoc />
-		public bool Equals(IGrip? other) => other is Node node && Equals(node);
+		int IComparable<IGrip>.CompareTo(IGrip? other) => other is Node node
+			? CompareTo(node)
+			: 0;
 
 		/// <summary>
 		///     Returns true if both nodes positions are equal.
 		/// </summary>
 		/// <param name="other">The other <see cref="Node" /> object.</param>
 		public bool Equals(Node? other) => other is not null && Position == other.Position;
+
+		/// <inheritdoc />
+		bool IEquatable<IGrip>.Equals(IGrip? other) => other is Node node && Equals(node);
+
+		#endregion
+
+		#region Object override
+
+		/// <summary>
+		///     Returns true if <paramref name="other" /> is a <see cref="Node" /> and both positions are equal.
+		/// </summary>
+		/// <param name="other">The other <see cref="Node" /> object.</param>
+		public override bool Equals(object? other) => other is Node otherNode && Equals(otherNode);
 
 		/// <inheritdoc />
 		public override int GetHashCode() => Position.GetHashCode();
@@ -182,6 +192,8 @@ namespace andrefmello91.SPMElements
 
 			return msgstr;
 		}
+
+		#endregion
 
 		#endregion
 

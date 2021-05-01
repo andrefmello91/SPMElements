@@ -17,7 +17,7 @@ namespace andrefmello91.SPMElements
 	/// <summary>
 	///     Stringer base class with linear properties.
 	/// </summary>
-	public class Stringer : SPMElement, IEquatable<Stringer>, IComparable<Stringer>
+	public class Stringer : SPMElement<StringerGeometry>
 	{
 
 		#region Properties
@@ -31,11 +31,6 @@ namespace andrefmello91.SPMElements
 		///     Get crack openings in start, mid and end nodes.
 		/// </summary>
 		public virtual Length[] CrackOpenings { get; }
-
-		/// <summary>
-		///     Get/set the <see cref="Geometry" /> of this.
-		/// </summary>
-		public StringerGeometry Geometry { get; }
 
 		/// <summary>
 		///     Get the initial <see cref="Node" /> of this stringer.
@@ -99,8 +94,8 @@ namespace andrefmello91.SPMElements
 		/// </summary>
 		/// <inheritdoc cref="From" />
 		protected Stringer(Node grip1, Node grip2, Node grip3, CrossSection crossSection)
+			:base(new StringerGeometry(grip1.Position, grip3.Position, crossSection))
 		{
-			Geometry = new StringerGeometry(grip1.Position, grip3.Position, crossSection);
 			Grip1    = grip1;
 			Grip2    = grip2;
 			Grip3    = grip3;
@@ -218,35 +213,10 @@ namespace andrefmello91.SPMElements
 			};
 
 		/// <inheritdoc />
-		public override int CompareTo(SPMElement? other) => other is Stringer stringer
-			? CompareTo(stringer)
-			: 0;
-
-		/// <summary>
-		///     Returns true if <paramref name="obj" /> is <see cref="Stringer" /> and <see cref="Geometry" /> of
-		///     <paramref name="obj" /> is equal to this.
-		/// </summary>
-		public override bool Equals(object? obj) => obj is Stringer other && Equals(other);
-
-		/// <inheritdoc />
-		public override bool Equals(SPMElement? other) => other is Stringer stringer && Equals(stringer);
-
-		/// <inheritdoc />
 		public override void UpdateStiffness()
 		{
 			// Not needed in linear element.
 		}
-
-		/// <inheritdoc />
-		public int CompareTo(Stringer? other) => other is null
-			? 1
-			: Geometry.CompareTo(other.Geometry);
-
-		/// <summary>
-		///     Returns true if <see cref="Geometry" /> of <paramref name="other" /> is equal to this.
-		/// </summary>
-		/// <param name="other"></param>
-		public bool Equals(Stringer? other) => other is not null && Geometry == other.Geometry;
 
 		/// <summary>
 		///     Calculate initial stiffness elements.
@@ -258,9 +228,6 @@ namespace andrefmello91.SPMElements
 			LocalStiffness       = CalculateStiffness(Concrete.Stiffness, Geometry.Length);
 			Stiffness            = TransformationMatrix.Transpose() * LocalStiffness * TransformationMatrix;
 		}
-
-		/// <inheritdoc />
-		public override int GetHashCode() => Geometry.GetHashCode();
 
 		/// <inheritdoc />
 		public override string ToString()

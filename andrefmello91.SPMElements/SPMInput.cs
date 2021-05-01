@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using andrefmello91.FEMAnalysis;
 
@@ -7,7 +8,7 @@ namespace andrefmello91.SPMElements
 	/// <summary>
 	///     SPMInput class.
 	/// </summary>
-	public class SPMInput : FEMInput<SPMElement>, IFEMInput<IFiniteElement>
+	public class SPMInput : FEMInput<ISPMElement>, IFEMInput<IFiniteElement>
 	{
 
 		#region Fields
@@ -57,7 +58,7 @@ namespace andrefmello91.SPMElements
 		///     SPMInput constructor.
 		/// </summary>
 		private SPMInput(IEnumerable<Stringer> stringers, IEnumerable<Panel> panels, IEnumerable<Node> nodes)
-			: base(stringers.Concat<SPMElement>(panels).ToList(), nodes)
+			: base(stringers.Concat<ISPMElement>(panels).ToList(), nodes)
 		{
 			Stringers = stringers.ToList();
 			Panels    = panels.ToList();

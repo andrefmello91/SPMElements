@@ -401,7 +401,7 @@ namespace andrefmello91.SPMElements
 			OngoingIteration.Number++;
 
 			// Clear iteration list
-			_iterations.ClearIf(l => l.Count > 5, ^3..^1);
+			_iterations.ClearIf(l => l.Count > 20, ^3..);
 		}
 
 		/// <summary>

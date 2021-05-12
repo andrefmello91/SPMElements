@@ -7,14 +7,8 @@ namespace andrefmello91.SPMElements
 	/// <summary>
 	///     SPMInput class.
 	/// </summary>
-	public class SPMInput : FEMInput<ISPMElement>, IFEMInput<IFiniteElement>
+	public class SPMInput : FEMInput<ISPMElement>
 	{
-
-		#region Fields
-
-		private readonly List<IFiniteElement> _elements;
-
-		#endregion
 
 		#region Properties
 
@@ -32,13 +26,6 @@ namespace andrefmello91.SPMElements
 		///     Get the collection of stringers.
 		/// </summary>
 		public List<Stringer> Stringers { get; }
-
-		#region Interface Implementations
-
-		/// <inheritdoc />
-		List<IFiniteElement> IFEMInput<IFiniteElement>.Elements => _elements;
-
-		#endregion
 
 		#endregion
 
@@ -69,8 +56,6 @@ namespace andrefmello91.SPMElements
 
 			// Set stringer dimensions
 			Panels.SetStringerDimensions(Stringers);
-
-			_elements = Elements.Cast<IFiniteElement>().ToList();
 		}
 
 		#endregion
@@ -106,9 +91,6 @@ namespace andrefmello91.SPMElements
 				_                   => new SPMInput(stringers.Select(s => s.As(model)).ToList(), panels.Select(p => p.As(model)).ToList())
 			};
 		}
-
-		/// <inheritdoc />
-		IEnumerator<IFiniteElement> IEnumerable<IFiniteElement>.GetEnumerator() => base.GetEnumerator();
 
 		/// <inheritdoc />
 		public override string ToString() =>

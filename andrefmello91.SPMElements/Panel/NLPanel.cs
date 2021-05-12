@@ -30,7 +30,7 @@ namespace andrefmello91.SPMElements
 		///     The list of the last 20 iterations.
 		/// </summary>
 		/// <remarks>
-		///     It's cleared when count achieves 20 elements.
+		///     It's cleared at the start of a new load step.
 		/// </remarks>
 		private readonly List<IterationResult> _iterations = InitialValues(8).ToList();
 
@@ -407,8 +407,6 @@ namespace andrefmello91.SPMElements
 			_iterations.Add(OngoingIteration.Clone());
 			OngoingIteration.Number++;
 
-			// Clear iteration list
-			_iterations.ClearIf(l => l.Count > 20, ^3..);
 		}
 
 		/// <summary>
@@ -547,6 +545,18 @@ namespace andrefmello91.SPMElements
 			var ks = QPs * Ds * _baMatrix;
 
 			Stiffness = kc + ks;
+		}
+
+		/// <summary>
+		///		Clear the iterations lists.
+		/// </summary>
+		public void ClearIterations()
+		{
+			if (_iterations.Count < 4)
+				return;
+			
+			_iterations.RemoveRange(..^3);
+			OngoingIteration.Number = 1;
 		}
 
 		#endregion

@@ -107,7 +107,8 @@ namespace andrefmello91.SPMElements
 			};
 		}
 
-		#region Object override
+		/// <inheritdoc />
+		IEnumerator<IFiniteElement> IEnumerable<IFiniteElement>.GetEnumerator() => base.GetEnumerator();
 
 		/// <inheritdoc />
 		public override string ToString() =>
@@ -116,8 +117,6 @@ namespace andrefmello91.SPMElements
 			$"Number of panels: {Panels.Count}\n" +
 			$"Force vector: \n{ForceVector}\n" +
 			$"Constraint Index: {ConstraintIndex.Select(i => i.ToString()).Aggregate((i, f) => $"{i} - {f}")}";
-
-		#endregion
 
 		#endregion
 

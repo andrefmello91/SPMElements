@@ -177,7 +177,7 @@ namespace andrefmello91.SPMElements
 		internal NLPanel(Node grip1, Node grip2, Node grip3, Node grip4, PanelGeometry geometry, IParameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, WebReinforcement? reinforcement = null)
 			: base(grip1, grip2, grip3, grip4, geometry)
 		{
-			Concrete = new BiaxialConcrete(concreteParameters, model);
+			Concrete = BiaxialConcrete.From(concreteParameters, model);
 
 			Reinforcement = reinforcement;
 

@@ -1,6 +1,9 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using andrefmello91.FEMAnalysis;
+using andrefmello91.OnPlaneComponents;
+using andrefmello91.SPMElements.PanelProperties;
+using andrefmello91.SPMElements.StringerProperties;
 
 namespace andrefmello91.SPMElements
 {
@@ -27,6 +30,24 @@ namespace andrefmello91.SPMElements
 		/// </summary>
 		public List<Stringer> Stringers { get; }
 
+		/// <summary>
+		///		Get a node at a <see cref="position"/>.
+		/// </summary>
+		/// <param name="position">The required position.</param>
+		public Node? this[Point position] => Nodes.Find(n => n.Position == position);
+		
+		/// <summary>
+		///		Get a stringer that correspond to a <see cref="stringerGeometry"/>.
+		/// </summary>
+		/// <param name="stringerGeometry">The required position.</param>
+		public Stringer? this[StringerGeometry stringerGeometry] => Stringers.Find(n => n.Geometry == stringerGeometry);
+		
+		/// <summary>
+		///		Get a panel that correspond to a <see cref="panelVertices"/>.
+		/// </summary>
+		/// <param name="panelVertices">The required vertices.</param>
+		public Panel? this[Vertices panelVertices] => Panels.Find(n => n.Geometry.Vertices == panelVertices);
+		
 		#endregion
 
 		#region Constructors

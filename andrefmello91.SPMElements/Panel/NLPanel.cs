@@ -30,7 +30,7 @@ namespace andrefmello91.SPMElements
 		///     The list of the last 20 iterations.
 		/// </summary>
 		/// <remarks>
-		///     It's cleared at the start of a new load step.
+		///     It's cleared at the start of a new step.
 		/// </remarks>
 		private readonly List<IterationResult> _iterations = InitialValues(8).ToList();
 

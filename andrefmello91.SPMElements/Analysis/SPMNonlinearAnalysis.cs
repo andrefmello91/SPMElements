@@ -9,8 +9,8 @@ namespace andrefmello91.SPMElements
 	{
 		/// <inheritdoc />
 		/// <param name="spmInput">The <see cref="SPMInput"/>.</param>
-		public SPMNonlinearAnalysis(IFEMInput<ISPMElement> spmInput, NonLinearSolver solver = NonLinearSolver.NewtonRaphson)
-			: base(spmInput, solver)
+		public SPMNonlinearAnalysis(IFEMInput<ISPMElement> spmInput, NonLinearSolver solver = NonLinearSolver.NewtonRaphson, AnalysisControl control = AnalysisControl.Force)
+			: base(spmInput, solver, control)
 		{
 		}
 

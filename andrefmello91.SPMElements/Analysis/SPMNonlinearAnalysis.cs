@@ -15,10 +15,8 @@ namespace andrefmello91.SPMElements
 		}
 
 		/// <inheritdoc />
-		protected override void ClearIterations()
+		protected void ClearIterations()
 		{
-			base.ClearIterations();
-
 			if (Solver is NonLinearSolver.Secant)
 				return;
 			

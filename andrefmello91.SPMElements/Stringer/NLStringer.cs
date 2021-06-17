@@ -46,7 +46,7 @@ namespace andrefmello91.SPMElements
 		protected override Vector<double> LocalDisplacements
 		{
 			get => OngoingIteration.Displacements;
-			set => OngoingIteration.Displacements = value;
+			set => OngoingIteration.IncrementDisplacements(value - OngoingIteration.Displacements);
 		}
 
 		/// <inheritdoc />

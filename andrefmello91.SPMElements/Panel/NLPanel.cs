@@ -105,7 +105,7 @@ namespace andrefmello91.SPMElements
 		public override Vector<double> Displacements
 		{
 			get => OngoingIteration.Displacements;
-			set => OngoingIteration.Displacements = value;
+			set => OngoingIteration.IncrementDisplacements(value - OngoingIteration.Displacements);
 		}
 
 		/// <inheritdoc />

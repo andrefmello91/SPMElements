@@ -153,10 +153,10 @@ namespace andrefmello91.SPMElements
 		///     The initial iteration values for SPM elements.
 		/// </summary>
 		/// <param name="size">The size of element's matrices and vectors.</param>
-		internal static IEnumerable<IterationResult> InitialValues(int size)
+		internal static IEnumerable<Iteration> InitialValues(int size)
 		{
 			for (var i = 0; i < 3; i++)
-				yield return new IterationResult(size);
+				yield return new Iteration(size);
 		}
 
 		#region Interface Implementations

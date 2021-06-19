@@ -32,7 +32,7 @@ namespace andrefmello91.SPMElements
 		/// <remarks>
 		///     It's cleared at the start of a new step.
 		/// </remarks>
-		private readonly List<IterationResult> _iterations = InitialValues(8).ToList();
+		private readonly List<Iteration> _iterations = InitialValues(8).ToList();
 
 		#endregion
 
@@ -126,7 +126,7 @@ namespace andrefmello91.SPMElements
 		///     The results of the current solution (last solved iteration [i - 1]).
 		/// </summary>
 		/// <inheritdoc cref="OngoingIteration" />
-		private IterationResult CurrentSolution => _iterations[^2];
+		private Iteration CurrentSolution => _iterations[^2];
 
 		/// <summary>
 		///     Get <see cref="Membrane" /> integration points.
@@ -137,7 +137,7 @@ namespace andrefmello91.SPMElements
 		///     The results of the last solution (penultimate solved iteration [i - 2]).
 		/// </summary>
 		/// <inheritdoc cref="OngoingIteration" />
-		private IterationResult LastSolution => _iterations[^3];
+		private Iteration LastSolution => _iterations[^3];
 
 		/// <summary>
 		///     Results of the ongoing iteration.
@@ -145,7 +145,7 @@ namespace andrefmello91.SPMElements
 		/// <remarks>
 		///     In local coordinate system.
 		/// </remarks>
-		private IterationResult OngoingIteration => _iterations[^1];
+		private Iteration OngoingIteration => _iterations[^1];
 
 		/// <summary>
 		///     Get/set panel reinforcement stress <see cref="Vector" />.

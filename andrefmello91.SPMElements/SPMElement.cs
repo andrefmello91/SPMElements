@@ -156,7 +156,7 @@ namespace andrefmello91.SPMElements
 		internal static IEnumerable<Iteration> InitialValues(int size)
 		{
 			for (var i = 0; i < 3; i++)
-				yield return new Iteration(size);
+				yield return (Iteration) Iteration.From(size);
 		}
 
 		#region Interface Implementations

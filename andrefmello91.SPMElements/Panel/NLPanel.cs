@@ -401,7 +401,7 @@ namespace andrefmello91.SPMElements
 		/// <inheritdoc />
 		public override void UpdateStiffness()
 		{
-			Stiffness += NonlinearAnalysis.TangentIncrement(LastIteration.InternalForces, PanultimateIteration.InternalForces, LastIteration.Displacements, PanultimateIteration.Displacements);
+			Stiffness += NonlinearAnalysis.TangentIncrement(CurrentIteration, LastIteration);
 
 			// Increase iteration
 			_iterations.Add(CurrentIteration.Clone());

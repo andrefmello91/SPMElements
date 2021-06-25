@@ -179,7 +179,7 @@ namespace andrefmello91.SPMElements
 		/// <inheritdoc />
 		public override void UpdateStiffness()
 		{
-			LocalStiffness += NonlinearAnalysis.TangentIncrement(LastIteration.InternalForces, PenultimateIteration.InternalForces, LastIteration.Displacements, PenultimateIteration.Displacements);
+			LocalStiffness += NonlinearAnalysis.TangentIncrement(CurrentIteration, LastIteration);
 
 			Stiffness = TransformationMatrix.Transpose() * LocalStiffness * TransformationMatrix;
 

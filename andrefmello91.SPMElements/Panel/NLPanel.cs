@@ -104,29 +104,29 @@ namespace andrefmello91.SPMElements
 		/// <inheritdoc />
 		public override Vector<double> Displacements
 		{
-			get => OngoingIteration.Displacements;
-			set => OngoingIteration.IncrementDisplacements(value - OngoingIteration.Displacements);
+			get => CurrentIteration.Displacements;
+			set => CurrentIteration.IncrementDisplacements(value - CurrentIteration.Displacements);
 		}
 
 		/// <inheritdoc />
 		public override Matrix<double> Stiffness
 		{
-			get => OngoingIteration.Stiffness;
-			set => OngoingIteration.Stiffness = value;
+			get => CurrentIteration.Stiffness;
+			set => CurrentIteration.Stiffness = value;
 		}
 
 		/// <inheritdoc />
 		public override Vector<double> Forces
 		{
-			get => OngoingIteration.InternalForces;
-			set => OngoingIteration.InternalForces = value;
+			get => CurrentIteration.InternalForces;
+			set => CurrentIteration.InternalForces = value;
 		}
 
 		/// <summary>
 		///     The results of the current solution (last solved iteration [i - 1]).
 		/// </summary>
-		/// <inheritdoc cref="OngoingIteration" />
-		private Iteration CurrentSolution => _iterations[^2];
+		/// <inheritdoc cref="CurrentIteration" />
+		private Iteration LastIteration => _iterations[^2];
 
 		/// <summary>
 		///     Get <see cref="Membrane" /> integration points.
@@ -136,8 +136,8 @@ namespace andrefmello91.SPMElements
 		/// <summary>
 		///     The results of the last solution (penultimate solved iteration [i - 2]).
 		/// </summary>
-		/// <inheritdoc cref="OngoingIteration" />
-		private Iteration LastSolution => _iterations[^3];
+		/// <inheritdoc cref="CurrentIteration" />
+		private Iteration PanultimateIteration => _iterations[^3];
 
 		/// <summary>
 		///     Results of the ongoing iteration.
@@ -145,7 +145,7 @@ namespace andrefmello91.SPMElements
 		/// <remarks>
 		///     In local coordinate system.
 		/// </remarks>
-		private Iteration OngoingIteration => _iterations[^1];
+		private Iteration CurrentIteration => _iterations[^1];
 
 		/// <summary>
 		///     Get/set panel reinforcement stress <see cref="Vector" />.
@@ -401,11 +401,11 @@ namespace andrefmello91.SPMElements
 		/// <inheritdoc />
 		public override void UpdateStiffness()
 		{
-			Stiffness += NonlinearAnalysis.TangentIncrement(CurrentSolution.InternalForces, LastSolution.InternalForces, CurrentSolution.Displacements, LastSolution.Displacements);
+			Stiffness += NonlinearAnalysis.TangentIncrement(LastIteration.InternalForces, PanultimateIteration.InternalForces, LastIteration.Displacements, PanultimateIteration.Displacements);
 
 			// Increase iteration
-			_iterations.Add(OngoingIteration.Clone());
-			OngoingIteration.Number++;
+			_iterations.Add(CurrentIteration.Clone());
+			CurrentIteration.Number++;
 
 		}
 
@@ -556,7 +556,7 @@ namespace andrefmello91.SPMElements
 				return;
 			
 			_iterations.RemoveRange(..^3);
-			OngoingIteration.Number = 1;
+			CurrentIteration.Number = 1;
 		}
 
 		#endregion

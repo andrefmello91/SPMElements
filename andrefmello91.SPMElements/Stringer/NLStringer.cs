@@ -45,35 +45,35 @@ namespace andrefmello91.SPMElements
 		/// <inheritdoc />
 		protected override Vector<double> LocalDisplacements
 		{
-			get => OngoingIteration.Displacements;
-			set => OngoingIteration.IncrementDisplacements(value - OngoingIteration.Displacements);
+			get => CurrentIteration.Displacements;
+			set => CurrentIteration.IncrementDisplacements(value - CurrentIteration.Displacements);
 		}
 
 		/// <inheritdoc />
 		protected override Matrix<double> LocalStiffness
 		{
-			get => OngoingIteration.Stiffness;
-			set => OngoingIteration.Stiffness = value;
+			get => CurrentIteration.Stiffness;
+			set => CurrentIteration.Stiffness = value;
 		}
 
 		/// <inheritdoc />
 		protected override Vector<double> LocalForces
 		{
-			get => OngoingIteration.InternalForces;
-			set => OngoingIteration.InternalForces = value;
+			get => CurrentIteration.InternalForces;
+			set => CurrentIteration.InternalForces = value;
 		}
 
 		/// <summary>
 		///     The results of the current solution (last solved iteration [i - 1]).
 		/// </summary>
-		/// <inheritdoc cref="OngoingIteration" />
-		private Iteration CurrentSolution => _iterations[^2];
+		/// <inheritdoc cref="CurrentIteration" />
+		private Iteration LastIteration => _iterations[^2];
 
 		/// <summary>
 		///     The results of the last solution (penultimate solved iteration [i - 2]).
 		/// </summary>
-		/// <inheritdoc cref="OngoingIteration" />
-		private Iteration LastSolution => _iterations[^3];
+		/// <inheritdoc cref="CurrentIteration" />
+		private Iteration PenultimateIteration => _iterations[^3];
 
 		/// <summary>
 		///     Results of the ongoing iteration.
@@ -81,7 +81,7 @@ namespace andrefmello91.SPMElements
 		/// <remarks>
 		///     In local coordinate system.
 		/// </remarks>
-		private Iteration OngoingIteration => _iterations[^1];
+		private Iteration CurrentIteration => _iterations[^1];
 
 		/// <summary>
 		///     Get the strain <see cref="Vector" />.
@@ -179,13 +179,13 @@ namespace andrefmello91.SPMElements
 		/// <inheritdoc />
 		public override void UpdateStiffness()
 		{
-			LocalStiffness += NonlinearAnalysis.TangentIncrement(CurrentSolution.InternalForces, LastSolution.InternalForces, CurrentSolution.Displacements, LastSolution.Displacements);
+			LocalStiffness += NonlinearAnalysis.TangentIncrement(LastIteration.InternalForces, PenultimateIteration.InternalForces, LastIteration.Displacements, PenultimateIteration.Displacements);
 
 			Stiffness = TransformationMatrix.Transpose() * LocalStiffness * TransformationMatrix;
 
 			// Increase iteration
-			_iterations.Add(OngoingIteration.Clone());
-			OngoingIteration.Number++;
+			_iterations.Add(CurrentIteration.Clone());
+			CurrentIteration.Number++;
 
 		}
 
@@ -198,7 +198,7 @@ namespace andrefmello91.SPMElements
 				return;
 			
 			_iterations.RemoveRange(..^3);
-			OngoingIteration.Number = 1;
+			CurrentIteration.Number = 1;
 		}
 		
 		#endregion

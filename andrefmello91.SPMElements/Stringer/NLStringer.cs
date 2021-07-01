@@ -107,6 +107,8 @@ namespace andrefmello91.SPMElements
 
 			_bMatrix = CalculateBMatrix(Geometry.Length);
 
+			Forces = Vector<double>.Build.Dense(2 * Grips.Length);
+			
 			InitiateStiffness();
 		}
 

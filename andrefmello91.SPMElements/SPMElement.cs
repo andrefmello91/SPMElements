@@ -11,46 +11,6 @@ using static andrefmello91.FEMAnalysis.Extensions;
 
 namespace andrefmello91.SPMElements
 {
-	/// <summary>
-	///     Interface for SPM elements
-	/// </summary>
-	public interface ISPMElement : IFiniteElement
-	{
-
-		#region Properties
-
-		/// <summary>
-		///     The nodes of this element.
-		/// </summary>
-		new Node[] Grips { get; }
-
-		/// <summary>
-		///     The <see cref="ElementModel" /> of this SPM element.
-		/// </summary>
-		ElementModel Model { get; }
-
-		#endregion
-
-	}
-
-	/// <summary>
-	///     Generic interface for SPM elements
-	/// </summary>
-	/// <typeparam name="TGeometry">The struct that represents the geometry of the element.</typeparam>
-	public interface ISPMElement<out TGeometry> : ISPMElement
-		where TGeometry : struct, IEquatable<TGeometry>, IComparable<TGeometry>
-	{
-
-		#region Properties
-
-		/// <summary>
-		///     The geometry of this element.
-		/// </summary>
-		TGeometry Geometry { get; }
-
-		#endregion
-
-	}
 
 	/// <summary>
 	///     Base class for SPM elements.
@@ -73,25 +33,19 @@ namespace andrefmello91.SPMElements
 		public abstract Force MaxForce { get; }
 
 		/// <summary>
-		///     Get the displacement <see cref="Vector" />, in local coordinate system.
+		///     Get the displacement vector, in local coordinate system.
 		/// </summary>
-		/// <remarks>
-		///     Components in <see cref="LengthUnit.Millimeter" />.
-		/// </remarks>
-		protected virtual Vector<double> LocalDisplacements { get; set; }
+		protected virtual DisplacementVector LocalDisplacements { get; set; }
 
 		/// <summary>
-		///     Get the force <see cref="Vector" />, in local coordinate system.
+		///     Get the force vector, in local coordinate system.
 		/// </summary>
-		/// <remarks>
-		///     Components in <see cref="ForceUnit.Newton" />.
-		/// </remarks>
-		protected virtual Vector<double> LocalForces { get; set; }
+		protected virtual ForceVector LocalForces { get; set; }
 
 		/// <summary>
-		///     Get the local stiffness <see cref="Matrix" />.
+		///     Get the local stiffness matrix.
 		/// </summary>
-		protected virtual Matrix<double> LocalStiffness { get; set; }
+		protected virtual StiffnessMatrix LocalStiffness { get; set; }
 
 		/// <summary>
 		///     Get the transformation matrix to transform from local to global coordinate systems.
@@ -101,13 +55,13 @@ namespace andrefmello91.SPMElements
 		#region Interface Implementations
 
 		/// <inheritdoc />
-		public virtual Vector<double> Displacements { get; set; }
+		public virtual DisplacementVector Displacements { get; protected set; }
 
 		/// <inheritdoc />
 		public int[] DoFIndex => GlobalIndexes(Grips).ToArray();
 
 		/// <inheritdoc />
-		public virtual Vector<double> Forces { get; set; }
+		public virtual ForceVector Forces { get; protected set; }
 
 		/// <inheritdoc />
 		public TGeometry Geometry { get; }
@@ -131,7 +85,7 @@ namespace andrefmello91.SPMElements
 		public int Number { get; set; }
 
 		/// <inheritdoc />
-		public virtual Matrix<double> Stiffness { get; set; }
+		public virtual StiffnessMatrix Stiffness { get; set; }
 
 		#endregion
 
@@ -168,7 +122,6 @@ namespace andrefmello91.SPMElements
 			LocalForces = LocalStiffness * LocalDisplacements;
 
 			// Approximate small values to zero
-			LocalForces.CoerceZero(0.001);
 			Forces = TransformationMatrix.Transpose() * LocalForces;
 		}
 

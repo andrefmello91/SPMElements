@@ -10,7 +10,7 @@ namespace andrefmello91.SPMElements
 	/// <summary>
 	///     SPMInput class.
 	/// </summary>
-	public class SPMInput : FEMInput<ISPMElement>
+	public class SPMInput : FEMInput
 	{
 
 		#region Properties

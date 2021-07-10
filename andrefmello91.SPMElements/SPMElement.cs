@@ -35,17 +35,17 @@ namespace andrefmello91.SPMElements
 		/// <summary>
 		///     Get the displacement vector, in local coordinate system.
 		/// </summary>
-		protected virtual DisplacementVector LocalDisplacements { get; set; }
+		protected DisplacementVector LocalDisplacements { get; set; }
 
 		/// <summary>
 		///     Get the force vector, in local coordinate system.
 		/// </summary>
-		protected virtual ForceVector LocalForces { get; set; }
+		protected ForceVector LocalForces { get; set; }
 
 		/// <summary>
 		///     Get the local stiffness matrix.
 		/// </summary>
-		protected virtual StiffnessMatrix LocalStiffness { get; set; }
+		protected StiffnessMatrix LocalStiffness { get; set; }
 
 		/// <summary>
 		///     Get the transformation matrix to transform from local to global coordinate systems.
@@ -55,19 +55,19 @@ namespace andrefmello91.SPMElements
 		#region Interface Implementations
 
 		/// <inheritdoc />
-		public virtual DisplacementVector Displacements { get; protected set; }
+		public DisplacementVector Displacements { get; protected set; }
 
 		/// <inheritdoc />
 		public int[] DoFIndex => GlobalIndexes(Grips).ToArray();
 
 		/// <inheritdoc />
-		public virtual ForceVector Forces { get; protected set; }
+		public ForceVector Forces { get; protected set; }
 
 		/// <inheritdoc />
 		public TGeometry Geometry { get; }
 
 		/// <inheritdoc />
-		public abstract Node[] Grips { get; }
+		public Node[] Grips { get; }
 
 		/// <inheritdoc />
 		IGrip[] IFiniteElement.Grips => Grips.Cast<IGrip>().ToArray();
@@ -85,7 +85,7 @@ namespace andrefmello91.SPMElements
 		public int Number { get; set; }
 
 		/// <inheritdoc />
-		public virtual StiffnessMatrix Stiffness { get; set; }
+		public StiffnessMatrix Stiffness { get; protected set; }
 
 		#endregion
 
@@ -97,21 +97,20 @@ namespace andrefmello91.SPMElements
 		///     SPM element base constructor.
 		/// </summary>
 		/// <param name="geometry">The element's geometry.</param>
-		protected SPMElement(TGeometry geometry) => Geometry = geometry;
+		/// <param name="grips">The collection of grips of this element.</param>
+		protected SPMElement(TGeometry geometry, IEnumerable<Node> grips)
+		{
+			Geometry           = geometry;
+			Grips              = grips.ToArray();
+			LocalForces        = ForceVector.Zero(Grips.Length);
+			LocalDisplacements = DisplacementVector.Zero(Grips.Length);
+			Forces             = ForceVector.Zero(2 * Grips.Length);
+			Displacements      = DisplacementVector.Zero(2 * Grips.Length);
+		}
 
 		#endregion
 
 		#region Methods
-
-		/// <summary>
-		///     The initial iteration values for SPM elements.
-		/// </summary>
-		/// <param name="size">The size of element's matrices and vectors.</param>
-		internal static IEnumerable<Iteration> InitialValues(int size)
-		{
-			for (var i = 0; i < 3; i++)
-				yield return (Iteration) Iteration.From(size);
-		}
 
 		#region Interface Implementations
 

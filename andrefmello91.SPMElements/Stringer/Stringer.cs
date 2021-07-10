@@ -3,6 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using andrefmello91.Extensions;
+using andrefmello91.FEMAnalysis;
 using andrefmello91.Material.Concrete;
 using andrefmello91.Material.Reinforcement;
 using andrefmello91.OnPlaneComponents;
@@ -35,28 +36,25 @@ namespace andrefmello91.SPMElements
 		/// <summary>
 		///     Get the initial <see cref="Node" /> of this stringer.
 		/// </summary>
-		public Node Grip1 { get; }
+		public Node Grip1 => Grips[0];
 
 		/// <summary>
 		///     Get the center <see cref="Node" /> of this stringer.
 		/// </summary>
-		public Node Grip2 { get; }
+		public Node Grip2 => Grips[1];
 
 		/// <summary>
 		///     Get the end <see cref="Node" /> of this stringer.
 		/// </summary>
-		public Node Grip3 { get; }
+		public Node Grip3 => Grips[2];
 
 		/// <inheritdoc />
-		public override Node[] Grips => new[] { Grip1, Grip2, Grip3 };
-
-		/// <inheritdoc />
-		public override Force MaxForce => Force.FromNewtons(LocalForces.AbsoluteMaximum());
+		public override Force MaxForce => LocalForces.AbsoluteMaximum();
 
 		/// <summary>
 		///     Get normal forces acting in the stringer.
 		/// </summary>
-		public (Force N1, Force N3) NormalForces => (Force.FromNewtons(-LocalForces[0]), Force.FromNewtons(LocalForces[2]));
+		public (Force N1, Force N3) NormalForces => (-LocalForces[0], LocalForces[2]);
 
 		/// <summary>
 		///     Get the <see cref="UniaxialReinforcement" /> of this element.
@@ -94,11 +92,8 @@ namespace andrefmello91.SPMElements
 		/// </summary>
 		/// <inheritdoc cref="From" />
 		protected Stringer(Node grip1, Node grip2, Node grip3, CrossSection crossSection)
-			: base(new StringerGeometry(grip1.Position, grip3.Position, crossSection))
+			: base(new StringerGeometry(grip1.Position, grip3.Position, crossSection), new []{ grip1, grip2, grip3 })
 		{
-			Grip1 = grip1;
-			Grip2 = grip2;
-			Grip3 = grip3;
 		}
 
 
@@ -113,7 +108,10 @@ namespace andrefmello91.SPMElements
 			if (Reinforcement is not null)
 				Reinforcement.ConcreteArea = Concrete.Area;
 
-			InitiateStiffness();
+			// Calculate matrices
+			TransformationMatrix = CalculateTransformationMatrix(Geometry.Angle);
+			LocalStiffness       = CalculateStiffness(Concrete.Stiffness, Geometry.Length);
+			Stiffness            = (StiffnessMatrix) LocalStiffness.Transform(TransformationMatrix);
 		}
 
 		#endregion
@@ -164,26 +162,28 @@ namespace andrefmello91.SPMElements
 		/// </summary>
 		/// <param name="concreteStiffness">The stiffness of concrete cross-section.</param>
 		/// <param name="stringerLength">The length of the stringer.</param>
-		private static Matrix<double> CalculateStiffness(Force concreteStiffness, Length stringerLength)
+		protected static StiffnessMatrix CalculateStiffness(Force concreteStiffness, Length stringerLength)
 		{
 			// Calculate the constant factor of stiffness
 			var k = concreteStiffness.Newtons / (3 * stringerLength.Millimeters);
 
 			// Calculate the local stiffness matrix
-			return
-				k * new double[,]
+			var stiffness = k * new double[,]
 				{
 					{ 7, -8, 1 },
 					{ -8, 16, -8 },
 					{ 1, -8, 7 }
 				}.ToMatrix();
+
+			return
+				new StiffnessMatrix(stiffness);
 		}
 
 		/// <summary>
 		///     Calculate the transformation matrix based on the <paramref name="angle" /> of a stringer.
 		/// </summary>
 		/// <param name="angle">The angle of the stringer, related to horizontal axis.</param>
-		private static Matrix<double> CalculateTransformationMatrix(double angle)
+		protected static Matrix<double> CalculateTransformationMatrix(double angle)
 		{
 			// Get the direction cosines
 			var (l, m) = angle.DirectionCosines();
@@ -216,17 +216,6 @@ namespace andrefmello91.SPMElements
 		public override void UpdateStiffness()
 		{
 			// Not needed in linear element.
-		}
-
-		/// <summary>
-		///     Calculate initial stiffness elements.
-		/// </summary>
-		protected void InitiateStiffness()
-		{
-			// Calculate matrices
-			TransformationMatrix = CalculateTransformationMatrix(Geometry.Angle);
-			LocalStiffness       = CalculateStiffness(Concrete.Stiffness, Geometry.Length);
-			Stiffness            = TransformationMatrix.Transpose() * LocalStiffness * TransformationMatrix;
 		}
 
 		#region Object override

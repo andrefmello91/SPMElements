@@ -26,14 +26,6 @@ namespace andrefmello91.SPMElements
 		// Auxiliary fields
 		private readonly Matrix<double> _baMatrix;
 
-		/// <summary>
-		///     The list of the last 20 iterations.
-		/// </summary>
-		/// <remarks>
-		///     It's cleared at the start of a new step.
-		/// </remarks>
-		private readonly List<Iteration> _iterations = InitialValues(8).ToList();
-
 		#endregion
 
 		#region Properties
@@ -101,62 +93,17 @@ namespace andrefmello91.SPMElements
 		/// <inheritdoc />
 		public override Length CrackOpening => Membrane.CrackOpening(Reinforcement, ConcretePrincipalStrains);
 
-		/// <inheritdoc />
-		public override Vector<double> Displacements
-		{
-			get => CurrentIteration.Displacements;
-			set => CurrentIteration.IncrementDisplacements(value - CurrentIteration.Displacements);
-		}
-
-		/// <inheritdoc />
-		public override Matrix<double> Stiffness
-		{
-			get => CurrentIteration.Stiffness;
-			set => CurrentIteration.Stiffness = value;
-		}
-
-		/// <inheritdoc />
-		public override Vector<double> Forces
-		{
-			get => CurrentIteration.InternalForces;
-			set => CurrentIteration.InternalForces = value;
-		}
-
-		/// <summary>
-		///     The results of the current solution (last solved iteration [i - 1]).
-		/// </summary>
-		/// <inheritdoc cref="CurrentIteration" />
-		private Iteration LastIteration => _iterations[^2];
-
 		/// <summary>
 		///     Get <see cref="Membrane" /> integration points.
 		/// </summary>
 		private Membrane[] IntegrationPoints { get; }
 
-		/// <summary>
-		///     The results of the last solution (penultimate solved iteration [i - 2]).
-		/// </summary>
-		/// <inheritdoc cref="CurrentIteration" />
-		private Iteration PanultimateIteration => _iterations[^3];
-
-		/// <summary>
-		///     Results of the ongoing iteration.
-		/// </summary>
-		/// <remarks>
-		///     In local coordinate system.
-		/// </remarks>
-		private Iteration CurrentIteration => _iterations[^1];
-
-		/// <summary>
-		///     Get/set panel reinforcement stress <see cref="Vector" />.
-		/// </summary>
-		/// <inheritdoc cref="Stresses" />
 		private Vector<double> ReinforcementStresses { get; set; }
 
 		/// <summary>
 		///     Get panel strain <see cref="Vector" />.
 		/// </summary>
-		private Vector<double> StrainVector => _baMatrix * Displacements;
+		private Vector<double> StrainVector => _baMatrix * Displacements.Convert(LengthUnit.Millimeter);
 
 		/// <summary>
 		///     Get panel stress <see cref="Vector" />.
@@ -398,17 +345,6 @@ namespace andrefmello91.SPMElements
 		public override void UpdateDisplacements() =>
 			Displacements = this.GetDisplacementsFromGrips();
 
-		/// <inheritdoc />
-		public override void UpdateStiffness()
-		{
-			Stiffness += NonlinearAnalysis.TangentIncrement(CurrentIteration, LastIteration);
-
-			// Increase iteration
-			_iterations.Add(CurrentIteration.Clone());
-			CurrentIteration.Number++;
-
-		}
-
 		/// <summary>
 		///     Calculate and set global force vector.
 		///     <para>See: <see cref="Panel.Forces" />.</para>
@@ -483,11 +419,10 @@ namespace andrefmello91.SPMElements
 			f5 = -a * t1 - b * t2 - t3;
 			f8 = b * t1 - a * t2 - t4;
 
-			Forces =
-				new[]
+			Forces = new ForceVector(new[]
 				{
 					f1, f2, f3, f4, f5, f6, f7, f8
-				}.ToVector();
+				});
 
 			// Check value of t3
 			static double CheckT3(double value) => value < 0 ? 0 : value;
@@ -544,19 +479,7 @@ namespace andrefmello91.SPMElements
 			var kc = QPc * Dc * _baMatrix;
 			var ks = QPs * Ds * _baMatrix;
 
-			Stiffness = kc + ks;
-		}
-
-		/// <summary>
-		///		Clear the iterations lists.
-		/// </summary>
-		public void ClearIterations()
-		{
-			if (_iterations.Count < 4)
-				return;
-			
-			_iterations.RemoveRange(..^3);
-			CurrentIteration.Number = 1;
+			Stiffness = new StiffnessMatrix(kc + ks);
 		}
 
 		#endregion

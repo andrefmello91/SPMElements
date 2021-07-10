@@ -10,6 +10,7 @@ using andrefmello91.SPMElements.StringerProperties;
 using MathNet.Numerics.LinearAlgebra;
 using MathNet.Numerics.LinearAlgebra.Double;
 using UnitsNet;
+using UnitsNet.Units;
 #nullable enable
 
 namespace andrefmello91.SPMElements
@@ -25,14 +26,6 @@ namespace andrefmello91.SPMElements
 		// Auxiliary fields
 		private readonly Matrix<double> _bMatrix;
 
-		/// <summary>
-		///     The list of the last 20 iterations.
-		/// </summary>
-		/// <remarks>
-		///     It's cleared at the start of a new step.
-		/// </remarks>
-		private readonly List<Iteration> _iterations = InitialValues(3).ToList();
-		
 		private Force _n1, _n3;
 
 		#endregion
@@ -42,51 +35,10 @@ namespace andrefmello91.SPMElements
 		/// <inheritdoc />
 		public override Length[] CrackOpenings => Strains.Select(eps => CrackOpening(Reinforcement, eps)).ToArray();
 
-		/// <inheritdoc />
-		protected override Vector<double> LocalDisplacements
-		{
-			get => CurrentIteration.Displacements;
-			set => CurrentIteration.IncrementDisplacements(value - CurrentIteration.Displacements);
-		}
-
-		/// <inheritdoc />
-		protected override Matrix<double> LocalStiffness
-		{
-			get => CurrentIteration.Stiffness;
-			set => CurrentIteration.Stiffness = value;
-		}
-
-		/// <inheritdoc />
-		protected override Vector<double> LocalForces
-		{
-			get => CurrentIteration.InternalForces;
-			set => CurrentIteration.InternalForces = value;
-		}
-
-		/// <summary>
-		///     The results of the current solution (last solved iteration [i - 1]).
-		/// </summary>
-		/// <inheritdoc cref="CurrentIteration" />
-		private Iteration LastIteration => _iterations[^2];
-
-		/// <summary>
-		///     The results of the last solution (penultimate solved iteration [i - 2]).
-		/// </summary>
-		/// <inheritdoc cref="CurrentIteration" />
-		private Iteration PenultimateIteration => _iterations[^3];
-
-		/// <summary>
-		///     Results of the ongoing iteration.
-		/// </summary>
-		/// <remarks>
-		///     In local coordinate system.
-		/// </remarks>
-		private Iteration CurrentIteration => _iterations[^1];
-
 		/// <summary>
 		///     Get the strain <see cref="Vector" />.
 		/// </summary>
-		private Vector<double> Strains => _bMatrix * LocalDisplacements;
+		private Vector<double> Strains => _bMatrix * LocalDisplacements.Convert(LengthUnit.Millimeter);
 
 		#endregion
 
@@ -107,9 +59,10 @@ namespace andrefmello91.SPMElements
 
 			_bMatrix = CalculateBMatrix(Geometry.Length);
 
-			Forces = Vector<double>.Build.Dense(2 * Grips.Length);
-			
-			InitiateStiffness();
+			// Calculate matrices
+			TransformationMatrix = CalculateTransformationMatrix(Geometry.Angle);
+			LocalStiffness       = CalculateStiffness(Concrete.Stiffness, Geometry.Length);
+			Stiffness            = (StiffnessMatrix) LocalStiffness.Transform(TransformationMatrix);
 		}
 
 		#endregion
@@ -166,43 +119,15 @@ namespace andrefmello91.SPMElements
 			var eps = Strains;
 
 			// Calculate normal forces
-			_n1 = CalculateForce(eps[0], Concrete, Reinforcement);
-			_n3 = CalculateForce(eps[2], Concrete, Reinforcement);
+			_n1 = CalculateForce(eps[0], Concrete, Reinforcement).ToUnit(ForceUnit.Newton);
+			_n3 = CalculateForce(eps[2], Concrete, Reinforcement).ToUnit(ForceUnit.Newton);
 
 			// Update forces
-			LocalForces = new[] { -_n1.Newtons, _n1.Newtons - _n3.Newtons, _n3.Newtons }.ToVector();
-
-			// Approximate small values to zero
-			LocalForces.CoerceZero(0.001);
+			LocalForces = new ForceVector(new[] { -_n1, _n1 - _n3, _n3 });
 
 			Forces = TransformationMatrix.Transpose() * LocalForces;
 		}
 
-		/// <inheritdoc />
-		public override void UpdateStiffness()
-		{
-			LocalStiffness += NonlinearAnalysis.TangentIncrement(CurrentIteration, LastIteration);
-
-			Stiffness = TransformationMatrix.Transpose() * LocalStiffness * TransformationMatrix;
-
-			// Increase iteration
-			_iterations.Add(CurrentIteration.Clone());
-			CurrentIteration.Number++;
-
-		}
-
-		/// <summary>
-		///		Clear the iterations lists.
-		/// </summary>
-		public void ClearIterations()
-		{
-			if (_iterations.Count < 4)
-				return;
-			
-			_iterations.RemoveRange(..^3);
-			CurrentIteration.Number = 1;
-		}
-		
 		#endregion
 
 	}

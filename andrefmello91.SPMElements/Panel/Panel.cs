@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using andrefmello91.Extensions;
+using andrefmello91.FEMAnalysis;
 using andrefmello91.Material.Concrete;
 using andrefmello91.Material.Reinforcement;
 using andrefmello91.OnPlaneComponents;
@@ -102,28 +103,25 @@ namespace andrefmello91.SPMElements
 		/// <summary>
 		///     Get the center <see cref="SPMElements.Node" /> of bottom edge.
 		/// </summary>
-		public Node Grip1 { get; }
+		public Node Grip1 => Grips[0];
 
 		/// <summary>
 		///     Get the center <see cref="SPMElements.Node" /> of right edge.
 		/// </summary>
-		public Node Grip2 { get; }
+		public Node Grip2 => Grips[1];
 
 		/// <summary>
 		///     Get the center <see cref="SPMElements.Node" /> of top edge.
 		/// </summary>
-		public Node Grip3 { get; }
+		public Node Grip3 => Grips[2];
 
 		/// <summary>
 		///     Get the center <see cref="SPMElements.Node" /> of left edge.
 		/// </summary>
-		public Node Grip4 { get; }
+		public Node Grip4 => Grips[3];
 
 		/// <inheritdoc />
-		public override Node[] Grips => new[] { Grip1, Grip2, Grip3, Grip4 };
-
-		/// <inheritdoc />
-		public override Force MaxForce => Force.FromNewtons(Forces.AbsoluteMaximum());
+		public override Force MaxForce => Forces.AbsoluteMaximum();
 
 		/// <summary>
 		///     Get <see cref="WebReinforcement" /> of this.
@@ -139,12 +137,8 @@ namespace andrefmello91.SPMElements
 		/// </summary>
 		/// <inheritdoc cref="From" />
 		protected Panel(Node grip1, Node grip2, Node grip3, Node grip4, PanelGeometry geometry)
-			: base(geometry)
+			: base(geometry, new[] { grip1, grip2, grip3, grip4 })
 		{
-			Grip1 = grip1;
-			Grip2 = grip2;
-			Grip3 = grip3;
-			Grip4 = grip4;
 		}
 
 		/// <summary>
@@ -161,7 +155,10 @@ namespace andrefmello91.SPMElements
 			if (Reinforcement is not null)
 				Reinforcement.Width = Geometry.Width;
 
-			InitiateStiffness();
+			// Initiate stiffness
+			TransformationMatrix = CalculateTransformationMatrix(Geometry);
+			LocalStiffness       = CalculateStiffness(Geometry, Concrete.Parameters.TransverseModule);
+			Stiffness            = (StiffnessMatrix) LocalStiffness.Transform(TransformationMatrix);
 		}
 
 		#endregion
@@ -204,7 +201,7 @@ namespace andrefmello91.SPMElements
 		/// </summary>
 		/// <param name="geometry">The <see cref="PanelGeometry" />.</param>
 		/// <param name="concreteTransverseModule">The transverse elastic module of concrete.</param>
-		private static Matrix<double> CalculateStiffness(PanelGeometry geometry, Pressure concreteTransverseModule) => geometry.IsRectangular
+		private static StiffnessMatrix CalculateStiffness(PanelGeometry geometry, Pressure concreteTransverseModule) => geometry.IsRectangular
 			? RectangularPanelStiffness(geometry, concreteTransverseModule)
 			: NonRectangularPanelStiffness(geometry, concreteTransverseModule);
 
@@ -235,7 +232,7 @@ namespace andrefmello91.SPMElements
 		///     <para>See: <seealso cref="PanelGeometry.IsRectangular" /></para>
 		/// </summary>
 		/// <inheritdoc cref="CalculateStiffness" />
-		private static Matrix<double> NonRectangularPanelStiffness(PanelGeometry geometry, Pressure concreteTransverseModule)
+		private static StiffnessMatrix NonRectangularPanelStiffness(PanelGeometry geometry, Pressure concreteTransverseModule)
 		{
 			// Get the dimensions
 			double[]
@@ -327,8 +324,10 @@ namespace andrefmello91.SPMElements
 			}.ToVector();
 
 			// Get the stiffness matrix
+			var stiffness = B.ToColumnMatrix() * D * B.ToRowMatrix();
+
 			return
-				B.ToColumnMatrix() * D * B.ToRowMatrix();
+				new StiffnessMatrix(stiffness);
 		}
 
 		/// <summary>
@@ -336,7 +335,7 @@ namespace andrefmello91.SPMElements
 		///     <para>See: <seealso cref="PanelGeometry.IsRectangular" /></para>
 		/// </summary>
 		/// <inheritdoc cref="CalculateStiffness" />
-		private static Matrix<double> RectangularPanelStiffness(PanelGeometry geometry, Pressure concreteTransverseModule)
+		private static StiffnessMatrix RectangularPanelStiffness(PanelGeometry geometry, Pressure concreteTransverseModule)
 		{
 			// Get the dimensions
 			double
@@ -353,14 +352,16 @@ namespace andrefmello91.SPMElements
 			var Gc = concreteTransverseModule.Megapascals;
 
 			// Calculate the stiffness matrix
-			return
-				Gc * w * new[,]
+			var stiffness = Gc * w * new[,]
 				{
 					{ a_b, -1, a_b, -1 },
 					{ -1, b_a, -1, b_a },
 					{ a_b, -1, a_b, -1 },
 					{ -1, b_a, -1, b_a }
 				}.ToMatrix();
+
+			return
+				new StiffnessMatrix(stiffness);
 		}
 
 		/// <summary>
@@ -400,16 +401,6 @@ namespace andrefmello91.SPMElements
 		public override void UpdateStiffness()
 		{
 			// Not needed in linear element.
-		}
-
-		/// <summary>
-		///     Calculate initial stiffness elements.
-		/// </summary>
-		private void InitiateStiffness()
-		{
-			TransformationMatrix = CalculateTransformationMatrix(Geometry);
-			LocalStiffness       = CalculateStiffness(Geometry, Concrete.Parameters.TransverseModule);
-			Stiffness            = TransformationMatrix.Transpose() * LocalStiffness * TransformationMatrix;
 		}
 
 		#region Object override

@@ -118,7 +118,7 @@ namespace andrefmello91.SPMElements
 			$"Number of nodes: {Nodes.Count}\n" +
 			$"Number of stringers: {Stringers.Count}\n" +
 			$"Number of panels: {Panels.Count}\n" +
-			$"Force vector: \n{ForceVector}\n" +
+			$"Force vector: \n{Forces}\n" +
 			$"Constraint Index: {ConstraintIndex.Select(i => i.ToString()).Aggregate((i, f) => $"{i} - {f}")}";
 
 		#endregion

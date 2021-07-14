@@ -125,7 +125,7 @@ namespace andrefmello91.SPMElements
 			// Update forces
 			LocalForces = new ForceVector(new[] { -_n1, _n1 - _n3, _n3 });
 
-			Forces = TransformationMatrix.Transpose() * LocalForces;
+			Forces = (ForceVector) (TransformationMatrix.Transpose() * LocalForces);
 		}
 
 		#endregion

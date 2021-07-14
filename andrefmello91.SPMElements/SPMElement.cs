@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using andrefmello91.Extensions;
 using andrefmello91.FEMAnalysis;
+using andrefmello91.OnPlaneComponents;
 using MathNet.Numerics.LinearAlgebra;
 using MathNet.Numerics.LinearAlgebra.Double;
 using UnitsNet;
@@ -121,7 +122,7 @@ namespace andrefmello91.SPMElements
 			LocalForces = LocalStiffness * LocalDisplacements;
 
 			// Approximate small values to zero
-			Forces = TransformationMatrix.Transpose() * LocalForces;
+			Forces = (ForceVector) (TransformationMatrix.Transpose() * LocalForces);
 		}
 
 		/// <inheritdoc />
@@ -142,7 +143,7 @@ namespace andrefmello91.SPMElements
 		public virtual void UpdateDisplacements()
 		{
 			Displacements      = this.GetDisplacementsFromGrips();
-			LocalDisplacements = TransformationMatrix * Displacements;
+			LocalDisplacements = (DisplacementVector) (TransformationMatrix * Displacements);
 		}
 
 		/// <inheritdoc />

@@ -103,7 +103,10 @@ namespace andrefmello91.SPMElements
 		/// <summary>
 		///     Get panel strain <see cref="Vector" />.
 		/// </summary>
-		private Vector<double> StrainVector => _baMatrix * Displacements.Convert(LengthUnit.Millimeter);
+		private Vector<double> StrainVector => 
+			_baMatrix * (Vector<double>) (Displacements.Unit == LengthUnit.Millimeter
+				? Displacements 
+				: Displacements.Convert(LengthUnit.Millimeter));
 
 		/// <summary>
 		///     Get panel stress <see cref="Vector" />.
@@ -454,8 +457,8 @@ namespace andrefmello91.SPMElements
 			for (var i = 0; i < 4; i++)
 			{
 				// Get the stiffness
-				var sigC = IntegrationPoints[i].Concrete.Stresses;
-				var sigS = IntegrationPoints[i].Reinforcement?.Stresses ?? StressState.Zero;
+				var sigC = IntegrationPoints[i].Concrete.Stresses.ToHorizontal();
+				var sigS = IntegrationPoints[i].Reinforcement?.Stresses.ToHorizontal() ?? StressState.Zero;
 
 				// Set to stiffness
 				ConcreteStresses.SetSubVector(3 * i, 3, sigC.AsVector());

@@ -38,7 +38,9 @@ namespace andrefmello91.SPMElements
 		/// <summary>
 		///     Get the strain <see cref="Vector" />.
 		/// </summary>
-		private Vector<double> Strains => _bMatrix * LocalDisplacements.Convert(LengthUnit.Millimeter);
+		private Vector<double> Strains => _bMatrix * (Vector<double>) (LocalDisplacements.Unit is LengthUnit.Millimeter 
+			? LocalDisplacements 
+			: LocalDisplacements.Convert(LengthUnit.Millimeter));
 
 		#endregion
 
@@ -88,7 +90,7 @@ namespace andrefmello91.SPMElements
 		/// <param name="concrete">The uniaxial concrete of the stringer.</param>
 		/// <param name="reinforcement">The <see cref="UniaxialReinforcement" /> of the stringer.</param>
 		private static Force CalculateForce(double strain, [NotNull] UniaxialConcrete concrete, UniaxialReinforcement? reinforcement) =>
-			strain.ApproxZero(1E-9)
+			strain.ApproxZero()
 				? Force.Zero
 				: concrete.CalculateForce(strain, reinforcement) + (reinforcement?.CalculateForce(strain) ?? Force.Zero);
 

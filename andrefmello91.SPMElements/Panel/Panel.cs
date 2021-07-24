@@ -72,8 +72,8 @@ namespace andrefmello91.SPMElements
 
 				// Get steel strengths
 				Pressure
-					fyx = Reinforcement?.DirectionX?.Steel?.YieldStress ?? Pressure.Zero,
-					fyy = Reinforcement?.DirectionY?.Steel?.YieldStress ?? Pressure.Zero;
+					fyx = Reinforcement?.DirectionX?.Steel.Parameters.YieldStress ?? Pressure.Zero,
+					fyy = Reinforcement?.DirectionY?.Steel.Parameters.YieldStress ?? Pressure.Zero;
 
 				if (fyx.Approx(fyy, StressState.Tolerance))
 				{

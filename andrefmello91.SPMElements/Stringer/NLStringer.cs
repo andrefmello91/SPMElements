@@ -3,6 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using andrefmello91.Extensions;
 using andrefmello91.FEMAnalysis;
+using andrefmello91.Material;
 using andrefmello91.Material.Concrete;
 using andrefmello91.Material.Reinforcement;
 using andrefmello91.OnPlaneComponents;
@@ -42,6 +43,16 @@ namespace andrefmello91.SPMElements
 			? LocalDisplacements 
 			: LocalDisplacements.Convert(LengthUnit.Millimeter));
 
+		/// <summary>
+		///		The cross section at the initial node.
+		/// </summary>
+		private RCCrossSection InitialCrossSection { get; }
+		
+		/// <summary>
+		///		The cross section at the end node.
+		/// </summary>
+		private RCCrossSection EndCrossSection { get; }
+		
 		#endregion
 
 		#region Constructors
@@ -59,6 +70,9 @@ namespace andrefmello91.SPMElements
 			if (Reinforcement is not null)
 				Reinforcement.ConcreteArea = Concrete.Area;
 
+			InitialCrossSection = new RCCrossSection(Concrete.Clone(), Reinforcement?.Clone());
+			EndCrossSection     = InitialCrossSection.Clone();
+			
 			_bMatrix = CalculateBMatrix(Geometry.Length);
 
 			// Calculate matrices
@@ -82,17 +96,6 @@ namespace andrefmello91.SPMElements
 				{ -1, 0, 1 },
 				{ 1, -4, 3 }
 			}.ToMatrix();
-
-		/// <summary>
-		///     Calculate force for <paramref name="concrete" /> and <paramref name="reinforcement" /> based on strain.
-		/// </summary>
-		/// <param name="strain">Current strain.</param>
-		/// <param name="concrete">The uniaxial concrete of the stringer.</param>
-		/// <param name="reinforcement">The <see cref="UniaxialReinforcement" /> of the stringer.</param>
-		private static Force CalculateForce(double strain, [NotNull] UniaxialConcrete concrete, UniaxialReinforcement? reinforcement) =>
-			strain.ApproxZero()
-				? Force.Zero
-				: concrete.CalculateForce(strain, reinforcement) + (reinforcement?.CalculateForce(strain) ?? Force.Zero);
 
 		/// <summary>
 		///     Calculate the average crack opening.
@@ -121,11 +124,15 @@ namespace andrefmello91.SPMElements
 			var eps = Strains;
 
 			// Calculate normal forces
-			_n1 = CalculateForce(eps[0], Concrete, Reinforcement).ToUnit(ForceUnit.Newton);
-			_n3 = CalculateForce(eps[2], Concrete, Reinforcement).ToUnit(ForceUnit.Newton);
+			InitialCrossSection.Calculate(eps[0]);
+			EndCrossSection.Calculate(eps[2]);
 
+			Force
+				n1 = InitialCrossSection.Force,
+				n3 = EndCrossSection.Force;
+			
 			// Update forces
-			LocalForces = new ForceVector(new[] { -_n1, _n1 - _n3, _n3 });
+			LocalForces = new ForceVector(new[] { -n1, n1 - n3, n3 });
 
 			Forces = (ForceVector) (TransformationMatrix.Transpose() * LocalForces);
 		}

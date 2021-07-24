@@ -60,8 +60,8 @@ namespace andrefmello91.SPMElements
 		/// <summary>
 		///     Nonlinear stringer object.
 		/// </summary>
-		/// <inheritdoc cref="Stringer(Node, Node, Node, CrossSection, IParameters, ConstitutiveModel, UniaxialReinforcement)" />
-		internal NLStringer(Node grip1, Node grip2, Node grip3, CrossSection crossSection, IParameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, UniaxialReinforcement? reinforcement = null)
+		/// <inheritdoc cref="Stringer(Node, Node, Node, CrossSection, IConcreteParameters, ConstitutiveModel, UniaxialReinforcement)" />
+		internal NLStringer(Node grip1, Node grip2, Node grip3, CrossSection crossSection, IConcreteParameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, UniaxialReinforcement? reinforcement = null)
 			: base(grip1, grip2, grip3, crossSection)
 		{
 			Reinforcement = reinforcement;

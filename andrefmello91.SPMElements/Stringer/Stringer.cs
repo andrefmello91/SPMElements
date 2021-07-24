@@ -99,7 +99,7 @@ namespace andrefmello91.SPMElements
 
 		/// <inheritdoc cref="Stringer(Node, Node, Node, CrossSection)" />
 		/// <inheritdoc cref="From" />
-		protected Stringer(Node grip1, Node grip2, Node grip3, CrossSection crossSection, IParameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, UniaxialReinforcement? reinforcement = null)
+		protected Stringer(Node grip1, Node grip2, Node grip3, CrossSection crossSection, IConcreteParameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, UniaxialReinforcement? reinforcement = null)
 			: this(grip1, grip2, grip3, crossSection)
 		{
 			Reinforcement = reinforcement;
@@ -125,11 +125,11 @@ namespace andrefmello91.SPMElements
 		/// <param name="grip2">The center <see cref="Node" /> of the <see cref="Stringer" />.</param>
 		/// <param name="grip3">The final <see cref="Node" /> of the <see cref="Stringer" />.</param>
 		/// <param name="crossSection">The stringer cross-section.</param>
-		/// <param name="concreteParameters">The concrete <see cref="IParameters" />.</param>
+		/// <param name="concreteParameters">The concrete <see cref="IConcreteParameters" />.</param>
 		/// <param name="model">The concrete <see cref="ConstitutiveModel" />.</param>
 		/// <param name="reinforcement">The <see cref="UniaxialReinforcement" /> of this stringer.</param>
 		/// <inheritdoc cref="As" />
-		public static Stringer From(Node grip1, Node grip2, Node grip3, CrossSection crossSection, IParameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, UniaxialReinforcement? reinforcement = null, ElementModel elementModel = ElementModel.Elastic) =>
+		public static Stringer From(Node grip1, Node grip2, Node grip3, CrossSection crossSection, IConcreteParameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, UniaxialReinforcement? reinforcement = null, ElementModel elementModel = ElementModel.Elastic) =>
 			elementModel switch
 			{
 				ElementModel.Elastic => new Stringer(grip1, grip2, grip3, crossSection, concreteParameters, model, reinforcement),
@@ -144,7 +144,7 @@ namespace andrefmello91.SPMElements
 		/// <param name="grip1Position">The position of initial <see cref="Node" /> of the <see cref="Stringer" />.</param>
 		/// <param name="grip3Position">The position of final <see cref="Node" /> of the <see cref="Stringer" />.</param>
 		/// <inheritdoc cref="From" />
-		public static Stringer FromNodes([NotNull] IEnumerable<Node> nodes, Point grip1Position, Point grip3Position, CrossSection crossSection, IParameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, UniaxialReinforcement? reinforcement = null, ElementModel elementModel = ElementModel.Elastic) =>
+		public static Stringer FromNodes([NotNull] IEnumerable<Node> nodes, Point grip1Position, Point grip3Position, CrossSection crossSection, IConcreteParameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, UniaxialReinforcement? reinforcement = null, ElementModel elementModel = ElementModel.Elastic) =>
 			From(nodes.GetByPosition(grip1Position), nodes.GetByPosition(grip1Position.MidPoint(grip3Position)), nodes.GetByPosition(grip3Position), crossSection, concreteParameters, model, reinforcement, elementModel);
 
 		/// <summary>

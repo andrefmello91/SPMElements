@@ -145,7 +145,7 @@ namespace andrefmello91.SPMElements
 		///     Elastic panel object.
 		/// </summary>
 		/// <inheritdoc cref="From" />
-		protected Panel(Node grip1, Node grip2, Node grip3, Node grip4, PanelGeometry geometry, IParameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, WebReinforcement? reinforcement = null)
+		protected Panel(Node grip1, Node grip2, Node grip3, Node grip4, PanelGeometry geometry, IConcreteParameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, WebReinforcement? reinforcement = null)
 			: this(grip1, grip2, grip3, grip4, geometry)
 		{
 			Concrete = BiaxialConcrete.From(concreteParameters, model);
@@ -177,7 +177,7 @@ namespace andrefmello91.SPMElements
 		/// <param name="model">The concrete <see cref="ConstitutiveModel" />.</param>
 		/// <param name="reinforcement">The <see cref="WebReinforcement" />.</param>
 		/// <inheritdoc cref="As" />
-		public static Panel From(Node grip1, Node grip2, Node grip3, Node grip4, PanelGeometry geometry, IParameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, WebReinforcement? reinforcement = null, ElementModel elementModel = ElementModel.Elastic) =>
+		public static Panel From(Node grip1, Node grip2, Node grip3, Node grip4, PanelGeometry geometry, IConcreteParameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, WebReinforcement? reinforcement = null, ElementModel elementModel = ElementModel.Elastic) =>
 			elementModel switch
 			{
 				ElementModel.Elastic => new Panel(grip1, grip2, grip3, grip4, geometry, concreteParameters, model, reinforcement),
@@ -189,7 +189,7 @@ namespace andrefmello91.SPMElements
 		/// </summary>
 		/// <param name="nodes">The collection containing all <see cref="Node" />'s in SPM model.</param>
 		/// <inheritdoc cref="From" />
-		public static Panel FromNodes(IEnumerable<Node> nodes, PanelGeometry geometry, IParameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, WebReinforcement? reinforcement = null, ElementModel elementModel = ElementModel.Elastic)
+		public static Panel FromNodes(IEnumerable<Node> nodes, PanelGeometry geometry, IConcreteParameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, WebReinforcement? reinforcement = null, ElementModel elementModel = ElementModel.Elastic)
 		{
 			var nds = geometry.Edges.Select(e => nodes.GetByPosition(e.CenterPoint)).ToArray();
 

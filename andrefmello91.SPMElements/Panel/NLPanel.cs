@@ -124,7 +124,7 @@ namespace andrefmello91.SPMElements
 		///     Nonlinear panel object.
 		/// </summary>
 		/// <inheritdoc />
-		internal NLPanel(Node grip1, Node grip2, Node grip3, Node grip4, PanelGeometry geometry, IParameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, WebReinforcement? reinforcement = null)
+		internal NLPanel(Node grip1, Node grip2, Node grip3, Node grip4, PanelGeometry geometry, IConcreteParameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, WebReinforcement? reinforcement = null)
 			: base(grip1, grip2, grip3, grip4, geometry)
 		{
 			Concrete = BiaxialConcrete.From(concreteParameters, model);
@@ -330,7 +330,7 @@ namespace andrefmello91.SPMElements
 		/// <summary>
 		///     Initiate <see cref="Membrane" /> integration points.
 		/// </summary>
-		private static IEnumerable<Membrane> IntPoints(IParameters concreteParameters, WebReinforcement? reinforcement, Length width, ConstitutiveModel model)
+		private static IEnumerable<Membrane> IntPoints(IConcreteParameters concreteParameters, WebReinforcement? reinforcement, Length width, ConstitutiveModel model)
 		{
 			for (var i = 0; i < 4; i++)
 				yield return Membrane.From(concreteParameters, reinforcement?.Clone(), width, model);

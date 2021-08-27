@@ -101,33 +101,10 @@ namespace andrefmello91.SPMElements.PanelProperties
 		#region Constructors
 
 		/// <summary>
-		///     Panel geometry constructor.
+		///     Create a panel geometry object.
 		/// </summary>
-		/// <param name="vertices">The collection of vertices, in any order.</param>
-		/// <param name="width">Panel width.</param>
-		/// <param name="unit">
-		///     The <see cref="LengthUnit" /> of <paramref name="width" /> and <paramref name="vertices" />'
-		///     coordinates.
-		/// </param>
-		public PanelGeometry(IEnumerable<Point> vertices, double width, LengthUnit unit = LengthUnit.Millimeter)
-			: this(new Vertices(vertices), width, unit)
-		{
-		}
-
-		/// <inheritdoc cref="PanelGeometry(IEnumerable{Point}, double, LengthUnit)" />
-		public PanelGeometry(IEnumerable<Point> vertices, Length width)
-			: this(new Vertices(vertices), width)
-		{
-		}
-
 		/// <param name="vertices">Panel <see cref="PanelProperties.Vertices" /> object.</param>
-		/// <inheritdoc cref="PanelGeometry(IEnumerable{Point}, double, LengthUnit)" />
-		public PanelGeometry(Vertices vertices, double width, LengthUnit unit = LengthUnit.Millimeter)
-			: this(vertices, (Length) width.As(unit))
-		{
-		}
-
-		/// <inheritdoc cref="PanelGeometry" />
+		/// <param name="width">Panel width.</param>
 		public PanelGeometry(Vertices vertices, Length width)
 		{
 			Vertices = vertices;
@@ -141,10 +118,34 @@ namespace andrefmello91.SPMElements.PanelProperties
 
 			Dimensions = CalculateDimensions(Vertices);
 		}
+		
+		/// <inheritdoc cref="PanelGeometry(Vertices,Length)" />
+		/// <param name="unit">
+		///     The <see cref="LengthUnit" /> of <paramref name="width" /> and <paramref name="vertices" />' coordinates.
+		/// </param>
+		public PanelGeometry(Vertices vertices, double width, LengthUnit unit = LengthUnit.Millimeter)
+			: this(vertices, (Length) width.As(unit))
+		{
+		}
+
 
 		#endregion
 
 		#region Methods
+
+		/// <summary>
+		///		Create a panel geometry object from a collection of points.
+		/// </summary>
+		/// <param name="vertices">The collection of the four <see cref="Point" /> vertices, in any order.</param>
+		/// <param name="width">Panel width.</param>
+		/// <exception cref="ArgumentException">If <paramref name="vertices"/> doesn't contain 4 points.</exception>
+		public static PanelGeometry From(IEnumerable<Point> vertices, Length width) => new (Vertices.From(vertices), width);
+		
+		/// <inheritdoc cref="From(IEnumerable{Point}, Length)"/>
+		/// <param name="unit">
+		///     The <see cref="LengthUnit" /> of <paramref name="width" /> and <paramref name="vertices" />' coordinates.
+		/// </param>
+		public static PanelGeometry From(IEnumerable<Point> vertices, double width, LengthUnit unit = LengthUnit.Millimeter) => new (Vertices.From(vertices), width, unit);
 
 		/// <summary>
 		///     Calculate panel dimensions (a, b, c, d).

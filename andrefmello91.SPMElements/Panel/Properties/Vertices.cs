@@ -71,7 +71,7 @@ namespace andrefmello91.SPMElements.PanelProperties
 		#region Constructors
 
 		/// <summary>
-		///     Panel vertices object.
+		///     Create a panel vertices object.
 		/// </summary>
 		/// <param name="vertex1">The base left vertex.</param>
 		/// <param name="vertex2">The base right vertex.</param>
@@ -87,25 +87,27 @@ namespace andrefmello91.SPMElements.PanelProperties
 			CenterPoint = CalculateCenterPoint(Vertex1, Vertex2, Vertex3, Vertex4);
 		}
 
-		/// <param name="vertices">The collection of the four <see cref="Point" /> vertices, in any order.</param>
-		/// <inheritdoc cref="Vertices(Point, Point, Point, Point)" />
-		public Vertices(IEnumerable<Point> vertices)
-		{
-			if (vertices.Count() != 4)
-				throw new NotImplementedException();
-
-			// Order points
-			var verts = vertices.ToList();
-			verts.Sort();
-
-			// Set in necessary order (invert 3 and 4)
-			this = new Vertices(verts[0], verts[1], verts[3], verts[2]);
-		}
-
 		#endregion
 
 		#region Methods
 
+		/// <summary>
+		///		Create a panel vertices object from a collection of points.
+		/// </summary>
+		/// <param name="vertices">The collection of the four <see cref="Point" /> vertices, in any order.</param>
+		/// <exception cref="ArgumentException">If <paramref name="vertices"/> doesn't contain 4 points.</exception>
+		public static Vertices From(IEnumerable<Point> vertices)
+		{
+			if (vertices.Count() != 4)
+				throw new ArgumentException("Vertices must contain 4 points.", nameof(vertices));
+
+			// Order points
+			var verts = vertices.OrderBy(p => p).ToList();
+
+			return
+				new Vertices(verts[0], verts[1], verts[3], verts[2]);
+		}
+		
 		/// <summary>
 		///     Calculate <see cref="Vertices" /> approximated center point.
 		/// </summary>
@@ -195,13 +197,13 @@ namespace andrefmello91.SPMElements.PanelProperties
 		/// <param name="unit">The desired <see cref="LengthUnit" />.</param>
 		public Vertices Convert(LengthUnit unit) =>
 			unit == Unit
-				? this
+				? Clone()
 				: new Vertices(Vertex1.Convert(unit), Vertex2.Convert(unit), Vertex3.Convert(unit), Vertex4.Convert(unit));
 
 		IUnitConvertible<LengthUnit> IUnitConvertible<LengthUnit>.Convert(LengthUnit unit) => Convert(unit);
 
 		/// <inheritdoc />
-		public Vertices Clone() => new(AsArray());
+		public Vertices Clone() => From(AsArray());
 
 		/// <inheritdoc />
 		public bool Approaches(Vertices other, Length tolerance) =>

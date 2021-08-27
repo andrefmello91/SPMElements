@@ -166,9 +166,9 @@ namespace andrefmello91.SPMElements
 		public override string ToString()
 		{
 			var msgstr =
-				$"Node {Number}\n" +
-				$"Position: ({Position.X:0.00}, {Position.Y:0.00})\n" +
-				$"DoFIndex: {DoFIndex.Select(i => i.ToString()).Aggregate((i, f) => $"{i} - {f}")}";
+				$"<b>Node {Number}</b>\n" +
+				$"Position:\t({Position.X}, {Position.Y})\n" +
+				$"DoFIndex:\t{DoFIndex.Select(i => i.ToString()).Aggregate((i, f) => $"{i} - {f}")}";
 
 			// Read applied forces
 			if (!Force.IsZero)
@@ -181,7 +181,7 @@ namespace andrefmello91.SPMElements
 			if (!IsFree)
 				msgstr +=
 					"\n\n" +
-					$"Constraints: {Constraint}";
+					$"Constraints:\t{Constraint.Direction}";
 
 			// Get displacements
 			if (!Displacement.IsZero)

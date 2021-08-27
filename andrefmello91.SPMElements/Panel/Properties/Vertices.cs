@@ -227,10 +227,10 @@ namespace andrefmello91.SPMElements.PanelProperties
 
 		/// <inheritdoc />
 		public override string ToString() =>
-			$"Vertex 1: ({Vertex1.X.Value:0.00}, {Vertex1.Y.Value:0.00})\n" +
-			$"Vertex 2: ({Vertex2.X.Value:0.00}, {Vertex2.Y.Value:0.00})\n" +
-			$"Vertex 3: ({Vertex3.X.Value:0.00}, {Vertex3.Y.Value:0.00})\n" +
-			$"Vertex 4: ({Vertex4.X.Value:0.00}, {Vertex4.Y.Value:0.00})\n" +
+			$"Vertex 1:\t({Vertex1.X.Value:0.00},\t{Vertex1.Y.Value:0.00})\n" +
+			$"Vertex 2:\t({Vertex2.X.Value:0.00},\t{Vertex2.Y.Value:0.00})\n" +
+			$"Vertex 3:\t({Vertex3.X.Value:0.00},\t{Vertex3.Y.Value:0.00})\n" +
+			$"Vertex 4:\t({Vertex4.X.Value:0.00},\t{Vertex4.Y.Value:0.00})\n" +
 			$"Coordinates in {Unit}";
 
 		#endregion

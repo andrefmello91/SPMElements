@@ -166,7 +166,7 @@ namespace andrefmello91.SPMElements
 		public override string ToString()
 		{
 			var msgstr =
-				$"<b>Node {Number}</b>\n" +
+				$"Node {Number}\n" +
 				$"Position:\t({Position.X}, {Position.Y})\n" +
 				$"DoFIndex:\t{DoFIndex.Select(i => i.ToString()).Aggregate((i, f) => $"{i} - {f}")}";
 

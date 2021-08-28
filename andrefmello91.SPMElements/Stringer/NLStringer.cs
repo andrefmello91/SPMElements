@@ -52,6 +52,12 @@ namespace andrefmello91.SPMElements
 		///		The cross section at the end node.
 		/// </summary>
 		private RCCrossSection EndCrossSection { get; }
+
+		/// <summary>
+		///		Check if concrete is cracked in this stringer.
+		/// </summary>
+		/// <inheritdoc cref="Material.Concrete.Concrete.Cracked"/>
+		public bool ConcreteCracked => InitialCrossSection.Concrete.Cracked || EndCrossSection.Concrete.Cracked;
 		
 		#endregion
 

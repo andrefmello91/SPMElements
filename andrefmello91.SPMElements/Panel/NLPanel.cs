@@ -116,6 +116,12 @@ namespace andrefmello91.SPMElements
 		/// </remarks>
 		private Vector<double> Stresses => ConcreteStresses + ReinforcementStresses;
 
+		/// <summary>
+		///		Check if concrete is cracked in this panel.
+		/// </summary>
+		/// <inheritdoc cref="Material.Concrete.Concrete.Cracked"/>
+		public bool ConcreteCracked => IntegrationPoints.Any(m => m.Concrete.Cracked);
+
 		#endregion
 
 		#region Constructors

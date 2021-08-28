@@ -8,8 +8,8 @@ namespace andrefmello91.SPMElements
 	/// </summary>
 	public class SPMAnalysis : NonlinearAnalysis
 	{
-		// Load steps of cracking
-		private int? _stringerCrackLS, _panelCrackLS;
+		// Load steps of element cracking
+		private (int number, int step)? _stringerCrackLS, _panelCrackLS;
 		
 		/// <inheritdoc />
 		public SPMAnalysis(IFEMInput nonlinearInput)
@@ -32,12 +32,12 @@ namespace andrefmello91.SPMElements
 				return;
 			
 			// Check if a stringer cracked at the current step
-			if (!_stringerCrackLS.HasValue && spmInput.Stringers.Any(s => s is NLStringer { ConcreteCracked: true }))
-				_stringerCrackLS = (int) CurrentStep;
+			if (!_stringerCrackLS.HasValue && spmInput.Stringers.FirstOrDefault(s => s is NLStringer { ConcreteCracked: true }) is NLStringer stringer)
+				_stringerCrackLS = (stringer.Number, (int)CurrentStep);
 			
 			// Check if a panel cracked at the current step
-			if (!_panelCrackLS.HasValue && spmInput.Panels.Any(s => s is NLPanel { ConcreteCracked: true }))
-				_panelCrackLS = (int) CurrentStep;
+			if (!_panelCrackLS.HasValue && spmInput.Panels.FirstOrDefault(s => s is NLPanel { ConcreteCracked: true }) is NLPanel panel)
+				_panelCrackLS = (panel.Number, (int)CurrentStep);
 		}
 
 		/// <summary>

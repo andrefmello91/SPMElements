@@ -31,65 +31,25 @@ namespace andrefmello91.SPMElements
 		#region Properties
 
 		/// <inheritdoc />
-		public override StressState AverageStresses
-		{
-			get
-			{
-				// Get stress vector
-				var sigma = Stresses;
-
-				// Calculate average stresses
-				var avg = new double[3];
-
-				for (var i = 0; i < 3; i++)
-					avg[i] = 0.25 * (sigma[i] + sigma[i + 3] + sigma[i + 6] + sigma[i + 9]);
-
-				return new StressState(avg[0], avg[1], avg[2]);
-			}
-		}
+		public override StressState AverageStresses => 0.25 * IntegrationPoints
+			.Aggregate(StressState.Zero, (state, membrane) => state + membrane.AverageStresses);
 
 		/// <inheritdoc />
-		public override PrincipalStrainState ConcretePrincipalStrains
-		{
-			get
-			{
-				var eps = StrainState.Zero;
-
-				for (var i = 0; i < 4; i++)
-					eps += IntegrationPoints[i].Concrete.Strains;
-
-				// Calculate average
-				eps = 0.25 * eps;
-
-				// Return principal
-				return PrincipalStrainState.FromStrain(eps);
-			}
-		}
+		public override PrincipalStrainState ConcretePrincipalStrains => (PrincipalStrainState) (0.25 * IntegrationPoints
+			.Aggregate(StrainState.Zero, (state, membrane) => state + membrane.Concrete.Strains));
 
 		/// <inheritdoc />
-		public override PrincipalStressState ConcretePrincipalStresses
-		{
-			get
-			{
-				var sigma = StressState.Zero;
-
-				for (var i = 0; i < 4; i++)
-					sigma += IntegrationPoints[i].Concrete.Stresses;
-
-				// Calculate average
-				sigma = 0.25 * sigma;
-
-				// Return principal
-				return PrincipalStressState.FromStress(sigma);
-			}
-		}
+		public override PrincipalStressState ConcretePrincipalStresses => (PrincipalStressState) (0.25 * IntegrationPoints
+			.Aggregate(StressState.Zero, (state, membrane) => state + membrane.Concrete.Stresses));
 
 		/// <summary>
-		///     Get/set panel concrete stress <see cref="Vector" />.
+		///     The concrete stress <see cref="Vector" />.
 		/// </summary>
 		/// <inheritdoc cref="Stresses" />
-		public Vector<double> ConcreteStresses { get; private set; }
-
+		private Vector<double> ConcreteStresses => IntegrationPoints
+			.SelectMany(m => m.Concrete.Stresses.ToHorizontal().AsVector())
+			.ToVector();
+		
 		/// <inheritdoc />
 		public override Length CrackOpening
 		{
@@ -108,7 +68,13 @@ namespace andrefmello91.SPMElements
 		/// </summary>
 		private Membrane[] IntegrationPoints { get; }
 
-		private Vector<double> ReinforcementStresses { get; set; }
+		/// <summary>
+		///		Reinforcement stress vector.
+		/// </summary>
+		/// <inheritdoc cref="Stresses"/>
+		private Vector<double> ReinforcementStresses => IntegrationPoints
+			.SelectMany(m => (m.Reinforcement?.Stresses.ToHorizontal() ?? StressState.Zero).AsVector())
+			.ToVector();
 
 		/// <summary>
 		///     Get panel strain <see cref="Vector" />.
@@ -386,7 +352,7 @@ namespace andrefmello91.SPMElements
 			Vector<double>
 				sigC = ConcreteStresses,
 				sigS = ReinforcementStresses,
-				sig  = Stresses;
+				sig  = sigC + sigS;
 
 			var (sig1, sigC1, sigS1) = (sig.SubVector(0, 3), sigC.SubVector(0, 3), sigS.SubVector(0, 3));
 			var (sig2, sigC2, sigS2) = (sig.SubVector(3, 3), sigC.SubVector(3, 3), sigS.SubVector(3, 3));
@@ -464,21 +430,6 @@ namespace andrefmello91.SPMElements
 
 				// Calculate stresses
 				IntegrationPoints[i].Calculate(e);
-			}
-
-			// Update vectors
-			ConcreteStresses      = Vector<double>.Build.Dense(12);
-			ReinforcementStresses = Vector<double>.Build.Dense(12);
-
-			for (var i = 0; i < 4; i++)
-			{
-				// Get the stiffness
-				var sigC = IntegrationPoints[i].Concrete.Stresses.ToHorizontal();
-				var sigS = IntegrationPoints[i].Reinforcement?.Stresses.ToHorizontal() ?? StressState.Zero;
-
-				// Set to stiffness
-				ConcreteStresses.SetSubVector(3 * i, 3, sigC.AsVector());
-				ReinforcementStresses.SetSubVector(3 * i, 3, sigS.AsVector());
 			}
 		}
 

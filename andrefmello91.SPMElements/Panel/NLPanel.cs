@@ -91,7 +91,17 @@ namespace andrefmello91.SPMElements
 		public Vector<double> ConcreteStresses { get; private set; }
 
 		/// <inheritdoc />
-		public override Length CrackOpening => Membrane.CrackOpening(Reinforcement, ConcretePrincipalStrains);
+		public override Length CrackOpening
+		{
+			get
+			{
+				var cStrains = ConcretePrincipalStrains;
+				
+				return cStrains.Epsilon1 > Concrete.Parameters.CrackingStrain
+					? Membrane.CrackOpening(Reinforcement, cStrains)
+					: Length.Zero;
+			}
+		}
 
 		/// <summary>
 		///     Get <see cref="Membrane" /> integration points.

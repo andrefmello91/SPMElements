@@ -34,7 +34,9 @@ namespace andrefmello91.SPMElements
 		#region Properties
 
 		/// <inheritdoc />
-		public override Length[] CrackOpenings => Strains.Select(eps => CrackOpening(Reinforcement, eps)).ToArray();
+		public override Length[] CrackOpenings => Strains
+			.Select(eps => CrackOpening(Reinforcement, eps, Concrete.Parameters.CrackingStrain))
+			.ToArray();
 
 		/// <summary>
 		///     Get the strain <see cref="Vector" />.
@@ -108,9 +110,11 @@ namespace andrefmello91.SPMElements
 		/// </summary>
 		/// <param name="reinforcement">The <see cref="UniaxialReinforcement" />.</param>
 		/// <param name="strain">The strain.</param>
-		private static Length CrackOpening(UniaxialReinforcement? reinforcement, double strain) => strain < 0 || strain.ApproxZero(1E-9)
-			? Length.Zero
-			: strain * CrackSpacing(reinforcement);
+		/// <param name="concreteCrackingStrain">The cracking strain of concrete. <seealso cref="IConcreteParameters.CrackingStrain"/>.</param>
+		private static Length CrackOpening(UniaxialReinforcement? reinforcement, double strain, double concreteCrackingStrain) =>
+			strain <= concreteCrackingStrain
+				? Length.Zero
+				: strain * CrackSpacing(reinforcement);
 
 		/// <summary>
 		///     Calculate the crack spacing at <paramref name="reinforcement" />, according to Kaklauskas (2019)

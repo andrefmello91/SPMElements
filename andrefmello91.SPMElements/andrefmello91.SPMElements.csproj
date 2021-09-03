@@ -25,7 +25,7 @@
     <ItemGroup>
         <PackageReference Include="MathNet.Numerics" Version="4.15.0" />
         <PackageReference Include="UnitsNet" Version="4.97.1" />
-        <ProjectReference Include="..\..\FEMAnalysis\andrefmello91.FEMAnalysis\andrefmello91.FEMAnalysis.csproj" />
+        <ProjectReference Include="..\..\FEM-Analysis\andrefmello91.FEMAnalysis\andrefmello91.FEMAnalysis.csproj" />
     </ItemGroup>
 
     <ItemGroup Condition="'$(TargetFramework)'=='netstandard2.0'">
@@ -42,9 +42,9 @@
 
     <ItemGroup Condition="'$(Configuration)'=='Debug'">
         <ProjectReference Include="..\..\Extensions\andrefmello91.Extensions\andrefmello91.Extensions.csproj" />
-        <ProjectReference Include="..\..\OnPlaneComponents\andrefmello91.OnPlaneComponents\andrefmello91.OnPlaneComponents.csproj" />
+        <ProjectReference Include="..\..\On-Plane-Components\andrefmello91.OnPlaneComponents\andrefmello91.OnPlaneComponents.csproj" />
         <ProjectReference Include="..\..\Material\andrefmello91.Material\andrefmello91.Material.csproj" />
-        <ProjectReference Include="..\..\ReinforcedConcreteMembrane\andrefmello91.ReinforcedConcreteMembrane\andrefmello91.ReinforcedConcreteMembrane.csproj" />
+        <ProjectReference Include="..\..\Reinforced-Concrete-Membrane\andrefmello91.ReinforcedConcreteMembrane\andrefmello91.ReinforcedConcreteMembrane.csproj" />
     </ItemGroup>
 
 </Project>

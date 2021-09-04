@@ -20,14 +20,9 @@ namespace andrefmello91.SPMElements
 		#region Events
 
 		/// <summary>
-		///     Event to execute when a panel cracks.
+		///     Event to execute when an element cracks.
 		/// </summary>
-		public event EventHandler<SPMElementEventArgs>? PanelCracked;
-
-		/// <summary>
-		///     Event to execute when a stringer cracks.
-		/// </summary>
-		public event EventHandler<SPMElementEventArgs>? StringerCracked;
+		public event EventHandler<SPMElementEventArgs>? ElementCracked;
 
 		#endregion
 
@@ -66,14 +61,14 @@ namespace andrefmello91.SPMElements
 			if (!_stringerCrackLS.HasValue && spmInput.Stringers.FirstOrDefault(s => s is NLStringer { ConcreteCracked: true }) is NLStringer stringer)
 			{
 				_stringerCrackLS = (stringer.Number, (int) CurrentStep);
-				Invoke(StringerCracked, new SPMElementEventArgs(stringer, (int) CurrentStep));
+				Invoke(ElementCracked, new SPMElementEventArgs(stringer, (int) CurrentStep));
 			}
 
 			// Check if a panel cracked at the current step
 			if (!_panelCrackLS.HasValue && spmInput.Panels.FirstOrDefault(s => s is NLPanel { ConcreteCracked: true }) is NLPanel panel)
 			{
 				_panelCrackLS = (panel.Number, (int) CurrentStep);
-				Invoke(PanelCracked, new SPMElementEventArgs(panel, (int) CurrentStep));
+				Invoke(ElementCracked, new SPMElementEventArgs(panel, (int) CurrentStep));
 			}
 		}
 

@@ -34,6 +34,12 @@ namespace andrefmello91.SPMElements
 		public override StressState AverageStresses => 0.25 * IntegrationPoints
 			.Aggregate(StressState.Zero, (state, membrane) => state + membrane.AverageStresses);
 
+		/// <summary>
+		///     Check if concrete is cracked in this panel.
+		/// </summary>
+		/// <inheritdoc cref="Material.Concrete.Concrete.Cracked" />
+		public bool ConcreteCracked => IntegrationPoints.Any(m => m.Concrete.Cracked);
+
 		/// <inheritdoc />
 		public override PrincipalStrainState ConcretePrincipalStrains => (PrincipalStrainState) (0.25 * IntegrationPoints
 			.Aggregate(StrainState.Zero, (state, membrane) => state + membrane.Concrete.Strains));
@@ -42,21 +48,13 @@ namespace andrefmello91.SPMElements
 		public override PrincipalStressState ConcretePrincipalStresses => (PrincipalStressState) (0.25 * IntegrationPoints
 			.Aggregate(StressState.Zero, (state, membrane) => state + membrane.Concrete.Stresses));
 
-		/// <summary>
-		///     The concrete stress <see cref="Vector" />.
-		/// </summary>
-		/// <inheritdoc cref="Stresses" />
-		private Vector<double> ConcreteStresses => IntegrationPoints
-			.SelectMany(m => m.Concrete.Stresses.ToHorizontal().AsVector())
-			.ToVector();
-		
 		/// <inheritdoc />
 		public override Length CrackOpening
 		{
 			get
 			{
 				var cStrains = ConcretePrincipalStrains;
-				
+
 				return cStrains.Epsilon1 > Concrete.Parameters.CrackingStrain
 					? Membrane.CrackOpening(Reinforcement, cStrains)
 					: Length.Zero;
@@ -64,14 +62,22 @@ namespace andrefmello91.SPMElements
 		}
 
 		/// <summary>
+		///     The concrete stress <see cref="Vector" />.
+		/// </summary>
+		/// <inheritdoc cref="Stresses" />
+		private Vector<double> ConcreteStresses => IntegrationPoints
+			.SelectMany(m => m.Concrete.Stresses.ToHorizontal().AsVector())
+			.ToVector();
+
+		/// <summary>
 		///     Get <see cref="Membrane" /> integration points.
 		/// </summary>
 		private Membrane[] IntegrationPoints { get; }
 
 		/// <summary>
-		///		Reinforcement stress vector.
+		///     Reinforcement stress vector.
 		/// </summary>
-		/// <inheritdoc cref="Stresses"/>
+		/// <inheritdoc cref="Stresses" />
 		private Vector<double> ReinforcementStresses => IntegrationPoints
 			.SelectMany(m => (m.Reinforcement?.Stresses.ToHorizontal() ?? StressState.Zero).AsVector())
 			.ToVector();
@@ -79,9 +85,9 @@ namespace andrefmello91.SPMElements
 		/// <summary>
 		///     Get panel strain <see cref="Vector" />.
 		/// </summary>
-		private Vector<double> StrainVector => 
+		private Vector<double> StrainVector =>
 			_baMatrix * (Vector<double>) (Displacements.Unit == LengthUnit.Millimeter
-				? Displacements 
+				? Displacements
 				: Displacements.Convert(LengthUnit.Millimeter));
 
 		/// <summary>
@@ -91,12 +97,6 @@ namespace andrefmello91.SPMElements
 		///     Components in <see cref="PressureUnit.Megapascal" />.
 		/// </remarks>
 		private Vector<double> Stresses => ConcreteStresses + ReinforcementStresses;
-
-		/// <summary>
-		///		Check if concrete is cracked in this panel.
-		/// </summary>
-		/// <inheritdoc cref="Material.Concrete.Concrete.Cracked"/>
-		public bool ConcreteCracked => IntegrationPoints.Any(m => m.Concrete.Cracked);
 
 		#endregion
 
@@ -405,9 +405,9 @@ namespace andrefmello91.SPMElements
 			f8 = b * t1 - a * t2 - t4;
 
 			Forces = new ForceVector(new[]
-				{
-					f1, f2, f3, f4, f5, f6, f7, f8
-				});
+			{
+				f1, f2, f3, f4, f5, f6, f7, f8
+			});
 
 			// Check value of t3
 			static double CheckT3(double value) => value < 0 ? 0 : value;

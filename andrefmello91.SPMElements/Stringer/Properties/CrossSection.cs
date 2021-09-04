@@ -20,14 +20,6 @@ namespace andrefmello91.SPMElements.StringerProperties
 
 		#region Properties
 
-		/// <inheritdoc />
-		public LengthUnit Unit
-		{
-			get => _width.Unit;
-			set => ChangeUnit(value);
-		}
-
-
 		/// <summary>
 		///     Get the cross-section area.
 		/// </summary>
@@ -49,6 +41,13 @@ namespace andrefmello91.SPMElements.StringerProperties
 		{
 			get => _width;
 			set => _width = value.ToUnit(Unit);
+		}
+
+		/// <inheritdoc />
+		public LengthUnit Unit
+		{
+			get => _width.Unit;
+			set => ChangeUnit(value);
 		}
 
 		#endregion
@@ -80,20 +79,13 @@ namespace andrefmello91.SPMElements.StringerProperties
 
 		#region Methods
 
-		/// <inheritdoc />
-		public void ChangeUnit(LengthUnit unit)
-		{
-			if (Unit == unit)
-				return;
-
-			_width  = _width.ToUnit(unit);
-			_height = _height.ToUnit(unit);
-		}
-
 		/// <inheritdoc cref="IUnitConvertible{TUnit}.Convert" />
 		public CrossSection Convert(LengthUnit unit) => new(Width.ToUnit(unit), Height.ToUnit(unit));
 
-		IUnitConvertible<LengthUnit> IUnitConvertible<LengthUnit>.Convert(LengthUnit unit) => Convert(unit);
+		/// <inheritdoc />
+		public override string ToString() =>
+			$"Width = {Width}\n" +
+			$"Height = {Height}\n";
 
 		/// <inheritdoc />
 		public bool Approaches(CrossSection other, Length tolerance) => Width.Approx(other.Width, tolerance) && Height.Approx(other.Height, tolerance);
@@ -114,9 +106,16 @@ namespace andrefmello91.SPMElements.StringerProperties
 		public bool Equals(CrossSection other) => Approaches(other, Point.Tolerance);
 
 		/// <inheritdoc />
-		public override string ToString() =>
-			$"Width = {Width}\n" +
-			$"Height = {Height}\n";
+		public void ChangeUnit(LengthUnit unit)
+		{
+			if (Unit == unit)
+				return;
+
+			_width  = _width.ToUnit(unit);
+			_height = _height.ToUnit(unit);
+		}
+
+		IUnitConvertible<LengthUnit> IUnitConvertible<LengthUnit>.Convert(LengthUnit unit) => Convert(unit);
 
 		#endregion
 

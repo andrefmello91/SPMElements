@@ -13,32 +13,19 @@ namespace andrefmello91.SPMElements.StringerProperties
 	/// </summary>
 	public struct StringerGeometry : IUnitConvertible<LengthUnit>, IApproachable<StringerGeometry, Length>, IEquatable<StringerGeometry>, IComparable<StringerGeometry>, ICloneable<StringerGeometry>
 	{
+
+		#region Fields
+
 		private CrossSection _section;
 
-		#region Properties
+		#endregion
 
-		/// <summary>
-		///     Get/set the <see cref="LengthUnit" /> that this was constructed with.
-		/// </summary>
-		public LengthUnit Unit
-		{
-			get => InitialPoint.Unit;
-			set => ChangeUnit(value);
-		}
+		#region Properties
 
 		/// <summary>
 		///     The stringer angle, in radians.
 		/// </summary>
 		public double Angle { get; }
-
-		/// <summary>
-		///     Get the cross-section.
-		/// </summary>
-		public CrossSection CrossSection
-		{
-			get => _section;
-			set => _section = value.Convert(Unit);
-		}
 
 		/// <summary>
 		///     Get the center <see cref="Point" /> of <see cref="Stringer" />.
@@ -49,6 +36,15 @@ namespace andrefmello91.SPMElements.StringerProperties
 		///     Get the connected <see cref="Point" />'s.
 		/// </summary>
 		public Point[] ConnectedPoints => new[] { InitialPoint, CenterPoint, EndPoint };
+
+		/// <summary>
+		///     Get the cross-section.
+		/// </summary>
+		public CrossSection CrossSection
+		{
+			get => _section;
+			set => _section = value.Convert(Unit);
+		}
 
 		/// <summary>
 		///     Get the final <see cref="Point" /> of <see cref="Stringer" />.
@@ -64,6 +60,15 @@ namespace andrefmello91.SPMElements.StringerProperties
 		///     The stringer length.
 		/// </summary>
 		public Length Length { get; private set; }
+
+		/// <summary>
+		///     Get/set the <see cref="LengthUnit" /> that this was constructed with.
+		/// </summary>
+		public LengthUnit Unit
+		{
+			get => InitialPoint.Unit;
+			set => ChangeUnit(value);
+		}
 
 		#endregion
 
@@ -116,6 +121,15 @@ namespace andrefmello91.SPMElements.StringerProperties
 		#region Methods
 
 		/// <summary>
+		///     Convert this <see cref="StringerGeometry" /> object to another <see cref="LengthUnit" />.
+		/// </summary>
+		/// <param name="unit">The desired <see cref="LengthUnit" />.</param>
+		public StringerGeometry Convert(LengthUnit unit) =>
+			unit == Unit
+				? this
+				: new StringerGeometry(InitialPoint.Convert(unit), EndPoint.Convert(unit), CrossSection.Convert(unit));
+
+		/// <summary>
 		///     Divide a <see cref="StringerGeometry" /> in a <paramref name="number" /> of new ones.
 		/// </summary>
 		/// <param name="number">The number of new <see cref="StringerGeometry" />'s. Must be bigger than 1.</param>
@@ -148,19 +162,46 @@ namespace andrefmello91.SPMElements.StringerProperties
 			}
 		}
 
-		/// <summary>
-		///     Convert this <see cref="StringerGeometry" /> object to another <see cref="LengthUnit" />.
-		/// </summary>
-		/// <param name="unit">The desired <see cref="LengthUnit" />.</param>
-		public StringerGeometry Convert(LengthUnit unit) =>
-			unit == Unit
-				? this
-				: new StringerGeometry(InitialPoint.Convert(unit), EndPoint.Convert(unit), CrossSection.Convert(unit));
+		/// <inheritdoc />
+		public override bool Equals(object obj) => obj is StringerGeometry other && Equals(other);
 
-		IUnitConvertible<LengthUnit> IUnitConvertible<LengthUnit>.Convert(LengthUnit unit) => Convert(unit);
+		/// <summary>
+		///     Returns true if <see cref="CrossSection" /> of <paramref name="other" /> coincide to this object.
+		/// </summary>
+		/// <inheritdoc cref="CompareTo" />
+		public bool EqualsCrossSection(StringerGeometry other) => CrossSection == other.CrossSection;
+
+		/// <inheritdoc />
+		public override int GetHashCode() => InitialPoint.GetHashCode() * EndPoint.GetHashCode();
+
+		/// <inheritdoc />
+		public override string ToString() =>
+			$"Lenght = {Length}\n" +
+			$"Angle = {Angle.ToDegree():0.00} deg\n" +
+			CrossSection;
+
+		/// <inheritdoc />
+		public bool Approaches(StringerGeometry other, Length tolerance) =>
+			InitialPoint.Approaches(other.InitialPoint, tolerance) && EndPoint.Approaches(other.EndPoint, tolerance) ||
+			InitialPoint.Approaches(other!.EndPoint, tolerance) && EndPoint.Approaches(other.InitialPoint, tolerance);
 
 		/// <inheritdoc />
 		public StringerGeometry Clone() => new(InitialPoint, EndPoint, CrossSection.Clone());
+
+		/// <summary>
+		///     Compare this <see cref="StringerGeometry" /> to <paramref name="other" />, based on <see cref="CenterPoint" />.
+		/// </summary>
+		/// <remarks>
+		///     See: <seealso cref="Point.CompareTo" />.
+		/// </remarks>
+		/// <param name="other">The <see cref="StringerGeometry" /> to compare.</param>
+		public int CompareTo(StringerGeometry other) => CenterPoint.CompareTo(other.CenterPoint);
+
+		/// <summary>
+		///     Returns true if <see cref="InitialPoint" /> and <seealso cref="EndPoint" /> of <paramref name="other" /> coincide.
+		/// </summary>
+		/// <inheritdoc cref="CompareTo" />
+		public bool Equals(StringerGeometry other) => Approaches(other, Point.Tolerance);
 
 		/// <summary>
 		///     Change the <see cref="LengthUnit" /> of this.
@@ -179,43 +220,7 @@ namespace andrefmello91.SPMElements.StringerProperties
 			Length = Length.ToUnit(unit);
 		}
 
-		/// <inheritdoc />
-		public bool Approaches(StringerGeometry other, Length tolerance) =>
-			InitialPoint.Approaches(other.InitialPoint, tolerance) && EndPoint.Approaches(other.EndPoint, tolerance) ||
-			InitialPoint.Approaches(other!.EndPoint, tolerance) && EndPoint.Approaches(other.InitialPoint, tolerance);
-
-		/// <summary>
-		///     Compare this <see cref="StringerGeometry" /> to <paramref name="other" />, based on <see cref="CenterPoint" />.
-		/// </summary>
-		/// <remarks>
-		///     See: <seealso cref="Point.CompareTo" />.
-		/// </remarks>
-		/// <param name="other">The <see cref="StringerGeometry" /> to compare.</param>
-		public int CompareTo(StringerGeometry other) => CenterPoint.CompareTo(other.CenterPoint);
-
-		/// <summary>
-		///     Returns true if <see cref="InitialPoint" /> and <seealso cref="EndPoint" /> of <paramref name="other" /> coincide.
-		/// </summary>
-		/// <inheritdoc cref="CompareTo" />
-		public bool Equals(StringerGeometry other) => Approaches(other, Point.Tolerance);
-
-		/// <summary>
-		///     Returns true if <see cref="CrossSection" /> of <paramref name="other" /> coincide to this object.
-		/// </summary>
-		/// <inheritdoc cref="CompareTo" />
-		public bool EqualsCrossSection(StringerGeometry other) => CrossSection == other.CrossSection;
-
-		/// <inheritdoc />
-		public override bool Equals(object obj) => obj is StringerGeometry other && Equals(other);
-
-		/// <inheritdoc />
-		public override int GetHashCode() => InitialPoint.GetHashCode() * EndPoint.GetHashCode();
-
-		/// <inheritdoc />
-		public override string ToString() =>
-			$"Lenght = {Length}\n" +
-			$"Angle = {Angle.ToDegree():0.00} deg\n" +
-			CrossSection;
+		IUnitConvertible<LengthUnit> IUnitConvertible<LengthUnit>.Convert(LengthUnit unit) => Convert(unit);
 
 		#endregion
 

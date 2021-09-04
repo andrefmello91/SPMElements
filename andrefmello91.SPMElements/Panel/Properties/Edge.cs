@@ -16,15 +16,6 @@ namespace andrefmello91.SPMElements.PanelProperties
 		#region Properties
 
 		/// <summary>
-		///     Get the <see cref="LengthUnit" /> that this was constructed with.
-		/// </summary>
-		public LengthUnit Unit
-		{
-			get => InitialVertex.Unit;
-			set => ChangeUnit(value);
-		}
-
-		/// <summary>
 		///     Get angle related to horizontal axis, in radians.
 		/// </summary>
 		public double Angle { get; }
@@ -54,6 +45,15 @@ namespace andrefmello91.SPMElements.PanelProperties
 		/// </summary>
 		public Length StringerDimension { get; private set; }
 
+		/// <summary>
+		///     Get the <see cref="LengthUnit" /> that this was constructed with.
+		/// </summary>
+		public LengthUnit Unit
+		{
+			get => InitialVertex.Unit;
+			set => ChangeUnit(value);
+		}
+
 		#endregion
 
 		#region Constructors
@@ -77,6 +77,48 @@ namespace andrefmello91.SPMElements.PanelProperties
 
 		#region Methods
 
+		/// <inheritdoc cref="IUnitConvertible{TUnit}.Convert" />
+		public Edge Convert(LengthUnit unit) => new(InitialVertex.Convert(unit), FinalVertex.Convert(unit));
+
+		/// <inheritdoc />
+		public override bool Equals(object obj) => obj is Edge other && Equals(other);
+
+		/// <inheritdoc />
+		public override int GetHashCode() => InitialVertex.GetHashCode() * FinalVertex.GetHashCode();
+
+		/// <summary>
+		///     Set stringer dimension in this edge.
+		/// </summary>
+		/// <param name="height">The height of the <seealso cref="Stringer" />, in <paramref name="unit" /> considered.</param>
+		/// <param name="unit">The <see cref="LengthUnit" /> of <paramref name="height" />.</param>
+		public void SetStringerDimension(double height, LengthUnit unit = LengthUnit.Millimeter) =>
+			SetStringerDimension((Length) height.As(unit));
+
+		/// <param name="height">The height of the <seealso cref="Stringer" />.</param>
+		/// <inheritdoc cref="SetStringerDimension(double, LengthUnit)" />
+		public void SetStringerDimension(Length height) => StringerDimension = height.ToUnit(Unit);
+
+		/// <inheritdoc />
+		public override string ToString() =>
+			$"Initial vertex: ({InitialVertex.X:0.00}, {InitialVertex.Y:0.00})\n" +
+			$"Final vertex: ({FinalVertex.X:0.00}, {FinalVertex.Y:0.00})\n" +
+			$"Lenght = {Length}\n" +
+			$"Angle = {Angle:0.00} rad";
+
+		/// <inheritdoc />
+		public bool Approaches(Edge other, Length tolerance) =>
+			InitialVertex.Approaches(other.InitialVertex, tolerance) && FinalVertex.Approaches(other.FinalVertex, tolerance) ||
+			InitialVertex.Approaches(other.FinalVertex, tolerance) && FinalVertex.Approaches(other.InitialVertex, tolerance);
+
+		/// <inheritdoc />
+		public int CompareTo(Edge other) => CenterPoint.CompareTo(other.CenterPoint);
+
+		/// <summary>
+		///     Returns true if edges are equal.
+		/// </summary>
+		/// <param name="other">The other <see cref="Edge" /> object.</param>
+		public bool Equals(Edge other) => InitialVertex == other.InitialVertex && FinalVertex == other.FinalVertex;
+
 		/// <summary>
 		///     Change the <see cref="LengthUnit" /> of this.
 		/// </summary>
@@ -94,49 +136,7 @@ namespace andrefmello91.SPMElements.PanelProperties
 			StringerDimension = StringerDimension.ToUnit(unit);
 		}
 
-		/// <summary>
-		///     Set stringer dimension in this edge.
-		/// </summary>
-		/// <param name="height">The height of the <seealso cref="Stringer" />, in <paramref name="unit" /> considered.</param>
-		/// <param name="unit">The <see cref="LengthUnit" /> of <paramref name="height" />.</param>
-		public void SetStringerDimension(double height, LengthUnit unit = LengthUnit.Millimeter) =>
-			SetStringerDimension((Length) height.As(unit));
-
-		/// <param name="height">The height of the <seealso cref="Stringer" />.</param>
-		/// <inheritdoc cref="SetStringerDimension(double, LengthUnit)" />
-		public void SetStringerDimension(Length height) => StringerDimension = height.ToUnit(Unit);
-
-		/// <inheritdoc cref="IUnitConvertible{TUnit}.Convert" />
-		public Edge Convert(LengthUnit unit) => new(InitialVertex.Convert(unit), FinalVertex.Convert(unit));
-
 		IUnitConvertible<LengthUnit> IUnitConvertible<LengthUnit>.Convert(LengthUnit unit) => Convert(unit);
-
-		/// <inheritdoc />
-		public bool Approaches(Edge other, Length tolerance) =>
-			InitialVertex.Approaches(other.InitialVertex, tolerance) && FinalVertex.Approaches(other.FinalVertex, tolerance) ||
-			InitialVertex.Approaches(other.FinalVertex, tolerance) && FinalVertex.Approaches(other.InitialVertex, tolerance);
-
-		/// <inheritdoc />
-		public int CompareTo(Edge other) => CenterPoint.CompareTo(other.CenterPoint);
-
-		/// <summary>
-		///     Returns true if edges are equal.
-		/// </summary>
-		/// <param name="other">The other <see cref="Edge" /> object.</param>
-		public bool Equals(Edge other) => InitialVertex == other.InitialVertex && FinalVertex == other.FinalVertex;
-
-		/// <inheritdoc />
-		public override bool Equals(object obj) => obj is Edge other && Equals(other);
-
-		/// <inheritdoc />
-		public override int GetHashCode() => InitialVertex.GetHashCode() * FinalVertex.GetHashCode();
-
-		/// <inheritdoc />
-		public override string ToString() =>
-			$"Initial vertex: ({InitialVertex.X:0.00}, {InitialVertex.Y:0.00})\n" +
-			$"Final vertex: ({FinalVertex.X:0.00}, {FinalVertex.Y:0.00})\n" +
-			$"Lenght = {Length}\n" +
-			$"Angle = {Angle:0.00} rad";
 
 		#endregion
 

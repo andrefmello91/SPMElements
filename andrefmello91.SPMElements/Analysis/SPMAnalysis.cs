@@ -4,13 +4,20 @@ using andrefmello91.FEMAnalysis;
 namespace andrefmello91.SPMElements
 {
 	/// <summary>
-	///		Nonlinear analysis class for SPM.
+	///     Nonlinear analysis class for SPM.
 	/// </summary>
 	public class SPMAnalysis : NonlinearAnalysis
 	{
+
+		#region Fields
+
 		// Load steps of element cracking
 		private (int number, int step)? _stringerCrackLS, _panelCrackLS;
-		
+
+		#endregion
+
+		#region Constructors
+
 		/// <inheritdoc />
 		public SPMAnalysis(IFEMInput nonlinearInput)
 			: base(nonlinearInput)
@@ -23,26 +30,33 @@ namespace andrefmello91.SPMElements
 		{
 		}
 
-		/// <inheritdoc />
-		protected override void SetStepResults(int? monitoredIndex)
-		{
-			base.SetStepResults(monitoredIndex);
-			
-			if (FemInput is not SPMInput spmInput)
-				return;
-			
-			// Check if a stringer cracked at the current step
-			if (!_stringerCrackLS.HasValue && spmInput.Stringers.FirstOrDefault(s => s is NLStringer { ConcreteCracked: true }) is NLStringer stringer)
-				_stringerCrackLS = (stringer.Number, (int)CurrentStep);
-			
-			// Check if a panel cracked at the current step
-			if (!_panelCrackLS.HasValue && spmInput.Panels.FirstOrDefault(s => s is NLPanel { ConcreteCracked: true }) is NLPanel panel)
-				_panelCrackLS = (panel.Number, (int)CurrentStep);
-		}
+		#endregion
+
+		#region Methods
 
 		/// <summary>
 		///     Generate an <see cref="SPMOutput" /> from analysis results.
 		/// </summary>
-		public new SPMOutput GenerateOutput() => new (Steps, _stringerCrackLS, _panelCrackLS);
+		public new SPMOutput GenerateOutput() => new(Steps, _stringerCrackLS, _panelCrackLS);
+
+		/// <inheritdoc />
+		protected override void SetStepResults(int? monitoredIndex)
+		{
+			base.SetStepResults(monitoredIndex);
+
+			if (FemInput is not SPMInput spmInput)
+				return;
+
+			// Check if a stringer cracked at the current step
+			if (!_stringerCrackLS.HasValue && spmInput.Stringers.FirstOrDefault(s => s is NLStringer { ConcreteCracked: true }) is NLStringer stringer)
+				_stringerCrackLS = (stringer.Number, (int) CurrentStep);
+
+			// Check if a panel cracked at the current step
+			if (!_panelCrackLS.HasValue && spmInput.Panels.FirstOrDefault(s => s is NLPanel { ConcreteCracked: true }) is NLPanel panel)
+				_panelCrackLS = (panel.Number, (int) CurrentStep);
+		}
+
+		#endregion
+
 	}
 }

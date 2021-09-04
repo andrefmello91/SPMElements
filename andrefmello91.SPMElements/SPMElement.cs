@@ -5,9 +5,7 @@ using andrefmello91.Extensions;
 using andrefmello91.FEMAnalysis;
 using andrefmello91.OnPlaneComponents;
 using MathNet.Numerics.LinearAlgebra;
-using MathNet.Numerics.LinearAlgebra.Double;
 using UnitsNet;
-using UnitsNet.Units;
 using static andrefmello91.FEMAnalysis.Extensions;
 
 namespace andrefmello91.SPMElements
@@ -53,6 +51,41 @@ namespace andrefmello91.SPMElements
 		/// </summary>
 		protected Matrix<double> TransformationMatrix { get; set; }
 
+		#endregion
+
+		#region Constructors
+
+		/// <summary>
+		///     SPM element base constructor.
+		/// </summary>
+		/// <param name="geometry">The element's geometry.</param>
+		/// <param name="grips">The collection of grips of this element.</param>
+		protected SPMElement(TGeometry geometry, IEnumerable<Node> grips)
+		{
+			Geometry           = geometry;
+			Grips              = grips.ToArray();
+			LocalForces        = ForceVector.Zero(Grips.Length);
+			LocalDisplacements = DisplacementVector.Zero(Grips.Length);
+			Forces             = ForceVector.Zero(2 * Grips.Length);
+			Displacements      = DisplacementVector.Zero(2 * Grips.Length);
+		}
+
+		#endregion
+
+		#region Operators
+
+		/// <summary>
+		///     Returns true if arguments are equal.
+		/// </summary>
+		public static bool operator ==(SPMElement<TGeometry>? left, SPMElement<TGeometry>? right) => left.IsEqualTo(right);
+
+		/// <summary>
+		///     Returns true if arguments are different.
+		/// </summary>
+		public static bool operator !=(SPMElement<TGeometry>? left, SPMElement<TGeometry>? right) => left.IsNotEqualTo(right);
+
+		#endregion
+
 		#region Interface Implementations
 
 		/// <inheritdoc />
@@ -89,29 +122,6 @@ namespace andrefmello91.SPMElements
 		public StiffnessMatrix Stiffness { get; protected set; }
 
 		#endregion
-
-		#endregion
-
-		#region Constructors
-
-		/// <summary>
-		///     SPM element base constructor.
-		/// </summary>
-		/// <param name="geometry">The element's geometry.</param>
-		/// <param name="grips">The collection of grips of this element.</param>
-		protected SPMElement(TGeometry geometry, IEnumerable<Node> grips)
-		{
-			Geometry           = geometry;
-			Grips              = grips.ToArray();
-			LocalForces        = ForceVector.Zero(Grips.Length);
-			LocalDisplacements = DisplacementVector.Zero(Grips.Length);
-			Forces             = ForceVector.Zero(2 * Grips.Length);
-			Displacements      = DisplacementVector.Zero(2 * Grips.Length);
-		}
-
-		#endregion
-
-		#region Methods
 
 		#region Interface Implementations
 
@@ -158,22 +168,6 @@ namespace andrefmello91.SPMElements
 
 		/// <inheritdoc />
 		public override int GetHashCode() => Geometry.GetHashCode();
-
-		#endregion
-
-		#endregion
-
-		#region Operators
-
-		/// <summary>
-		///     Returns true if arguments are equal.
-		/// </summary>
-		public static bool operator ==(SPMElement<TGeometry>? left, SPMElement<TGeometry>? right) => left.IsEqualTo(right);
-
-		/// <summary>
-		///     Returns true if arguments are different.
-		/// </summary>
-		public static bool operator !=(SPMElement<TGeometry>? left, SPMElement<TGeometry>? right) => left.IsNotEqualTo(right);
 
 		#endregion
 

@@ -18,15 +18,6 @@ namespace andrefmello91.SPMElements.PanelProperties
 		#region Properties
 
 		/// <summary>
-		///     Get the <see cref="LengthUnit" /> of vertices' coordinates.
-		/// </summary>
-		public LengthUnit Unit
-		{
-			get => Vertex1.Unit;
-			set => ChangeUnit(value);
-		}
-
-		/// <summary>
 		///     Get <see cref="Vertices" /> approximated center point.
 		/// </summary>
 		public Point CenterPoint { get; }
@@ -66,6 +57,15 @@ namespace andrefmello91.SPMElements.PanelProperties
 		/// </summary>
 		public Length[] YCoordinates => AsArray().Select(v => v.Y).ToArray();
 
+		/// <summary>
+		///     Get the <see cref="LengthUnit" /> of vertices' coordinates.
+		/// </summary>
+		public LengthUnit Unit
+		{
+			get => Vertex1.Unit;
+			set => ChangeUnit(value);
+		}
+
 		#endregion
 
 		#region Constructors
@@ -92,23 +92,6 @@ namespace andrefmello91.SPMElements.PanelProperties
 		#region Methods
 
 		/// <summary>
-		///		Create a panel vertices object from a collection of points.
-		/// </summary>
-		/// <param name="vertices">The collection of the four <see cref="Point" /> vertices, in any order.</param>
-		/// <exception cref="ArgumentException">If <paramref name="vertices"/> doesn't contain 4 points.</exception>
-		public static Vertices From(IEnumerable<Point> vertices)
-		{
-			if (vertices.Count() != 4)
-				throw new ArgumentException("Vertices must contain 4 points.", nameof(vertices));
-
-			// Order points
-			var verts = vertices.OrderBy(p => p).ToList();
-
-			return
-				new Vertices(verts[0], verts[1], verts[3], verts[2]);
-		}
-		
-		/// <summary>
 		///     Calculate <see cref="Vertices" /> approximated center point.
 		/// </summary>
 		/// <inheritdoc cref="Vertices(Point, Point, Point, Point)" />
@@ -122,6 +105,23 @@ namespace andrefmello91.SPMElements.PanelProperties
 		}
 
 		/// <summary>
+		///     Create a panel vertices object from a collection of points.
+		/// </summary>
+		/// <param name="vertices">The collection of the four <see cref="Point" /> vertices, in any order.</param>
+		/// <exception cref="ArgumentException">If <paramref name="vertices" /> doesn't contain 4 points.</exception>
+		public static Vertices From(IEnumerable<Point> vertices)
+		{
+			if (vertices.Count() != 4)
+				throw new ArgumentException("Vertices must contain 4 points.", nameof(vertices));
+
+			// Order points
+			var verts = vertices.OrderBy(p => p).ToList();
+
+			return
+				new Vertices(verts[0], verts[1], verts[3], verts[2]);
+		}
+
+		/// <summary>
 		///     Returns true if <paramref name="vertices" /> form a rectangular geometry.
 		/// </summary>
 		/// <param name="vertices">The <see cref="Vertices" /> object to check.</param>
@@ -130,6 +130,20 @@ namespace andrefmello91.SPMElements.PanelProperties
 			vertices.Vertex4.Y.Approx(vertices.Vertex3.Y, Point.Tolerance) &&
 			vertices.Vertex1.X.Approx(vertices.Vertex4.X, Point.Tolerance) &&
 			vertices.Vertex2.X.Approx(vertices.Vertex3.X, Point.Tolerance);
+
+		/// <summary>
+		///     Get vertices as an array.
+		/// </summary>
+		public Point[] AsArray() => new[] { Vertex1, Vertex2, Vertex3, Vertex4 };
+
+		/// <summary>
+		///     Convert this <see cref="Vertices" /> object to another <see cref="LengthUnit" />.
+		/// </summary>
+		/// <param name="unit">The desired <see cref="LengthUnit" />.</param>
+		public Vertices Convert(LengthUnit unit) =>
+			unit == Unit
+				? Clone()
+				: new Vertices(Vertex1.Convert(unit), Vertex2.Convert(unit), Vertex3.Convert(unit), Vertex4.Convert(unit));
 
 		/// <summary>
 		///     Divide a <see cref="Vertices" /> object into new ones.
@@ -169,10 +183,36 @@ namespace andrefmello91.SPMElements.PanelProperties
 			}
 		}
 
+		/// <inheritdoc />
+		public override bool Equals(object obj) => obj is Vertices other && Equals(other);
+
+		/// <inheritdoc />
+		public override int GetHashCode() => AsArray().Sum(point => point.GetHashCode());
+
+		/// <inheritdoc />
+		public override string ToString() =>
+			$"Vertex 1:\t({Vertex1.X.Value:0.00},\t{Vertex1.Y.Value:0.00})\n" +
+			$"Vertex 2:\t({Vertex2.X.Value:0.00},\t{Vertex2.Y.Value:0.00})\n" +
+			$"Vertex 3:\t({Vertex3.X.Value:0.00},\t{Vertex3.Y.Value:0.00})\n" +
+			$"Vertex 4:\t({Vertex4.X.Value:0.00},\t{Vertex4.Y.Value:0.00})\n" +
+			$"Coordinates in {Unit}";
+
+		/// <inheritdoc />
+		public bool Approaches(Vertices other, Length tolerance) =>
+			Vertex1.Approaches(other.Vertex1, tolerance) && Vertex2.Approaches(other.Vertex2, tolerance) &&
+			Vertex3.Approaches(other.Vertex3, tolerance) && Vertex4.Approaches(other.Vertex4, tolerance);
+
+		/// <inheritdoc />
+		public Vertices Clone() => From(AsArray());
+
+		/// <inheritdoc />
+		public int CompareTo(Vertices other) => CenterPoint.CompareTo(other.CenterPoint);
+
 		/// <summary>
-		///     Get vertices as an array.
+		///     Returns true if all vertices are equal.
 		/// </summary>
-		public Point[] AsArray() => new[] { Vertex1, Vertex2, Vertex3, Vertex4 };
+		/// <param name="other">The other <see cref="Vertices" /> to compare.</param>
+		public bool Equals(Vertices other) => Approaches(other, Point.Tolerance);
 
 		/// <summary>
 		///     Change the <see cref="LengthUnit" /> of vertices' coordinates.
@@ -191,47 +231,7 @@ namespace andrefmello91.SPMElements.PanelProperties
 			Unit = unit;
 		}
 
-		/// <summary>
-		///     Convert this <see cref="Vertices" /> object to another <see cref="LengthUnit" />.
-		/// </summary>
-		/// <param name="unit">The desired <see cref="LengthUnit" />.</param>
-		public Vertices Convert(LengthUnit unit) =>
-			unit == Unit
-				? Clone()
-				: new Vertices(Vertex1.Convert(unit), Vertex2.Convert(unit), Vertex3.Convert(unit), Vertex4.Convert(unit));
-
 		IUnitConvertible<LengthUnit> IUnitConvertible<LengthUnit>.Convert(LengthUnit unit) => Convert(unit);
-
-		/// <inheritdoc />
-		public Vertices Clone() => From(AsArray());
-
-		/// <inheritdoc />
-		public bool Approaches(Vertices other, Length tolerance) =>
-			Vertex1.Approaches(other.Vertex1, tolerance) && Vertex2.Approaches(other.Vertex2, tolerance) &&
-			Vertex3.Approaches(other.Vertex3, tolerance) && Vertex4.Approaches(other.Vertex4, tolerance);
-
-		/// <inheritdoc />
-		public int CompareTo(Vertices other) => CenterPoint.CompareTo(other.CenterPoint);
-
-		/// <summary>
-		///     Returns true if all vertices are equal.
-		/// </summary>
-		/// <param name="other">The other <see cref="Vertices" /> to compare.</param>
-		public bool Equals(Vertices other) => Approaches(other, Point.Tolerance);
-
-		/// <inheritdoc />
-		public override bool Equals(object obj) => obj is Vertices other && Equals(other);
-
-		/// <inheritdoc />
-		public override int GetHashCode() => AsArray().Sum(point => point.GetHashCode());
-
-		/// <inheritdoc />
-		public override string ToString() =>
-			$"Vertex 1:\t({Vertex1.X.Value:0.00},\t{Vertex1.Y.Value:0.00})\n" +
-			$"Vertex 2:\t({Vertex2.X.Value:0.00},\t{Vertex2.Y.Value:0.00})\n" +
-			$"Vertex 3:\t({Vertex3.X.Value:0.00},\t{Vertex3.Y.Value:0.00})\n" +
-			$"Vertex 4:\t({Vertex4.X.Value:0.00},\t{Vertex4.Y.Value:0.00})\n" +
-			$"Coordinates in {Unit}";
 
 		#endregion
 

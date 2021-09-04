@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using andrefmello91.Extensions;
-using andrefmello91.FEMAnalysis;
 using andrefmello91.Material.Concrete;
 using andrefmello91.Material.Reinforcement;
 using andrefmello91.OnPlaneComponents;
@@ -353,12 +352,12 @@ namespace andrefmello91.SPMElements
 
 			// Calculate the stiffness matrix
 			var stiffness = Gc * w * new[,]
-				{
-					{ a_b, -1, a_b, -1 },
-					{ -1, b_a, -1, b_a },
-					{ a_b, -1, a_b, -1 },
-					{ -1, b_a, -1, b_a }
-				}.ToMatrix();
+			{
+				{ a_b, -1, a_b, -1 },
+				{ -1, b_a, -1, b_a },
+				{ a_b, -1, a_b, -1 },
+				{ -1, b_a, -1, b_a }
+			}.ToMatrix();
 
 			return
 				new StiffnessMatrix(stiffness);
@@ -403,6 +402,8 @@ namespace andrefmello91.SPMElements
 			// Not needed in linear element.
 		}
 
+		#endregion
+
 		#region Object override
 
 		/// <inheritdoc />
@@ -422,8 +423,6 @@ namespace andrefmello91.SPMElements
 
 			return msgstr;
 		}
-
-		#endregion
 
 		#endregion
 

@@ -24,15 +24,6 @@ namespace andrefmello91.SPMElements.PanelProperties
 		#region Properties
 
 		/// <summary>
-		///     Get the <see cref="LengthUnit" /> that this was constructed with.
-		/// </summary>
-		public LengthUnit Unit
-		{
-			get => Vertices.Unit;
-			set => ChangeUnit(value);
-		}
-
-		/// <summary>
 		///     Get panel dimensions (a, b, c, d).
 		/// </summary>
 		public (Length a, Length b, Length c, Length d) Dimensions { get; private set; }
@@ -96,6 +87,15 @@ namespace andrefmello91.SPMElements.PanelProperties
 			set => _width = value.ToUnit(Unit);
 		}
 
+		/// <summary>
+		///     Get the <see cref="LengthUnit" /> that this was constructed with.
+		/// </summary>
+		public LengthUnit Unit
+		{
+			get => Vertices.Unit;
+			set => ChangeUnit(value);
+		}
+
 		#endregion
 
 		#region Constructors
@@ -118,7 +118,7 @@ namespace andrefmello91.SPMElements.PanelProperties
 
 			Dimensions = CalculateDimensions(Vertices);
 		}
-		
+
 		/// <inheritdoc cref="PanelGeometry(Vertices,Length)" />
 		/// <param name="unit">
 		///     The <see cref="LengthUnit" /> of <paramref name="width" /> and <paramref name="vertices" />' coordinates.
@@ -128,24 +128,9 @@ namespace andrefmello91.SPMElements.PanelProperties
 		{
 		}
 
-
 		#endregion
 
 		#region Methods
-
-		/// <summary>
-		///		Create a panel geometry object from a collection of points.
-		/// </summary>
-		/// <param name="vertices">The collection of the four <see cref="Point" /> vertices, in any order.</param>
-		/// <param name="width">Panel width.</param>
-		/// <exception cref="ArgumentException">If <paramref name="vertices"/> doesn't contain 4 points.</exception>
-		public static PanelGeometry From(IEnumerable<Point> vertices, Length width) => new (Vertices.From(vertices), width);
-		
-		/// <inheritdoc cref="From(IEnumerable{Point}, Length)"/>
-		/// <param name="unit">
-		///     The <see cref="LengthUnit" /> of <paramref name="width" /> and <paramref name="vertices" />' coordinates.
-		/// </param>
-		public static PanelGeometry From(IEnumerable<Point> vertices, double width, LengthUnit unit = LengthUnit.Millimeter) => new (Vertices.From(vertices), width, unit);
 
 		/// <summary>
 		///     Calculate panel dimensions (a, b, c, d).
@@ -166,6 +151,28 @@ namespace andrefmello91.SPMElements.PanelProperties
 		}
 
 		/// <summary>
+		///     Create a panel geometry object from a collection of points.
+		/// </summary>
+		/// <param name="vertices">The collection of the four <see cref="Point" /> vertices, in any order.</param>
+		/// <param name="width">Panel width.</param>
+		/// <exception cref="ArgumentException">If <paramref name="vertices" /> doesn't contain 4 points.</exception>
+		public static PanelGeometry From(IEnumerable<Point> vertices, Length width) => new(Vertices.From(vertices), width);
+
+		/// <inheritdoc cref="From(IEnumerable{Point}, Length)" />
+		/// <param name="unit">
+		///     The <see cref="LengthUnit" /> of <paramref name="width" /> and <paramref name="vertices" />' coordinates.
+		/// </param>
+		public static PanelGeometry From(IEnumerable<Point> vertices, double width, LengthUnit unit = LengthUnit.Millimeter) => new(Vertices.From(vertices), width, unit);
+
+		/// <inheritdoc cref="IUnitConvertible{TUnit}.Convert" />
+		public PanelGeometry Convert(LengthUnit unit) => new(Vertices.Convert(unit), Width.ToUnit(unit));
+
+		/// <summary>
+		///     Return <see cref="Dimensions" /> in <see cref="LengthUnit.Millimeter" />.
+		/// </summary>
+		public (double a, double b, double c, double d) DimensionsInMillimeters() => (Dimensions.a.Millimeters, Dimensions.b.Millimeters, Dimensions.c.Millimeters, Dimensions.d.Millimeters);
+
+		/// <summary>
 		///     Divide a <see cref="PanelGeometry" /> object into new ones.
 		/// </summary>
 		/// <remarks>
@@ -179,6 +186,34 @@ namespace andrefmello91.SPMElements.PanelProperties
 
 			return Vertices.Divide(rows, columns).Select(v => new PanelGeometry(v, width));
 		}
+
+		/// <inheritdoc />
+		public override bool Equals(object obj) => obj is PanelGeometry other && Equals(other);
+
+		/// <inheritdoc />
+		public override int GetHashCode() => Vertices.GetHashCode();
+
+		/// <inheritdoc />
+		public override string ToString() =>
+			$"{Vertices}\n" +
+
+			// Edges.Select(e => $"{nameof(e)}\n{e}\n").Aggregate((i, f) => i + f) +
+			$"Width = {Width}";
+
+		/// <inheritdoc />
+		public bool Approaches(PanelGeometry other, Length tolerance) => Vertices.Approaches(other.Vertices, tolerance);
+
+		/// <inheritdoc />
+		public PanelGeometry Clone() => new(Vertices.Clone(), Width);
+
+		/// <inheritdoc />
+		public int CompareTo(PanelGeometry other) => Vertices.CompareTo(other.Vertices);
+
+		/// <summary>
+		///     Returns true if all <see cref="Vertices" /> are equal.
+		/// </summary>
+		/// <param name="other">The other <see cref="PanelGeometry" /> to compare.</param>
+		public bool Equals(PanelGeometry other) => Approaches(other, Point.Tolerance);
 
 		/// <summary>
 		///     Change the <see cref="LengthUnit" /> of this.
@@ -201,43 +236,7 @@ namespace andrefmello91.SPMElements.PanelProperties
 			Dimensions = CalculateDimensions(Vertices);
 		}
 
-		/// <summary>
-		///     Return <see cref="Dimensions" /> in <see cref="LengthUnit.Millimeter" />.
-		/// </summary>
-		public (double a, double b, double c, double d) DimensionsInMillimeters() => (Dimensions.a.Millimeters, Dimensions.b.Millimeters, Dimensions.c.Millimeters, Dimensions.d.Millimeters);
-
-		/// <inheritdoc cref="IUnitConvertible{TUnit}.Convert" />
-		public PanelGeometry Convert(LengthUnit unit) => new(Vertices.Convert(unit), Width.ToUnit(unit));
-
 		IUnitConvertible<LengthUnit> IUnitConvertible<LengthUnit>.Convert(LengthUnit unit) => Convert(unit);
-
-		/// <inheritdoc />
-		public bool Approaches(PanelGeometry other, Length tolerance) => Vertices.Approaches(other.Vertices, tolerance);
-
-		/// <inheritdoc />
-		public PanelGeometry Clone() => new(Vertices.Clone(), Width);
-
-		/// <inheritdoc />
-		public int CompareTo(PanelGeometry other) => Vertices.CompareTo(other.Vertices);
-
-		/// <summary>
-		///     Returns true if all <see cref="Vertices" /> are equal.
-		/// </summary>
-		/// <param name="other">The other <see cref="PanelGeometry" /> to compare.</param>
-		public bool Equals(PanelGeometry other) => Approaches(other, Point.Tolerance);
-
-		/// <inheritdoc />
-		public override string ToString() =>
-			$"{Vertices}\n" +
-
-			// Edges.Select(e => $"{nameof(e)}\n{e}\n").Aggregate((i, f) => i + f) +
-			$"Width = {Width}";
-
-		/// <inheritdoc />
-		public override bool Equals(object obj) => obj is PanelGeometry other && Equals(other);
-
-		/// <inheritdoc />
-		public override int GetHashCode() => Vertices.GetHashCode();
 
 		#endregion
 

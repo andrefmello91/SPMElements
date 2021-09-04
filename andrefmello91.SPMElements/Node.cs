@@ -61,34 +61,6 @@ namespace andrefmello91.SPMElements
 		/// </summary>
 		public NodeType Type { get; }
 
-		#region Interface Implementations
-
-		/// <summary>
-		///     Get/set <see cref="OnPlaneComponents.Constraint" /> condition.
-		/// </summary>
-		public Constraint Constraint { get; set; } = Constraint.Free;
-
-		/// <summary>
-		///     Get/set nodal <see cref="PlaneDisplacement" />
-		/// </summary>
-		public PlaneDisplacement Displacement { get; set; } = PlaneDisplacement.Zero;
-
-		/// <inheritdoc />
-		public int[] DoFIndex => GlobalIndexes(this).ToArray();
-
-		/// <summary>
-		///     Get/set applied <see cref="Force" />.
-		/// </summary>
-		public PlaneForce Force { get; set; } = PlaneForce.Zero;
-
-		/// <inheritdoc />
-		public int Number { get; set; }
-
-		/// <inheritdoc />
-		public PlaneForce Reaction { get; set; }
-
-		#endregion
-
 		#endregion
 
 		#region Constructors
@@ -127,6 +99,50 @@ namespace andrefmello91.SPMElements
 		/// </summary>
 		/// <param name="otherNode">The other <see cref="Node" /> object.</param>
 		public Length GetDistance(Node? otherNode) => otherNode is not null ? Position.GetDistance(otherNode.Position) : Length.Zero;
+
+		#endregion
+
+		#region Operators
+
+		/// <summary>
+		///     Returns true if both nodes positions are equal.
+		/// </summary>
+		public static bool operator ==(Node? left, Node? right) => left is not null && left.Equals(right);
+
+		/// <summary>
+		///     Returns true if both nodes positions are different.
+		/// </summary>
+		public static bool operator !=(Node? left, Node? right) => left is not null && !left.Equals(right);
+
+		#endregion
+
+		#region Interface Implementations
+
+		/// <summary>
+		///     Get/set <see cref="OnPlaneComponents.Constraint" /> condition.
+		/// </summary>
+		public Constraint Constraint { get; set; } = Constraint.Free;
+
+		/// <summary>
+		///     Get/set nodal <see cref="PlaneDisplacement" />
+		/// </summary>
+		public PlaneDisplacement Displacement { get; set; } = PlaneDisplacement.Zero;
+
+		/// <inheritdoc />
+		public int[] DoFIndex => GlobalIndexes(this).ToArray();
+
+		/// <summary>
+		///     Get/set applied <see cref="Force" />.
+		/// </summary>
+		public PlaneForce Force { get; set; } = PlaneForce.Zero;
+
+		/// <inheritdoc />
+		public int Number { get; set; }
+
+		/// <inheritdoc />
+		public PlaneForce Reaction { get; set; }
+
+		#endregion
 
 		#region Interface Implementations
 
@@ -192,22 +208,6 @@ namespace andrefmello91.SPMElements
 
 			return msgstr;
 		}
-
-		#endregion
-
-		#endregion
-
-		#region Operators
-
-		/// <summary>
-		///     Returns true if both nodes positions are equal.
-		/// </summary>
-		public static bool operator ==(Node? left, Node? right) => left is not null && left.Equals(right);
-
-		/// <summary>
-		///     Returns true if both nodes positions are different.
-		/// </summary>
-		public static bool operator !=(Node? left, Node? right) => left is not null && !left.Equals(right);
 
 		#endregion
 

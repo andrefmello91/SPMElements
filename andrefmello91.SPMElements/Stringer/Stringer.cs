@@ -1,9 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using andrefmello91.Extensions;
-using andrefmello91.FEMAnalysis;
 using andrefmello91.Material.Concrete;
 using andrefmello91.Material.Reinforcement;
 using andrefmello91.OnPlaneComponents;
@@ -92,7 +90,7 @@ namespace andrefmello91.SPMElements
 		/// </summary>
 		/// <inheritdoc cref="From" />
 		protected Stringer(Node grip1, Node grip2, Node grip3, CrossSection crossSection)
-			: base(new StringerGeometry(grip1.Position, grip3.Position, crossSection), new []{ grip1, grip2, grip3 })
+			: base(new StringerGeometry(grip1.Position, grip3.Position, crossSection), new[] { grip1, grip2, grip3 })
 		{
 		}
 
@@ -148,16 +146,6 @@ namespace andrefmello91.SPMElements
 			From(nodes.GetByPosition(grip1Position), nodes.GetByPosition(grip1Position.MidPoint(grip3Position)), nodes.GetByPosition(grip3Position), crossSection, concreteParameters, model, reinforcement, elementModel);
 
 		/// <summary>
-		///     Get the proper concrete area for a <paramref name="stringer" />.
-		/// </summary>
-		internal static Area GetConcreteArea(Stringer stringer) =>
-			stringer switch
-			{
-				NLStringer => stringer.Geometry.CrossSection.Area - (stringer.Reinforcement?.Area ?? Area.Zero),
-				_          => stringer.Geometry.CrossSection.Area
-			};
-
-		/// <summary>
 		///     Calculate local stiffness <see cref="Matrix" />.
 		/// </summary>
 		/// <param name="concreteStiffness">The stiffness of concrete cross-section.</param>
@@ -169,11 +157,11 @@ namespace andrefmello91.SPMElements
 
 			// Calculate the local stiffness matrix
 			var stiffness = k * new double[,]
-				{
-					{ 7, -8, 1 },
-					{ -8, 16, -8 },
-					{ 1, -8, 7 }
-				}.ToMatrix();
+			{
+				{ 7, -8, 1 },
+				{ -8, 16, -8 },
+				{ 1, -8, 7 }
+			}.ToMatrix();
 
 			return
 				new StiffnessMatrix(stiffness);
@@ -198,6 +186,16 @@ namespace andrefmello91.SPMElements
 		}
 
 		/// <summary>
+		///     Get the proper concrete area for a <paramref name="stringer" />.
+		/// </summary>
+		internal static Area GetConcreteArea(Stringer stringer) =>
+			stringer switch
+			{
+				NLStringer => stringer.Geometry.CrossSection.Area - (stringer.Reinforcement?.Area ?? Area.Zero),
+				_          => stringer.Geometry.CrossSection.Area
+			};
+
+		/// <summary>
 		///     Create a <see cref="Stringer" /> object based in this nonlinear stringer.
 		/// </summary>
 		/// <param name="elementModel">The <see cref="ElementModel" />.</param>
@@ -211,12 +209,6 @@ namespace andrefmello91.SPMElements
 				ElementModel.Nonlinear when this is not NLStringer => new NLStringer(Grip1, Grip2, Grip3, Geometry.CrossSection, Concrete.Parameters, Concrete.Model, Reinforcement?.Clone()),
 				_                                                  => this
 			};
-
-		/// <inheritdoc />
-		public override void UpdateStiffness()
-		{
-			// Not needed in linear element.
-		}
 
 		#region Object override
 
@@ -236,6 +228,12 @@ namespace andrefmello91.SPMElements
 		}
 
 		#endregion
+
+		/// <inheritdoc />
+		public override void UpdateStiffness()
+		{
+			// Not needed in linear element.
+		}
 
 		#endregion
 

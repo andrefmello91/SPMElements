@@ -1,8 +1,5 @@
-﻿using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
-using System.Linq;
+﻿using System.Linq;
 using andrefmello91.Extensions;
-using andrefmello91.FEMAnalysis;
 using andrefmello91.Material;
 using andrefmello91.Material.Concrete;
 using andrefmello91.Material.Reinforcement;
@@ -33,34 +30,34 @@ namespace andrefmello91.SPMElements
 
 		#region Properties
 
+		/// <summary>
+		///     Check if concrete is cracked in this stringer.
+		/// </summary>
+		/// <inheritdoc cref="Material.Concrete.Concrete.Cracked" />
+		public bool ConcreteCracked => InitialCrossSection.Concrete.Cracked || EndCrossSection.Concrete.Cracked;
+
 		/// <inheritdoc />
 		public override Length[] CrackOpenings => Strains
 			.Select(eps => CrackOpening(Reinforcement, eps, Concrete.Parameters.CrackingStrain))
 			.ToArray();
 
 		/// <summary>
-		///     Get the strain <see cref="Vector" />.
-		/// </summary>
-		private Vector<double> Strains => _bMatrix * (Vector<double>) (LocalDisplacements.Unit is LengthUnit.Millimeter 
-			? LocalDisplacements 
-			: LocalDisplacements.Convert(LengthUnit.Millimeter));
-
-		/// <summary>
-		///		The cross section at the initial node.
-		/// </summary>
-		private RCCrossSection InitialCrossSection { get; }
-		
-		/// <summary>
-		///		The cross section at the end node.
+		///     The cross section at the end node.
 		/// </summary>
 		private RCCrossSection EndCrossSection { get; }
 
 		/// <summary>
-		///		Check if concrete is cracked in this stringer.
+		///     The cross section at the initial node.
 		/// </summary>
-		/// <inheritdoc cref="Material.Concrete.Concrete.Cracked"/>
-		public bool ConcreteCracked => InitialCrossSection.Concrete.Cracked || EndCrossSection.Concrete.Cracked;
-		
+		private RCCrossSection InitialCrossSection { get; }
+
+		/// <summary>
+		///     Get the strain <see cref="Vector" />.
+		/// </summary>
+		private Vector<double> Strains => _bMatrix * (Vector<double>) (LocalDisplacements.Unit is LengthUnit.Millimeter
+			? LocalDisplacements
+			: LocalDisplacements.Convert(LengthUnit.Millimeter));
+
 		#endregion
 
 		#region Constructors
@@ -68,7 +65,8 @@ namespace andrefmello91.SPMElements
 		/// <summary>
 		///     Nonlinear stringer object.
 		/// </summary>
-		/// <inheritdoc cref="Stringer(Node, Node, Node, CrossSection, IConcreteParameters, ConstitutiveModel, UniaxialReinforcement)" />
+		/// <inheritdoc
+		///     cref="Stringer(Node, Node, Node, CrossSection, IConcreteParameters, ConstitutiveModel, UniaxialReinforcement)" />
 		internal NLStringer(Node grip1, Node grip2, Node grip3, CrossSection crossSection, IConcreteParameters concreteParameters, ConstitutiveModel model = ConstitutiveModel.MCFT, UniaxialReinforcement? reinforcement = null)
 			: base(grip1, grip2, grip3, crossSection)
 		{
@@ -80,7 +78,7 @@ namespace andrefmello91.SPMElements
 
 			InitialCrossSection = new RCCrossSection(Concrete.Clone(), Reinforcement?.Clone());
 			EndCrossSection     = InitialCrossSection.Clone();
-			
+
 			_bMatrix = CalculateBMatrix(Geometry.Length);
 
 			// Calculate matrices
@@ -110,7 +108,10 @@ namespace andrefmello91.SPMElements
 		/// </summary>
 		/// <param name="reinforcement">The <see cref="UniaxialReinforcement" />.</param>
 		/// <param name="strain">The strain.</param>
-		/// <param name="concreteCrackingStrain">The cracking strain of concrete. <seealso cref="IConcreteParameters.CrackingStrain"/>.</param>
+		/// <param name="concreteCrackingStrain">
+		///     The cracking strain of concrete.
+		///     <seealso cref="IConcreteParameters.CrackingStrain" />.
+		/// </param>
 		private static Length CrackOpening(UniaxialReinforcement? reinforcement, double strain, double concreteCrackingStrain) =>
 			strain <= concreteCrackingStrain
 				? Length.Zero
@@ -140,7 +141,7 @@ namespace andrefmello91.SPMElements
 			Force
 				n1 = InitialCrossSection.Force,
 				n3 = EndCrossSection.Force;
-			
+
 			// Update forces
 			LocalForces = new ForceVector(new[] { -n1, n1 - n3, n3 });
 

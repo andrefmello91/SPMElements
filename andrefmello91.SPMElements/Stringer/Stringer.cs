@@ -210,8 +210,6 @@ namespace andrefmello91.SPMElements
 				_                                                  => this
 			};
 
-		#region Object override
-
 		/// <inheritdoc />
 		public override string ToString()
 		{
@@ -226,8 +224,6 @@ namespace andrefmello91.SPMElements
 
 			return msgstr;
 		}
-
-		#endregion
 
 		/// <inheritdoc />
 		public override void UpdateStiffness()

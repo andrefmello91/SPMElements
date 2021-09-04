@@ -377,6 +377,9 @@ namespace andrefmello91.SPMElements
 				_                                               => this
 			};
 
+		/// <inheritdoc />
+		public override int GetHashCode() => Geometry.GetHashCode();
+
 		/// <summary>
 		///     Set stringer dimensions on edges.
 		///     <para>See: <see cref="Edge.SetStringerDimension" /></para>
@@ -397,19 +400,6 @@ namespace andrefmello91.SPMElements
 		}
 
 		/// <inheritdoc />
-		public override void UpdateStiffness()
-		{
-			// Not needed in linear element.
-		}
-
-		#endregion
-
-		#region Object override
-
-		/// <inheritdoc />
-		public override int GetHashCode() => Geometry.GetHashCode();
-
-		/// <inheritdoc />
 		public override string ToString()
 		{
 			var msgstr =
@@ -422,6 +412,12 @@ namespace andrefmello91.SPMElements
 				msgstr += $"\n\n{Reinforcement}";
 
 			return msgstr;
+		}
+
+		/// <inheritdoc />
+		public override void UpdateStiffness()
+		{
+			// Not needed in linear element.
 		}
 
 		#endregion

@@ -51,6 +51,39 @@ namespace andrefmello91.SPMElements
 		/// </summary>
 		protected Matrix<double> TransformationMatrix { get; set; }
 
+		/// <inheritdoc />
+		public DisplacementVector Displacements { get; protected set; }
+
+		/// <inheritdoc />
+		public int[] DoFIndex => GlobalIndexes(Grips).ToArray();
+
+		/// <inheritdoc />
+		public ForceVector Forces { get; protected set; }
+
+		/// <inheritdoc />
+		public TGeometry Geometry { get; }
+
+		/// <inheritdoc />
+		public Node[] Grips { get; }
+
+		/// <summary>
+		///     The <see cref="ElementModel" /> of this SPM element.
+		/// </summary>
+		public ElementModel Model => this switch
+		{
+			NLStringer or NLPanel => ElementModel.Nonlinear,
+			_                     => ElementModel.Elastic
+		};
+
+		/// <inheritdoc />
+		public int Number { get; set; }
+
+		/// <inheritdoc />
+		public StiffnessMatrix Stiffness { get; protected set; }
+
+		/// <inheritdoc />
+		IGrip[] IFiniteElement.Grips => Grips.Cast<IGrip>().ToArray();
+
 		#endregion
 
 		#region Constructors
@@ -72,58 +105,19 @@ namespace andrefmello91.SPMElements
 
 		#endregion
 
-		#region Operators
-
-		/// <summary>
-		///     Returns true if arguments are equal.
-		/// </summary>
-		public static bool operator ==(SPMElement<TGeometry>? left, SPMElement<TGeometry>? right) => left.IsEqualTo(right);
-
-		/// <summary>
-		///     Returns true if arguments are different.
-		/// </summary>
-		public static bool operator !=(SPMElement<TGeometry>? left, SPMElement<TGeometry>? right) => left.IsNotEqualTo(right);
-
-		#endregion
-
-		#region Interface Implementations
+		#region Methods
 
 		/// <inheritdoc />
-		public DisplacementVector Displacements { get; protected set; }
+		public override bool Equals(object? obj) => obj is SPMElement<TGeometry> spmElement && Equals(spmElement);
 
 		/// <inheritdoc />
-		public int[] DoFIndex => GlobalIndexes(Grips).ToArray();
+		public override int GetHashCode() => Geometry.GetHashCode();
 
 		/// <inheritdoc />
-		public ForceVector Forces { get; protected set; }
+		public int CompareTo(SPMElement<TGeometry>? other) => other?.Geometry.CompareTo(other.Geometry) ?? 0;
 
 		/// <inheritdoc />
-		public TGeometry Geometry { get; }
-
-		/// <inheritdoc />
-		public Node[] Grips { get; }
-
-		/// <inheritdoc />
-		IGrip[] IFiniteElement.Grips => Grips.Cast<IGrip>().ToArray();
-
-		/// <summary>
-		///     The <see cref="ElementModel" /> of this SPM element.
-		/// </summary>
-		public ElementModel Model => this switch
-		{
-			NLStringer or NLPanel => ElementModel.Nonlinear,
-			_                     => ElementModel.Elastic
-		};
-
-		/// <inheritdoc />
-		public int Number { get; set; }
-
-		/// <inheritdoc />
-		public StiffnessMatrix Stiffness { get; protected set; }
-
-		#endregion
-
-		#region Interface Implementations
+		public bool Equals(SPMElement<TGeometry>? other) => other is not null && Geometry.Equals(other.Geometry);
 
 		/// <inheritdoc />
 		public virtual void CalculateForces()
@@ -136,20 +130,6 @@ namespace andrefmello91.SPMElements
 		}
 
 		/// <inheritdoc />
-		public int CompareTo(SPMElement<TGeometry>? other) => other?.Geometry.CompareTo(other.Geometry) ?? 0;
-
-		/// <inheritdoc />
-		int IComparable<IFiniteElement>.CompareTo(IFiniteElement? other) => other is SPMElement<TGeometry> spmElement
-			? CompareTo(spmElement)
-			: 0;
-
-		/// <inheritdoc />
-		public bool Equals(SPMElement<TGeometry>? other) => other is not null && Geometry.Equals(other.Geometry);
-
-		/// <inheritdoc />
-		bool IEquatable<IFiniteElement>.Equals(IFiniteElement? other) => other is SPMElement<TGeometry> spmElement && Equals(spmElement);
-
-		/// <inheritdoc />
 		public virtual void UpdateDisplacements()
 		{
 			Displacements      = this.GetDisplacementsFromGrips();
@@ -159,15 +139,27 @@ namespace andrefmello91.SPMElements
 		/// <inheritdoc />
 		public abstract void UpdateStiffness();
 
+		/// <inheritdoc />
+		int IComparable<IFiniteElement>.CompareTo(IFiniteElement? other) => other is SPMElement<TGeometry> spmElement
+			? CompareTo(spmElement)
+			: 0;
+
+		/// <inheritdoc />
+		bool IEquatable<IFiniteElement>.Equals(IFiniteElement? other) => other is SPMElement<TGeometry> spmElement && Equals(spmElement);
+
 		#endregion
 
-		#region Object override
+		#region Operators
 
-		/// <inheritdoc />
-		public override bool Equals(object? obj) => obj is SPMElement<TGeometry> spmElement && Equals(spmElement);
+		/// <summary>
+		///     Returns true if arguments are equal.
+		/// </summary>
+		public static bool operator ==(SPMElement<TGeometry>? left, SPMElement<TGeometry>? right) => left.IsEqualTo(right);
 
-		/// <inheritdoc />
-		public override int GetHashCode() => Geometry.GetHashCode();
+		/// <summary>
+		///     Returns true if arguments are different.
+		/// </summary>
+		public static bool operator !=(SPMElement<TGeometry>? left, SPMElement<TGeometry>? right) => left.IsNotEqualTo(right);
 
 		#endregion
 

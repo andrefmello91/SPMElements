@@ -29,14 +29,13 @@ namespace andrefmello91.SPMElements
 		#region Constructors
 
 		/// <inheritdoc />
-		public SPMAnalysis(IFEMInput nonlinearInput)
-			: base(nonlinearInput)
+		public SPMAnalysis(IFEMInput nonlinearInput, int? monitoredIndex = null, bool simulate = false)
+			: base(nonlinearInput, monitoredIndex, simulate)
 		{
 		}
-
 		/// <inheritdoc />
-		public SPMAnalysis(IFEMInput nonlinearInput, AnalysisParameters parameters)
-			: base(nonlinearInput, parameters)
+		public SPMAnalysis(IFEMInput nonlinearInput, AnalysisParameters parameters, int? monitoredIndex = null, bool simulate = false)
+			: base(nonlinearInput, parameters, monitoredIndex, simulate)
 		{
 		}
 

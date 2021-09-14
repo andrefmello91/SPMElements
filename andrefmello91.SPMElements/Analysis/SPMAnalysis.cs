@@ -13,19 +13,29 @@ namespace andrefmello91.SPMElements
 
 		#region Fields
 
-		private readonly List<string> _crackedElements = new();
-
-		// Load steps of element cracking
-		private (int number, int step)? _stringerCrackLS, _panelCrackLS;
+		private readonly List<string>
+			_crackedElements = new(),
+			_yieldedElements = new(),
+			_crushedElements = new();
 
 		#endregion
 
 		#region Events
 
 		/// <summary>
-		///     Event to execute when an element cracks.
+		///     Event to execute when elements crack.
 		/// </summary>
 		public event EventHandler<SPMElementEventArgs>? ElementsCracked;
+
+		/// <summary>
+		///     Event to execute when elements crush.
+		/// </summary>
+		public event EventHandler<SPMElementEventArgs>? ElementsCrushed;
+
+		/// <summary>
+		///     Event to execute when elements yield.
+		/// </summary>
+		public event EventHandler<SPMElementEventArgs>? ElementsYielded;
 
 		#endregion
 
@@ -56,10 +66,15 @@ namespace andrefmello91.SPMElements
 		{
 			base.SetStepResults(monitoredIndex);
 
-			// Check cracked elements
+			// Check elements
 			CheckCracking();
+			CheckYielding();
+			CheckCrushing();
 		}
 
+		/// <summary>
+		///     Check if elements cracked.
+		/// </summary>
 		private void CheckCracking()
 		{
 			var crackedElements = FemInput
@@ -72,6 +87,40 @@ namespace andrefmello91.SPMElements
 
 			_crackedElements.AddRange(crackedElements.Select(e => e.Name));
 			Invoke(ElementsCracked, new SPMElementEventArgs(crackedElements, (int) CurrentStep));
+		}
+
+		/// <summary>
+		///     Check if elements crushed.
+		/// </summary>
+		private void CheckCrushing()
+		{
+			var crushed = FemInput
+				.Where(e => e is INonlinearSPMElement nle && !_crushedElements.Contains(nle.Name) && nle.ConcreteCrushed)
+				.Cast<INonlinearSPMElement>()
+				.ToList();
+
+			if (!crushed.Any())
+				return;
+
+			_crushedElements.AddRange(crushed.Select(e => e.Name));
+			Invoke(ElementsCrushed, new SPMElementEventArgs(crushed, (int) CurrentStep));
+		}
+
+		/// <summary>
+		///     Check if elements yielded.
+		/// </summary>
+		private void CheckYielding()
+		{
+			var yielded = FemInput
+				.Where(e => e is INonlinearSPMElement nle && !_yieldedElements.Contains(nle.Name) && (nle.SteelYielded || nle.ConcreteYielded))
+				.Cast<INonlinearSPMElement>()
+				.ToList();
+
+			if (!yielded.Any())
+				return;
+
+			_yieldedElements.AddRange(yielded.Select(e => e.Name));
+			Invoke(ElementsYielded, new SPMElementEventArgs(yielded, (int) CurrentStep));
 		}
 
 		#endregion

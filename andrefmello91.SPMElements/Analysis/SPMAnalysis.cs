@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using andrefmello91.FEMAnalysis;
 
 namespace andrefmello91.SPMElements
@@ -24,7 +25,7 @@ namespace andrefmello91.SPMElements
 		/// <summary>
 		///     Event to execute when an element cracks.
 		/// </summary>
-		public event EventHandler<SPMElementEventArgs>? ElementCracked;
+		public event EventHandler<SPMElementEventArgs>? ElementsCracked;
 
 		#endregion
 
@@ -55,21 +56,22 @@ namespace andrefmello91.SPMElements
 		{
 			base.SetStepResults(monitoredIndex);
 
-			if (FemInput is not SPMInput spmInput)
+			// Check cracked elements
+			CheckCracking();
+		}
+
+		private void CheckCracking()
+		{
+			var crackedElements = FemInput
+				.Where(e => e is INonlinearSPMElement nle && !_crackedElements.Contains(nle.Name) && nle.ConcreteCracked)
+				.Cast<INonlinearSPMElement>()
+				.ToList();
+
+			if (!crackedElements.Any())
 				return;
 
-			// Check if a stringer cracked at the current step
-			foreach (var element in spmInput)
-			{
-				if (element is not INonlinearSPMElement nonlinearSpmElement)
-					continue;
-
-				if (_crackedElements.Contains(nonlinearSpmElement.Name) || !nonlinearSpmElement.ConcreteCracked)
-					continue;
-
-				_crackedElements.Add(nonlinearSpmElement.Name);
-				Invoke(ElementCracked, new SPMElementEventArgs(nonlinearSpmElement, (int) CurrentStep));
-			}
+			_crackedElements.AddRange(crackedElements.Select(e => e.Name));
+			Invoke(ElementsCracked, new SPMElementEventArgs(crackedElements, (int) CurrentStep));
 		}
 
 		#endregion

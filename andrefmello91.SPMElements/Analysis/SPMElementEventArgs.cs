@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace andrefmello91.SPMElements
 {
@@ -13,7 +15,7 @@ namespace andrefmello91.SPMElements
 		/// <summary>
 		///     The SPM element.
 		/// </summary>
-		public ISPMElement Element { get; }
+		public IList<ISPMElement> Elements { get; }
 
 		/// <summary>
 		///     The load step.
@@ -30,11 +32,11 @@ namespace andrefmello91.SPMElements
 		/// <summary>
 		///     Create a SPM element event arg.
 		/// </summary>
-		/// <param name="element">The element.</param>
+		/// <param name="elements">The collection of elements.</param>
 		/// <param name="loadStep">The load step (optional).</param>
-		public SPMElementEventArgs(ISPMElement element, int? loadStep = null)
+		public SPMElementEventArgs(IEnumerable<ISPMElement> elements, int? loadStep = null)
 		{
-			Element  = element;
+			Elements = elements.ToList();
 			LoadStep = loadStep;
 		}
 

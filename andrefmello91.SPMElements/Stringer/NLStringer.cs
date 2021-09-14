@@ -16,7 +16,7 @@ namespace andrefmello91.SPMElements
 	/// <summary>
 	///     Nonlinear stringer class.
 	/// </summary>
-	internal class NLStringer : Stringer
+	internal class NLStringer : Stringer, INonlinearSPMElement
 	{
 
 		#region Fields
@@ -29,12 +29,6 @@ namespace andrefmello91.SPMElements
 		#endregion
 
 		#region Properties
-
-		/// <summary>
-		///     Check if concrete is cracked in this stringer.
-		/// </summary>
-		/// <inheritdoc cref="Material.Concrete.Concrete.Cracked" />
-		public bool ConcreteCracked => InitialCrossSection.Concrete.Cracked || EndCrossSection.Concrete.Cracked;
 
 		/// <inheritdoc />
 		public override Length[] CrackOpenings => Strains
@@ -57,6 +51,21 @@ namespace andrefmello91.SPMElements
 		private Vector<double> Strains => _bMatrix * (Vector<double>) (LocalDisplacements.Unit is LengthUnit.Millimeter
 			? LocalDisplacements
 			: LocalDisplacements.Convert(LengthUnit.Millimeter));
+
+		/// <summary>
+		///     Check if concrete is cracked in this stringer.
+		/// </summary>
+		/// <inheritdoc cref="Material.Concrete.Concrete.Cracked" />
+		public bool ConcreteCracked => InitialCrossSection.Concrete.Cracked || EndCrossSection.Concrete.Cracked;
+
+		/// <inheritdoc />
+		public bool ConcreteCrushed => InitialCrossSection.Concrete.Crushed || EndCrossSection.Concrete.Crushed;
+
+		/// <inheritdoc />
+		public bool ConcreteYielded => InitialCrossSection.Concrete.Yielded || EndCrossSection.Concrete.Yielded;
+
+		/// <inheritdoc />
+		public bool SteelYielded => Reinforcement is not null && (InitialCrossSection.Reinforcement!.Yielded || EndCrossSection.Reinforcement!.Yielded);
 
 		#endregion
 

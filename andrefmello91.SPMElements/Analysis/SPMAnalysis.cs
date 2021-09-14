@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Linq;
+using System.Collections.Generic;
 using andrefmello91.FEMAnalysis;
 
 namespace andrefmello91.SPMElements
@@ -11,6 +11,8 @@ namespace andrefmello91.SPMElements
 	{
 
 		#region Fields
+
+		private readonly List<string> _crackedElements = new();
 
 		// Load steps of element cracking
 		private (int number, int step)? _stringerCrackLS, _panelCrackLS;
@@ -43,10 +45,10 @@ namespace andrefmello91.SPMElements
 
 		#region Methods
 
-		/// <summary>
-		///     Generate an <see cref="SPMOutput" /> from analysis results.
-		/// </summary>
-		public new SPMOutput GenerateOutput() => new(Steps, _stringerCrackLS, _panelCrackLS);
+		// /// <summary>
+		// ///     Generate an <see cref="SPMOutput" /> from analysis results.
+		// /// </summary>
+		// public new SPMOutput GenerateOutput() => new(Steps, _stringerCrackLS, _panelCrackLS);
 
 		/// <inheritdoc />
 		protected override void SetStepResults(int? monitoredIndex)
@@ -57,17 +59,16 @@ namespace andrefmello91.SPMElements
 				return;
 
 			// Check if a stringer cracked at the current step
-			if (!_stringerCrackLS.HasValue && spmInput.Stringers.FirstOrDefault(s => s is NLStringer { ConcreteCracked: true }) is NLStringer stringer)
+			foreach (var element in spmInput)
 			{
-				_stringerCrackLS = (stringer.Number, (int) CurrentStep);
-				Invoke(ElementCracked, new SPMElementEventArgs(stringer, (int) CurrentStep));
-			}
+				if (element is not INonlinearSPMElement nonlinearSpmElement)
+					continue;
 
-			// Check if a panel cracked at the current step
-			if (!_panelCrackLS.HasValue && spmInput.Panels.FirstOrDefault(s => s is NLPanel { ConcreteCracked: true }) is NLPanel panel)
-			{
-				_panelCrackLS = (panel.Number, (int) CurrentStep);
-				Invoke(ElementCracked, new SPMElementEventArgs(panel, (int) CurrentStep));
+				if (_crackedElements.Contains(nonlinearSpmElement.Name) || !nonlinearSpmElement.ConcreteCracked)
+					continue;
+
+				_crackedElements.Add(nonlinearSpmElement.Name);
+				Invoke(ElementCracked, new SPMElementEventArgs(nonlinearSpmElement, (int) CurrentStep));
 			}
 		}
 

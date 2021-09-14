@@ -76,6 +76,9 @@ namespace andrefmello91.SPMElements
 		};
 
 		/// <inheritdoc />
+		public abstract string Name { get; }
+
+		/// <inheritdoc />
 		public int Number { get; set; }
 
 		/// <inheritdoc />

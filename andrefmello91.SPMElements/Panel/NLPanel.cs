@@ -18,7 +18,7 @@ namespace andrefmello91.SPMElements
 	/// <summary>
 	///     Nonlinear panel class.
 	/// </summary>
-	internal class NLPanel : Panel
+	internal class NLPanel : Panel, INonlinearSPMElement
 	{
 
 		#region Fields
@@ -33,12 +33,6 @@ namespace andrefmello91.SPMElements
 		/// <inheritdoc />
 		public override StressState AverageStresses => 0.25 * IntegrationPoints
 			.Aggregate(StressState.Zero, (state, membrane) => state + membrane.AverageStresses);
-
-		/// <summary>
-		///     Check if concrete is cracked in this panel.
-		/// </summary>
-		/// <inheritdoc cref="Material.Concrete.Concrete.Cracked" />
-		public bool ConcreteCracked => IntegrationPoints.Any(m => m.Concrete.Cracked);
 
 		/// <inheritdoc />
 		public override PrincipalStrainState ConcretePrincipalStrains => (PrincipalStrainState) (0.25 * IntegrationPoints
@@ -97,6 +91,21 @@ namespace andrefmello91.SPMElements
 		///     Components in <see cref="PressureUnit.Megapascal" />.
 		/// </remarks>
 		private Vector<double> Stresses => ConcreteStresses + ReinforcementStresses;
+
+		/// <summary>
+		///     Check if concrete is cracked in this panel.
+		/// </summary>
+		/// <inheritdoc cref="Material.Concrete.Concrete.Cracked" />
+		public bool ConcreteCracked => IntegrationPoints.Any(m => m.Concrete.Cracked);
+
+		/// <inheritdoc />
+		public bool ConcreteCrushed => IntegrationPoints.Any(m => m.Concrete.Crushed);
+
+		/// <inheritdoc />
+		public bool ConcreteYielded => IntegrationPoints.Any(m => m.Concrete.Yielded);
+
+		/// <inheritdoc />
+		public bool SteelYielded => Reinforcement is not null && IntegrationPoints.Any(m => (m.Reinforcement!.DirectionX?.Yielded ?? false) || (m.Reinforcement!.DirectionY?.Yielded ?? false));
 
 		#endregion
 
@@ -318,18 +327,6 @@ namespace andrefmello91.SPMElements
 				yield return Membrane.From(concreteParameters, reinforcement?.Clone(), width, model);
 		}
 
-		/// <inheritdoc />
-		public override void CalculateForces()
-		{
-			// Calculate stresses, forces and update stiffness
-			CalculateStresses();
-			CalculateGripForces();
-		}
-
-		/// <inheritdoc />
-		public override void UpdateDisplacements() =>
-			Displacements = this.GetDisplacementsFromGrips();
-
 		/// <summary>
 		///     Calculate and set global force vector.
 		///     <para>See: <see cref="Panel.Forces" />.</para>
@@ -451,6 +448,18 @@ namespace andrefmello91.SPMElements
 
 			Stiffness = new StiffnessMatrix(kc + ks);
 		}
+
+		/// <inheritdoc />
+		public override void CalculateForces()
+		{
+			// Calculate stresses, forces and update stiffness
+			CalculateStresses();
+			CalculateGripForces();
+		}
+
+		/// <inheritdoc />
+		public override void UpdateDisplacements() =>
+			Displacements = this.GetDisplacementsFromGrips();
 
 		#endregion
 

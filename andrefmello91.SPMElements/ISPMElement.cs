@@ -21,6 +21,11 @@ namespace andrefmello91.SPMElements
 		/// </summary>
 		ElementModel Model { get; }
 
+		/// <summary>
+		///     The name of this element.
+		/// </summary>
+		string Name { get; }
+
 		#endregion
 
 	}
@@ -39,6 +44,38 @@ namespace andrefmello91.SPMElements
 		///     The geometry of this element.
 		/// </summary>
 		TGeometry Geometry { get; }
+
+		#endregion
+
+	}
+
+	/// <summary>
+	///     Interface for nonlinear SPM elements.
+	/// </summary>
+	public interface INonlinearSPMElement : ISPMElement
+	{
+
+		#region Properties
+
+		/// <summary>
+		///     True if concrete is cracked in this element.
+		/// </summary>
+		bool ConcreteCracked { get; }
+
+		/// <summary>
+		///     True if concrete crushed in this element.
+		/// </summary>
+		bool ConcreteCrushed { get; }
+
+		/// <summary>
+		///     True if concrete yielded in this element.
+		/// </summary>
+		bool ConcreteYielded { get; }
+
+		/// <summary>
+		///     True if steel yielded in this element.
+		/// </summary>
+		bool SteelYielded { get; }
 
 		#endregion
 

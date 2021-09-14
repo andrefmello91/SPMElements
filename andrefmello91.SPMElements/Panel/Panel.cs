@@ -122,6 +122,9 @@ namespace andrefmello91.SPMElements
 		/// <inheritdoc />
 		public override Force MaxForce => Forces.AbsoluteMaximum();
 
+		/// <inheritdoc />
+		public override string Name => $"Panel {Number}";
+
 		/// <summary>
 		///     Get <see cref="WebReinforcement" /> of this.
 		/// </summary>

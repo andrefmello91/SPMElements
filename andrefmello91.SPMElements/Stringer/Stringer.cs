@@ -49,6 +49,9 @@ namespace andrefmello91.SPMElements
 		/// <inheritdoc />
 		public override Force MaxForce => LocalForces.AbsoluteMaximum();
 
+		/// <inheritdoc />
+		public override string Name => $"Stringer {Number}";
+
 		/// <summary>
 		///     Get normal forces acting in the stringer.
 		/// </summary>

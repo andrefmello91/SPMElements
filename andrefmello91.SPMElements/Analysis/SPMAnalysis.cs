@@ -56,6 +56,17 @@ namespace andrefmello91.SPMElements
 
 		#region Methods
 
+		/// <inheritdoc />
+		protected override void CorrectResults()
+		{
+			base.CorrectResults();
+
+			// Check elements and set last step
+			CheckCracking(LastStep);
+			CheckYielding(LastStep);
+			CheckCrushing(LastStep);
+		}
+
 		// /// <summary>
 		// ///     Generate an <see cref="SPMOutput" /> from analysis results.
 		// /// </summary>
@@ -67,15 +78,15 @@ namespace andrefmello91.SPMElements
 			base.SetStepResults(monitoredIndex);
 
 			// Check elements
-			CheckCracking();
-			CheckYielding();
-			CheckCrushing();
+			CheckCracking(CurrentStep);
+			CheckYielding(CurrentStep);
+			CheckCrushing(CurrentStep);
 		}
 
 		/// <summary>
 		///     Check if elements cracked.
 		/// </summary>
-		private void CheckCracking()
+		private void CheckCracking(LoadStep step)
 		{
 			var crackedElements = FemInput
 				.Where(e => e is INonlinearSPMElement nle && !_crackedElements.Contains(nle.Name) && nle.ConcreteCracked)
@@ -86,13 +97,13 @@ namespace andrefmello91.SPMElements
 				return;
 
 			_crackedElements.AddRange(crackedElements.Select(e => e.Name));
-			Invoke(ElementsCracked, new SPMElementEventArgs(crackedElements, (int) CurrentStep));
+			Invoke(ElementsCracked, new SPMElementEventArgs(crackedElements, (int) step));
 		}
 
 		/// <summary>
 		///     Check if elements crushed.
 		/// </summary>
-		private void CheckCrushing()
+		private void CheckCrushing(LoadStep step)
 		{
 			var crushed = FemInput
 				.Where(e => e is INonlinearSPMElement nle && !_crushedElements.Contains(nle.Name) && nle.ConcreteCrushed)
@@ -103,13 +114,13 @@ namespace andrefmello91.SPMElements
 				return;
 
 			_crushedElements.AddRange(crushed.Select(e => e.Name));
-			Invoke(ElementsCrushed, new SPMElementEventArgs(crushed, (int) CurrentStep));
+			Invoke(ElementsCrushed, new SPMElementEventArgs(crushed, (int) step));
 		}
 
 		/// <summary>
 		///     Check if elements yielded.
 		/// </summary>
-		private void CheckYielding()
+		private void CheckYielding(LoadStep step)
 		{
 			var yielded = FemInput
 				.Where(e => e is INonlinearSPMElement nle && !_yieldedElements.Contains(nle.Name) && (nle.SteelYielded || nle.ConcreteYielded))
@@ -120,7 +131,7 @@ namespace andrefmello91.SPMElements
 				return;
 
 			_yieldedElements.AddRange(yielded.Select(e => e.Name));
-			Invoke(ElementsYielded, new SPMElementEventArgs(yielded, (int) CurrentStep));
+			Invoke(ElementsYielded, new SPMElementEventArgs(yielded, (int) step));
 		}
 
 		#endregion

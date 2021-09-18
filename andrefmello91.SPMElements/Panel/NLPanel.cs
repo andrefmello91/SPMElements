@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using andrefmello91.Extensions;
 using andrefmello91.FEMAnalysis;
 using andrefmello91.Material.Concrete;
@@ -112,7 +113,7 @@ namespace andrefmello91.SPMElements
 				_concreteCracked = value;
 
 				if (value)
-					StateChanged?.Invoke(this, EventArgs.Empty);
+					OnStateChanged();
 			}
 		}
 
@@ -128,7 +129,7 @@ namespace andrefmello91.SPMElements
 				_concreteCrushed = value;
 
 				if (value)
-					StateChanged?.Invoke(this, EventArgs.Empty);
+					OnStateChanged();
 			}
 		}
 
@@ -144,7 +145,7 @@ namespace andrefmello91.SPMElements
 				_concreteYielded = value;
 
 				if (value)
-					StateChanged?.Invoke(this, EventArgs.Empty);
+					OnStateChanged();
 			}
 		}
 
@@ -160,7 +161,7 @@ namespace andrefmello91.SPMElements
 				_steelYielded = value;
 
 				if (value)
-					StateChanged?.Invoke(this, EventArgs.Empty);
+					OnStateChanged();
 			}
 		}
 
@@ -169,7 +170,7 @@ namespace andrefmello91.SPMElements
 		#region Events
 
 		/// <inheritdoc />
-		public event EventHandler? StateChanged;
+		public event EventHandler<StateEventArgs>? StateChanged;
 
 		#endregion
 
@@ -523,6 +524,8 @@ namespace andrefmello91.SPMElements
 
 			Stiffness = new StiffnessMatrix(kc + ks);
 		}
+
+		private void OnStateChanged([CallerMemberName] string? stateName = null) => StateChanged?.Invoke(this, new StateEventArgs(stateName!));
 
 		/// <inheritdoc />
 		public override void CalculateForces()

@@ -43,4 +43,29 @@ namespace andrefmello91.SPMElements
 		#endregion
 
 	}
+
+	/// <summary>
+	///     Event args class for state changing of nonlinear SPM elements.
+	/// </summary>
+	public class StateEventArgs : EventArgs
+	{
+
+		#region Properties
+
+		/// <summary>
+		///     The name of the state changed.
+		/// </summary>
+		public string StateName { get; }
+
+		#endregion
+
+		#region Constructors
+
+		/// <inheritdoc />
+		/// <param name="stateName">The name of the state changed.</param>
+		public StateEventArgs(string stateName) => StateName = stateName;
+
+		#endregion
+
+	}
 }

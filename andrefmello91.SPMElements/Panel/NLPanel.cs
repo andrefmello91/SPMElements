@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using andrefmello91.Extensions;
 using andrefmello91.FEMAnalysis;
@@ -25,6 +26,10 @@ namespace andrefmello91.SPMElements
 
 		// Auxiliary fields
 		private readonly Matrix<double> _baMatrix;
+		private bool _concreteCracked;
+		private bool _concreteCrushed;
+		private bool _concreteYielded;
+		private bool _steelYielded;
 
 		#endregion
 
@@ -96,16 +101,75 @@ namespace andrefmello91.SPMElements
 		///     Check if concrete is cracked in this panel.
 		/// </summary>
 		/// <inheritdoc cref="Material.Concrete.Concrete.Cracked" />
-		public bool ConcreteCracked => IntegrationPoints.Any(m => m.Concrete.Cracked);
+		public bool ConcreteCracked
+		{
+			get => _concreteCracked;
+			private set
+			{
+				if (_concreteCracked)
+					return;
+
+				_concreteCracked = value;
+
+				if (value)
+					StateChanged?.Invoke(this, EventArgs.Empty);
+			}
+		}
 
 		/// <inheritdoc />
-		public bool ConcreteCrushed => IntegrationPoints.Any(m => m.Concrete.Crushed);
+		public bool ConcreteCrushed
+		{
+			get => _concreteCrushed;
+			private set
+			{
+				if (_concreteCrushed)
+					return;
+
+				_concreteCrushed = value;
+
+				if (value)
+					StateChanged?.Invoke(this, EventArgs.Empty);
+			}
+		}
 
 		/// <inheritdoc />
-		public bool ConcreteYielded => IntegrationPoints.Any(m => m.Concrete.Yielded);
+		public bool ConcreteYielded
+		{
+			get => _concreteYielded;
+			private set
+			{
+				if (_concreteYielded)
+					return;
+
+				_concreteYielded = value;
+
+				if (value)
+					StateChanged?.Invoke(this, EventArgs.Empty);
+			}
+		}
 
 		/// <inheritdoc />
-		public bool SteelYielded => Reinforcement is not null && IntegrationPoints.Any(m => (m.Reinforcement!.DirectionX?.Yielded ?? false) || (m.Reinforcement!.DirectionY?.Yielded ?? false));
+		public bool SteelYielded
+		{
+			get => _steelYielded;
+			private set
+			{
+				if (_steelYielded)
+					return;
+
+				_steelYielded = value;
+
+				if (value)
+					StateChanged?.Invoke(this, EventArgs.Empty);
+			}
+		}
+
+		#endregion
+
+		#region Events
+
+		/// <inheritdoc />
+		public event EventHandler? StateChanged;
 
 		#endregion
 
@@ -431,6 +495,17 @@ namespace andrefmello91.SPMElements
 		}
 
 		/// <summary>
+		///     Check state changes.
+		/// </summary>
+		private void CheckStates()
+		{
+			ConcreteCracked = IntegrationPoints.Any(m => m.Concrete.Cracked);
+			ConcreteYielded = IntegrationPoints.Any(m => m.Concrete.Yielded);
+			ConcreteCrushed = IntegrationPoints.Any(m => m.Concrete.Crushed);
+			SteelYielded    = Reinforcement is not null && IntegrationPoints.Any(m => (m.Reinforcement!.DirectionX?.Yielded ?? false) || (m.Reinforcement!.DirectionY?.Yielded ?? false));
+		}
+
+		/// <summary>
 		///     Calculate initial stiffness matrix.
 		/// </summary>
 		private void InitiateStiffness()
@@ -455,6 +530,7 @@ namespace andrefmello91.SPMElements
 			// Calculate stresses, forces and update stiffness
 			CalculateStresses();
 			CalculateGripForces();
+			CheckStates();
 		}
 
 		/// <inheritdoc />

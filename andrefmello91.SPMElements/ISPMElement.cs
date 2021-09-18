@@ -79,5 +79,14 @@ namespace andrefmello91.SPMElements
 
 		#endregion
 
+		#region Events
+
+		/// <summary>
+		///     Execute when the state of this element changes.
+		/// </summary>
+		event EventHandler? StateChanged;
+
+		#endregion
+
 	}
 }

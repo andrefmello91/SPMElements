@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using andrefmello91.Extensions;
 using andrefmello91.Material;
 using andrefmello91.Material.Concrete;
@@ -23,8 +24,12 @@ namespace andrefmello91.SPMElements
 
 		// Auxiliary fields
 		private readonly Matrix<double> _bMatrix;
+		private bool _concreteCracked;
+		private bool _concreteCrushed;
+		private bool _concreteYielded;
 
 		private Force _n1, _n3;
+		private bool _steelYielded;
 
 		#endregion
 
@@ -56,16 +61,75 @@ namespace andrefmello91.SPMElements
 		///     Check if concrete is cracked in this stringer.
 		/// </summary>
 		/// <inheritdoc cref="Material.Concrete.Concrete.Cracked" />
-		public bool ConcreteCracked => InitialCrossSection.Concrete.Cracked || EndCrossSection.Concrete.Cracked;
+		public bool ConcreteCracked
+		{
+			get => _concreteCracked;
+			private set
+			{
+				if (_concreteCracked)
+					return;
+
+				_concreteCracked = value;
+
+				if (value)
+					StateChanged?.Invoke(this, EventArgs.Empty);
+			}
+		}
 
 		/// <inheritdoc />
-		public bool ConcreteCrushed => InitialCrossSection.Concrete.Crushed || EndCrossSection.Concrete.Crushed;
+		public bool ConcreteCrushed
+		{
+			get => _concreteCrushed;
+			private set
+			{
+				if (_concreteCrushed)
+					return;
+
+				_concreteCrushed = value;
+
+				if (value)
+					StateChanged?.Invoke(this, EventArgs.Empty);
+			}
+		}
 
 		/// <inheritdoc />
-		public bool ConcreteYielded => InitialCrossSection.Concrete.Yielded || EndCrossSection.Concrete.Yielded;
+		public bool ConcreteYielded
+		{
+			get => _concreteYielded;
+			private set
+			{
+				if (_concreteYielded)
+					return;
+
+				_concreteYielded = value;
+
+				if (value)
+					StateChanged?.Invoke(this, EventArgs.Empty);
+			}
+		}
 
 		/// <inheritdoc />
-		public bool SteelYielded => Reinforcement is not null && (InitialCrossSection.Reinforcement!.Yielded || EndCrossSection.Reinforcement!.Yielded);
+		public bool SteelYielded
+		{
+			get => _steelYielded;
+			private set
+			{
+				if (_steelYielded)
+					return;
+
+				_steelYielded = value;
+
+				if (value)
+					StateChanged?.Invoke(this, EventArgs.Empty);
+			}
+		}
+
+		#endregion
+
+		#region Events
+
+		/// <inheritdoc />
+		public event EventHandler? StateChanged;
 
 		#endregion
 
@@ -137,6 +201,17 @@ namespace andrefmello91.SPMElements
 				? Length.FromMillimeters(21)
 				: Length.FromMillimeters(21) + 0.155 * reinforcement.BarDiameter / reinforcement.Ratio;
 
+		/// <summary>
+		///     Check state changes.
+		/// </summary>
+		private void CheckStates()
+		{
+			ConcreteCracked = InitialCrossSection.Concrete.Cracked || EndCrossSection.Concrete.Cracked;
+			ConcreteYielded = InitialCrossSection.Concrete.Yielded || EndCrossSection.Concrete.Yielded;
+			ConcreteCrushed = InitialCrossSection.Concrete.Crushed || EndCrossSection.Concrete.Crushed;
+			SteelYielded    = Reinforcement is not null && (InitialCrossSection.Reinforcement!.Yielded || EndCrossSection.Reinforcement!.Yielded);
+		}
+
 		/// <inheritdoc />
 		public override void CalculateForces()
 		{
@@ -155,6 +230,8 @@ namespace andrefmello91.SPMElements
 			LocalForces = new ForceVector(new[] { -n1, n1 - n3, n3 });
 
 			Forces = (ForceVector) (TransformationMatrix.Transpose() * LocalForces);
+
+			CheckStates();
 		}
 
 		#endregion

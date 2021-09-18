@@ -13,14 +13,26 @@ namespace andrefmello91.SPMElements
 
 		#region Fields
 
-		private readonly List<string>
-			_crackedElements = new(),
-			_yieldedElements = new(),
+		private readonly List<INonlinearSPMElement>
+			_concreteYieldedElements = new();
+
+		private readonly List<INonlinearSPMElement>
+			_steelYieldedElements = new();
+
+		private List<INonlinearSPMElement>
+			_crackedElements = new();
+
+		private List<INonlinearSPMElement>
 			_crushedElements = new();
 
 		#endregion
 
 		#region Events
+
+		/// <summary>
+		///     Event to execute when concrete of elements yield.
+		/// </summary>
+		public event EventHandler<SPMElementEventArgs>? ElementsConcreteYielded;
 
 		/// <summary>
 		///     Event to execute when elements crack.
@@ -33,9 +45,9 @@ namespace andrefmello91.SPMElements
 		public event EventHandler<SPMElementEventArgs>? ElementsCrushed;
 
 		/// <summary>
-		///     Event to execute when elements yield.
+		///     Event to execute when steel of elements yield.
 		/// </summary>
-		public event EventHandler<SPMElementEventArgs>? ElementsYielded;
+		public event EventHandler<SPMElementEventArgs>? ElementsSteelYielded;
 
 		#endregion
 
@@ -45,11 +57,13 @@ namespace andrefmello91.SPMElements
 		public SPMAnalysis(IFEMInput nonlinearInput, int? monitoredIndex = null, bool simulate = false)
 			: base(nonlinearInput, monitoredIndex, simulate)
 		{
+			SetEvents();
 		}
 		/// <inheritdoc />
 		public SPMAnalysis(IFEMInput nonlinearInput, AnalysisParameters parameters, int? monitoredIndex = null, bool simulate = false)
 			: base(nonlinearInput, parameters, monitoredIndex, simulate)
 		{
+			SetEvents();
 		}
 
 		#endregion
@@ -62,9 +76,10 @@ namespace andrefmello91.SPMElements
 			base.CorrectResults();
 
 			// Check elements and set last step
-			CheckCracking(LastStep);
-			CheckYielding(LastStep);
-			CheckCrushing(LastStep);
+			CheckElements(_crackedElements, ElementsCracked, LastStep);
+			CheckElements(_crushedElements, ElementsCrushed, LastStep);
+			CheckElements(_concreteYieldedElements, ElementsConcreteYielded, LastStep);
+			CheckElements(_steelYieldedElements, ElementsSteelYielded, LastStep);
 		}
 
 		// /// <summary>
@@ -78,60 +93,59 @@ namespace andrefmello91.SPMElements
 			base.SetStepResults(monitoredIndex);
 
 			// Check elements
-			CheckCracking(CurrentStep);
-			CheckYielding(CurrentStep);
-			CheckCrushing(CurrentStep);
+			CheckElements(_crackedElements, ElementsCracked, CurrentStep);
+			CheckElements(_crushedElements, ElementsCrushed, CurrentStep);
+			CheckElements(_concreteYieldedElements, ElementsConcreteYielded, CurrentStep);
+			CheckElements(_steelYieldedElements, ElementsSteelYielded, CurrentStep);
 		}
 
 		/// <summary>
-		///     Check if elements cracked.
+		///		Check element changes at <paramref name="step"/> and call <paramref name="handler"/>.
 		/// </summary>
-		private void CheckCracking(LoadStep step)
+		/// <param name="elements">The collection of elements that changed state.</param>
+		/// <param name="handler">The handler to call.</param>
+		/// <param name="step">The load step.</param>
+		/// <param name="clearList">Clear list after call?</param>
+		private void CheckElements(ICollection<INonlinearSPMElement> elements, EventHandler<SPMElementEventArgs>? handler, LoadStep step, bool clearList = true)
 		{
-			var crackedElements = FemInput
-				.Where(e => e is INonlinearSPMElement nle && !_crackedElements.Contains(nle.Name) && nle.ConcreteCracked)
-				.Cast<INonlinearSPMElement>()
-				.ToList();
-
-			if (!crackedElements.Any())
+			if (!elements.Any())
 				return;
 
-			_crackedElements.AddRange(crackedElements.Select(e => e.Name));
-			Invoke(ElementsCracked, new SPMElementEventArgs(crackedElements, (int) step));
+			Invoke(handler, new SPMElementEventArgs(elements, (int) step));
+
+			if (clearList)
+				elements.Clear();
 		}
 
 		/// <summary>
-		///     Check if elements crushed.
+		///     Set events to nonlinear elements.
 		/// </summary>
-		private void CheckCrushing(LoadStep step)
+		private void SetEvents()
 		{
-			var crushed = FemInput
-				.Where(e => e is INonlinearSPMElement nle && !_crushedElements.Contains(nle.Name) && nle.ConcreteCrushed)
+			var elements = FemInput
+				.Where(e => e is INonlinearSPMElement)
 				.Cast<INonlinearSPMElement>()
 				.ToList();
 
-			if (!crushed.Any())
-				return;
-
-			_crushedElements.AddRange(crushed.Select(e => e.Name));
-			Invoke(ElementsCrushed, new SPMElementEventArgs(crushed, (int) step));
+			foreach (var element in elements)
+				element.StateChanged += OnStateChanged;
 		}
 
-		/// <summary>
-		///     Check if elements yielded.
-		/// </summary>
-		private void CheckYielding(LoadStep step)
+		private void OnStateChanged(object? sender, StateEventArgs e)
 		{
-			var yielded = FemInput
-				.Where(e => e is INonlinearSPMElement nle && !_yieldedElements.Contains(nle.Name) && (nle.SteelYielded || nle.ConcreteYielded))
-				.Cast<INonlinearSPMElement>()
-				.ToList();
-
-			if (!yielded.Any())
+			if (sender is not INonlinearSPMElement element)
 				return;
 
-			_yieldedElements.AddRange(yielded.Select(e => e.Name));
-			Invoke(ElementsYielded, new SPMElementEventArgs(yielded, (int) step));
+			var list = e.StateName switch
+			{
+				nameof(INonlinearSPMElement.ConcreteCracked) => _crackedElements,
+				nameof(INonlinearSPMElement.ConcreteCrushed) => _crushedElements,
+				nameof(INonlinearSPMElement.ConcreteYielded) => _concreteYieldedElements,
+				nameof(INonlinearSPMElement.SteelYielded)    => _steelYieldedElements,
+				_                                            => null
+			};
+
+			list?.Add(element);
 		}
 
 		#endregion

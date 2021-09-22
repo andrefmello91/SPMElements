@@ -111,7 +111,12 @@ namespace andrefmello91.SPMElements
 			if (!elements.Any())
 				return;
 
-			Invoke(handler, new SPMElementEventArgs(elements, (int) step));
+			// Check if analysis stopped (add only first element)
+			var elmts = Stop
+				? new List<INonlinearSPMElement> { elements.First() }
+				: elements.ToList();
+
+			Invoke(handler, new SPMElementEventArgs(elmts, (int) step));
 
 			if (clearList)
 				elements.Clear();

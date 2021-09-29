@@ -5,6 +5,7 @@ using andrefmello91.Extensions;
 using andrefmello91.Material.Concrete;
 using andrefmello91.Material.Reinforcement;
 using andrefmello91.OnPlaneComponents;
+using andrefmello91.SPMElements.Monitors;
 using andrefmello91.SPMElements.StringerProperties;
 using MathNet.Numerics.LinearAlgebra;
 using MathNet.Numerics.LinearAlgebra.Double;
@@ -48,6 +49,19 @@ namespace andrefmello91.SPMElements
 
 		/// <inheritdoc />
 		public override Force MaxForce => LocalForces.AbsoluteMaximum();
+
+		/// <inheritdoc />
+		public override bool Monitored
+		{
+			get => Monitor is not null;
+			set
+			{
+				if (value)
+					Monitor ??= new StringerMonitor(Name);
+				else
+					Monitor = null;
+			}
+		}
 
 		/// <inheritdoc />
 		public override string Name => $"Stringer {Number}";

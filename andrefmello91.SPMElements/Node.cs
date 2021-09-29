@@ -13,7 +13,7 @@ namespace andrefmello91.SPMElements
 	/// <summary>
 	///     Node class.
 	/// </summary>
-	public class Node : IGrip, IEquatable<Node>, IComparable<Node>
+	public class Node : IGrip, IMonitoredElement, IEquatable<Node>, IComparable<Node>
 	{
 
 		#region Properties
@@ -87,6 +87,24 @@ namespace andrefmello91.SPMElements
 
 		/// <inheritdoc />
 		public PlaneForce Reaction { get; set; }
+
+		/// <inheritdoc />
+		public ElementMonitor? Monitor { get; private set; }
+
+		/// <summary>
+		///     Get/set monitoring of this node.
+		/// </summary>
+		public bool Monitored
+		{
+			get => Monitor is not null;
+			set
+			{
+				if (value)
+					Monitor ??= new GripMonitor(Name, DisplacementUnit);
+				else
+					Monitor = null;
+			}
+		}
 
 		#endregion
 
@@ -185,6 +203,9 @@ namespace andrefmello91.SPMElements
 
 		/// <inheritdoc />
 		bool IEquatable<IGrip>.Equals(IGrip? other) => other is Node node && Equals(node);
+
+		/// <inheritdoc />
+		public void AddValue(double loadFactor) => Monitor?.AddMonitoredValue(loadFactor, this);
 
 		#endregion
 

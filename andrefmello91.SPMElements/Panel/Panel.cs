@@ -6,6 +6,7 @@ using andrefmello91.Extensions;
 using andrefmello91.Material.Concrete;
 using andrefmello91.Material.Reinforcement;
 using andrefmello91.OnPlaneComponents;
+using andrefmello91.SPMElements.Monitors;
 using andrefmello91.SPMElements.PanelProperties;
 using MathNet.Numerics;
 using MathNet.Numerics.LinearAlgebra;
@@ -121,6 +122,19 @@ namespace andrefmello91.SPMElements
 
 		/// <inheritdoc />
 		public override Force MaxForce => Forces.AbsoluteMaximum();
+
+		/// <inheritdoc />
+		public override bool Monitored
+		{
+			get => Monitor is not null;
+			set
+			{
+				if (value)
+					Monitor ??= new PanelMonitor(Name);
+				else
+					Monitor = null;
+			}
+		}
 
 		/// <inheritdoc />
 		public override string Name => $"Panel {Number}";

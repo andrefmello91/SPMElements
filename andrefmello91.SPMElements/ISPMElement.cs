@@ -52,7 +52,7 @@ namespace andrefmello91.SPMElements
 	/// <summary>
 	///     Interface for nonlinear SPM elements.
 	/// </summary>
-	public interface INonlinearSPMElement : ISPMElement
+	public interface INonlinearSPMElement : ISPMElement, IMonitoredElement
 	{
 
 		#region Properties

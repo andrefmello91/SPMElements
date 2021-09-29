@@ -31,6 +31,12 @@ namespace andrefmello91.SPMElements
 		/// </summary>
 		public abstract Force MaxForce { get; }
 
+		/// <inheritdoc />
+		public ElementMonitor? Monitor { get; protected set; }
+
+		/// <inheritdoc />
+		public abstract bool Monitored { get; set; }
+
 		/// <summary>
 		///     Get the displacement vector, in local coordinate system.
 		/// </summary>

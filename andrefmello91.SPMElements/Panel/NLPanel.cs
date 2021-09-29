@@ -36,6 +36,12 @@ namespace andrefmello91.SPMElements
 
 		#region Properties
 
+		/// <summary>
+		///     The average strains in this panel.
+		/// </summary>
+		public StrainState AverageStrains => 0.25 * IntegrationPoints
+			.Aggregate(StrainState.Zero, (state, membrane) => state + membrane.AverageStrains);
+
 		/// <inheritdoc />
 		public override StressState AverageStresses => 0.25 * IntegrationPoints
 			.Aggregate(StressState.Zero, (state, membrane) => state + membrane.AverageStresses);
@@ -526,6 +532,9 @@ namespace andrefmello91.SPMElements
 		}
 
 		private void OnStateChanged([CallerMemberName] string? stateName = null) => StateChanged?.Invoke(this, new StateEventArgs(stateName!));
+
+		/// <inheritdoc />
+		public void AddValue(double loadFactor) => Monitor?.AddMonitoredValue(loadFactor, this);
 
 		/// <inheritdoc />
 		public override void CalculateForces()

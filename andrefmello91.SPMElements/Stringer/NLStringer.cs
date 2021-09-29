@@ -42,6 +42,13 @@ namespace andrefmello91.SPMElements
 			.ToArray();
 
 		/// <summary>
+		///     Get the strain <see cref="Vector" />.
+		/// </summary>
+		internal Vector<double> Strains => _bMatrix * (Vector<double>) (LocalDisplacements.Unit is LengthUnit.Millimeter
+			? LocalDisplacements
+			: LocalDisplacements.Convert(LengthUnit.Millimeter));
+
+		/// <summary>
 		///     The cross section at the end node.
 		/// </summary>
 		private RCCrossSection EndCrossSection { get; }
@@ -50,13 +57,6 @@ namespace andrefmello91.SPMElements
 		///     The cross section at the initial node.
 		/// </summary>
 		private RCCrossSection InitialCrossSection { get; }
-
-		/// <summary>
-		///     Get the strain <see cref="Vector" />.
-		/// </summary>
-		private Vector<double> Strains => _bMatrix * (Vector<double>) (LocalDisplacements.Unit is LengthUnit.Millimeter
-			? LocalDisplacements
-			: LocalDisplacements.Convert(LengthUnit.Millimeter));
 
 		/// <summary>
 		///     Check if concrete is cracked in this stringer.
@@ -214,6 +214,9 @@ namespace andrefmello91.SPMElements
 		}
 
 		private void OnStateChanged([CallerMemberName] string? stateName = null) => StateChanged?.Invoke(this, new StateEventArgs(stateName!));
+
+		/// <inheritdoc />
+		public void AddValue(double loadFactor) => Monitor?.AddMonitoredValue(loadFactor, this);
 
 		/// <inheritdoc />
 		public override void CalculateForces()

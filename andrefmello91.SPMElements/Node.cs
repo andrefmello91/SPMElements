@@ -80,6 +80,9 @@ namespace andrefmello91.SPMElements
 		public PlaneForce Force { get; set; } = PlaneForce.Zero;
 
 		/// <inheritdoc />
+		public string Name => $"Node {Number}";
+
+		/// <inheritdoc />
 		public int Number { get; set; }
 
 		/// <inheritdoc />

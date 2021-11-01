@@ -115,10 +115,19 @@ namespace andrefmello91.SPMElements.PanelProperties
 				throw new ArgumentException("Vertices must contain 4 points.", nameof(vertices));
 
 			// Order points
-			var verts = vertices.OrderBy(p => p).ToList();
+			var verts = vertices.OrderBy(p => p.Y).ThenBy(p => p.X).ToList();
+
+			// Get correct order
+			var (v1, v2) = verts[1].X > verts[0].X
+				? (verts[0], verts[1])
+				: (verts[1], verts[0]);
+
+			var (v4, v3) = verts[3].X > verts[2].X
+				? (verts[2], verts[3])
+				: (verts[3], verts[2]);
 
 			return
-				new Vertices(verts[0], verts[1], verts[3], verts[2]);
+				new Vertices(v1, v2, v3, v4);
 		}
 
 		/// <summary>

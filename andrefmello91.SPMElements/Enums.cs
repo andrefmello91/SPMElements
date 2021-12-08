@@ -1,61 +1,59 @@
-﻿namespace andrefmello91.SPMElements
+﻿namespace andrefmello91.SPMElements;
+
+/// <summary>
+///     Element models.
+/// </summary>
+public enum ElementModel
 {
 	/// <summary>
-	///     Element models.
+	///     Elastic model for linear analysis.
 	/// </summary>
-	public enum ElementModel
-	{
-		/// <summary>
-		///     Elastic model for linear analysis.
-		/// </summary>
-		Elastic,
-
-		/// <summary>
-		///     Nonlinear model, for nonlinear analysis.
-		/// </summary>
-		Nonlinear
-	}
+	Elastic,
 
 	/// <summary>
-	///     Node types.
+	///     Nonlinear model, for nonlinear analysis.
 	/// </summary>
-	public enum NodeType
-	{
-		/// <summary>
-		///     External nodes (external grips to stringers).
-		/// </summary>
-		External,
+	Nonlinear
+}
 
-		/// <summary>
-		///     External nodes (mid grip to stringers and grip for panels).
-		/// </summary>
-		Internal
-	}
+/// <summary>
+///     Node types.
+/// </summary>
+public enum NodeType
+{
+	/// <summary>
+	///     External nodes (external grips to stringers).
+	/// </summary>
+	External,
 
 	/// <summary>
-	///     Type of forces that stringer can be loaded.
+	///     External nodes (mid grip to stringers and grip for panels).
 	/// </summary>
-	public enum StringerForceState
-	{
-		/// <summary>
-		///     Stringer is not loaded.
-		/// </summary>
-		Unloaded,
+	Internal
+}
 
-		/// <summary>
-		///     Stringer is fully tensioned.
-		/// </summary>
-		PureTension,
+/// <summary>
+///     Type of forces that stringer can be loaded.
+/// </summary>
+public enum StringerForceState
+{
+	/// <summary>
+	///     Stringer is not loaded.
+	/// </summary>
+	Unloaded,
 
-		/// <summary>
-		///     Stringer is fully compressed.
-		/// </summary>
-		PureCompression,
+	/// <summary>
+	///     Stringer is fully tensioned.
+	/// </summary>
+	PureTension,
 
-		/// <summary>
-		///     Stringer is tensioned at an end and compressed at the other end.
-		/// </summary>
-		Combined
-	}
+	/// <summary>
+	///     Stringer is fully compressed.
+	/// </summary>
+	PureCompression,
 
+	/// <summary>
+	///     Stringer is tensioned at an end and compressed at the other end.
+	/// </summary>
+	Combined
 }

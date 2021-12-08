@@ -1,13 +1,12 @@
-﻿namespace andrefmello91.SPMElements.StringerProperties
+﻿namespace andrefmello91.SPMElements.StringerProperties;
+
+/// <summary>
+///     Type of forces that stringer can be loaded.
+/// </summary>
+public enum ForceState
 {
-	/// <summary>
-	///     Type of forces that stringer can be loaded.
-	/// </summary>
-	public enum ForceState
-	{
-		Unloaded,
-		PureTension,
-		PureCompression,
-		Combined
-	}
+	Unloaded,
+	PureTension,
+	PureCompression,
+	Combined
 }

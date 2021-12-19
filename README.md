@@ -1,7 +1,9 @@
 # SPMElements
 Stringer-Panel Model finite elements repository.
 
-This library implements the finite elements of the Stringer-Panel Method.
+This library implements the finite elements of the **Stringer-Panel Method**.
+
+The implementation is based in [Hoogenboom (1998) formulation](http://resolver.tudelft.nl/uuid:9ebcace7-f3d7-4ee0-93ff-cd157f4e5774).
 
 This library uses:
 

@@ -20,3 +20,13 @@ This library uses:
 - [Reinforced Concrete Membrane](https://github.com/andrefmello91/Reinforced-Concrete-Membrane) for membrane calculations;
 
 - [FEM-Analysis](https://github.com/andrefmello91/FEM-Analysis) as base for finite elements.
+
+## Usage
+
+### Package reference:
+
+`<PackageReference Include="andrefmello91.SPMElements" Version="1.X.X" />`
+
+### .NET CLI:
+
+`dotnet add package andrefmello91.SPMElements --version 1.X.X`

@@ -66,6 +66,7 @@ public class Panel : SPMElement<PanelGeometry>
 		get
 		{
 			Pressure sig2;
+			double   theta1;
 
 			// Get shear stress
 			var tau = AverageStresses.TauXY;
@@ -75,21 +76,32 @@ public class Panel : SPMElement<PanelGeometry>
 				fyx = Reinforcement?.DirectionX?.Steel.Parameters.YieldStress ?? Pressure.Zero,
 				fyy = Reinforcement?.DirectionY?.Steel.Parameters.YieldStress ?? Pressure.Zero;
 
-			if (fyx.Approx(fyy, StressState.Tolerance))
+			// Get ratios
+			double
+				psx = Reinforcement?.DirectionX?.Ratio ?? 0,
+				psy = Reinforcement?.DirectionY?.Ratio ?? 0;
+
+			if (psx.ApproxZero(1E-6) || psy.ApproxZero(1E-6) || psx.Approx(psy, 1E-4) && fyx.Approx(fyy, StressState.Tolerance))
 			{
 				sig2 = -2 * tau.Abs();
+
+				theta1 = tau >= Pressure.Zero
+					? Constants.PiOver4
+					: -Constants.PiOver4;
 			}
 
 			else
 			{
-				// Get relation of steel strengths
-				var rLambda = Math.Sqrt(fyx / fyy);
-				sig2 = -tau.Abs() * (rLambda + 1 / rLambda);
-			}
+				// Calculate theta
+				theta1 = Math.Atan(Math.Sqrt(psx * fyx / (psy * fyy)));
+				theta1 = tau >= Pressure.Zero
+					? theta1
+					: theta1 + Constants.PiOver2;
 
-			var theta1 = tau >= Pressure.Zero
-				? Constants.PiOver4
-				: -Constants.PiOver4;
+				// Calculate stress
+				var tanTheta1 = theta1.Tan();
+				sig2 = -tau * (tanTheta1 + 1D / tanTheta1);
+			}
 
 			return new PrincipalStressState(Pressure.Zero, sig2, theta1);
 		}

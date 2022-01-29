@@ -96,7 +96,7 @@ public class Panel : SPMElement<PanelGeometry>
 				theta1 = Math.Atan(Math.Sqrt(psx * fyx / (psy * fyy)));
 				theta1 = tau >= Pressure.Zero
 					? theta1
-					: theta1 + Constants.PiOver2;
+					: theta1 - Constants.PiOver2;
 
 				// Calculate stress
 				var tanTheta1 = theta1.Tan();

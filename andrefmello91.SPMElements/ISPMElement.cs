@@ -9,8 +9,6 @@ namespace andrefmello91.SPMElements;
 public interface ISPMElement : IFiniteElement
 {
 
-	#region Properties
-
 	/// <summary>
 	///     The nodes of this element.
 	/// </summary>
@@ -25,9 +23,6 @@ public interface ISPMElement : IFiniteElement
 	///     The name of this element.
 	/// </summary>
 	string Name { get; }
-
-	#endregion
-
 }
 
 /// <summary>
@@ -38,15 +33,10 @@ public interface ISPMElement<out TGeometry> : ISPMElement
 	where TGeometry : struct, IEquatable<TGeometry>, IComparable<TGeometry>
 {
 
-	#region Properties
-
 	/// <summary>
 	///     The geometry of this element.
 	/// </summary>
 	TGeometry Geometry { get; }
-
-	#endregion
-
 }
 
 /// <summary>
@@ -54,8 +44,6 @@ public interface ISPMElement<out TGeometry> : ISPMElement
 /// </summary>
 public interface INonlinearSPMElement : ISPMElement, IMonitoredElement
 {
-
-	#region Properties
 
 	/// <summary>
 	///     True if concrete is cracked in this element.
@@ -77,15 +65,8 @@ public interface INonlinearSPMElement : ISPMElement, IMonitoredElement
 	/// </summary>
 	bool SteelYielded { get; }
 
-	#endregion
-
-	#region Events
-
 	/// <summary>
 	///     Execute when the state of this element changes.
 	/// </summary>
 	event EventHandler<StateEventArgs>? StateChanged;
-
-	#endregion
-
 }

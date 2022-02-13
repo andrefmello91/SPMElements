@@ -13,8 +13,6 @@ namespace andrefmello91.SPMElements.PanelProperties;
 public struct Edge : IUnitConvertible<LengthUnit>, IApproachable<Edge, Length>, IEquatable<Edge>, IComparable<Edge>
 {
 
-	#region Properties
-
 	/// <summary>
 	///     Get angle related to horizontal axis, in radians.
 	/// </summary>
@@ -54,10 +52,6 @@ public struct Edge : IUnitConvertible<LengthUnit>, IApproachable<Edge, Length>, 
 		set => ChangeUnit(value);
 	}
 
-	#endregion
-
-	#region Constructors
-
 	/// <summary>
 	///     Panel edge constructor.
 	/// </summary>
@@ -72,10 +66,6 @@ public struct Edge : IUnitConvertible<LengthUnit>, IApproachable<Edge, Length>, 
 		Angle             = initialVertex.GetAngle(finalVertex);
 		StringerDimension = Length.Zero;
 	}
-
-	#endregion
-
-	#region Methods
 
 	/// <inheritdoc cref="IUnitConvertible{TUnit}.Convert" />
 	public Edge Convert(LengthUnit unit) => new(InitialVertex.Convert(unit), FinalVertex.Convert(unit));
@@ -138,10 +128,6 @@ public struct Edge : IUnitConvertible<LengthUnit>, IApproachable<Edge, Length>, 
 
 	IUnitConvertible<LengthUnit> IUnitConvertible<LengthUnit>.Convert(LengthUnit unit) => Convert(unit);
 
-	#endregion
-
-	#region Operators
-
 	/// <summary>
 	///     Returns true if arguments are equal.
 	/// </summary>
@@ -151,7 +137,4 @@ public struct Edge : IUnitConvertible<LengthUnit>, IApproachable<Edge, Length>, 
 	///     Returns true if arguments are different.
 	/// </summary>
 	public static bool operator !=(Edge left, Edge right) => !left.Equals(right);
-
-	#endregion
-
 }

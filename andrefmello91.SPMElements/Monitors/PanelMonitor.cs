@@ -13,14 +13,8 @@ namespace andrefmello91.SPMElements.Monitors;
 internal class PanelMonitor : ElementMonitor
 {
 
-	#region Fields
-
 	private readonly LengthUnit _crackUnit;
 	private readonly PressureUnit _stressUnit;
-
-	#endregion
-
-	#region Constructors
 
 	/// <summary>
 	///     Create a panel monitor.
@@ -34,10 +28,6 @@ internal class PanelMonitor : ElementMonitor
 		_crackUnit  = crackUnit;
 		_stressUnit = stressUnit;
 	}
-
-	#endregion
-
-	#region Methods
 
 	private static string[] Label(PressureUnit stressUnit, LengthUnit crackUnit)
 	{
@@ -65,13 +55,9 @@ internal class PanelMonitor : ElementMonitor
 		Values.Add(new MonitoredValue(panel, loadFactor, _stressUnit, _crackUnit));
 	}
 
-	#endregion
-
 	private class MonitoredValue
 		: IVectorTransformable
 	{
-
-		#region Properties
 
 		public IState<double> AverageStrains { get; }
 
@@ -80,10 +66,6 @@ internal class PanelMonitor : ElementMonitor
 		public double CrackWidth { get; }
 		public double LoadFactor { get; }
 
-		#endregion
-
-		#region Constructors
-
 		public MonitoredValue(NLPanel panel, double loadFactor, PressureUnit stressUnit = PressureUnit.Megapascal, LengthUnit crackUnit = LengthUnit.Millimeter)
 		{
 			LoadFactor     = loadFactor;
@@ -91,10 +73,6 @@ internal class PanelMonitor : ElementMonitor
 			AverageStress  = panel.AverageStresses.Convert(stressUnit);
 			CrackWidth     = panel.CrackOpening.As(crackUnit);
 		}
-
-		#endregion
-
-		#region Methods
 
 		/// <inheritdoc />
 		public Vector<double> AsVector() => new[]
@@ -108,8 +86,5 @@ internal class PanelMonitor : ElementMonitor
 			AverageStress.XY.Value,
 			CrackWidth
 		}.ToVector();
-
-		#endregion
-
 	}
 }

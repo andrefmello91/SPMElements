@@ -12,14 +12,8 @@ namespace andrefmello91.SPMElements.Monitors;
 internal class StringerMonitor : ElementMonitor
 {
 
-	#region Fields
-
 	private readonly LengthUnit _crackUnit;
 	private readonly ForceUnit _forceUnit;
-
-	#endregion
-
-	#region Constructors
 
 	/// <summary>
 	///     Create a stringer monitor.
@@ -33,10 +27,6 @@ internal class StringerMonitor : ElementMonitor
 		_crackUnit = crackUnit;
 		_forceUnit = forceUnit;
 	}
-
-	#endregion
-
-	#region Methods
 
 	private static string[] Label(ForceUnit forceUnit, LengthUnit crackUnit)
 	{
@@ -62,13 +52,9 @@ internal class StringerMonitor : ElementMonitor
 		Values.Add(new MonitoredValue(stringer, loadFactor, _forceUnit, _crackUnit));
 	}
 
-	#endregion
-
 	private class MonitoredValue
 		: IVectorTransformable
 	{
-
-		#region Properties
 
 		public double LoadFactor { get; }
 
@@ -82,10 +68,6 @@ internal class StringerMonitor : ElementMonitor
 
 		public double MinStrain { get; }
 
-		#endregion
-
-		#region Constructors
-
 		public MonitoredValue(NLStringer stringer, double loadFactor, ForceUnit forceUnit = ForceUnit.Kilonewton, LengthUnit crackUnit = LengthUnit.Millimeter)
 		{
 			LoadFactor = loadFactor;
@@ -95,10 +77,6 @@ internal class StringerMonitor : ElementMonitor
 			MaxForce   = UnitMath.Max(stringer.NormalForces.N1, stringer.NormalForces.N3).As(forceUnit);
 			MaxCrack   = stringer.CrackOpenings.Max(crackUnit).Value;
 		}
-
-		#endregion
-
-		#region Methods
 
 		/// <inheritdoc />
 		public Vector<double> AsVector() => new[]
@@ -110,8 +88,5 @@ internal class StringerMonitor : ElementMonitor
 			MaxForce,
 			MaxCrack
 		}.ToVector();
-
-		#endregion
-
 	}
 }

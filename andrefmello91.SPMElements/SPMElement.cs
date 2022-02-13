@@ -18,8 +18,6 @@ public abstract class SPMElement<TGeometry> : ISPMElement<TGeometry>, IEquatable
 	where TGeometry : struct, IEquatable<TGeometry>, IComparable<TGeometry>
 {
 
-	#region Properties
-
 	/// <summary>
 	///     Get the grip numbers of this element.
 	/// </summary>
@@ -92,10 +90,6 @@ public abstract class SPMElement<TGeometry> : ISPMElement<TGeometry>, IEquatable
 	/// <inheritdoc />
 	IGrip[] IFiniteElement.Grips => Grips.Cast<IGrip>().ToArray();
 
-	#endregion
-
-	#region Constructors
-
 	/// <summary>
 	///     SPM element base constructor.
 	/// </summary>
@@ -110,10 +104,6 @@ public abstract class SPMElement<TGeometry> : ISPMElement<TGeometry>, IEquatable
 		Forces             = ForceVector.Zero(2 * Grips.Length);
 		Displacements      = DisplacementVector.Zero(2 * Grips.Length);
 	}
-
-	#endregion
-
-	#region Methods
 
 	/// <inheritdoc />
 	public override bool Equals(object? obj) => obj is SPMElement<TGeometry> spmElement && Equals(spmElement);
@@ -155,10 +145,6 @@ public abstract class SPMElement<TGeometry> : ISPMElement<TGeometry>, IEquatable
 	/// <inheritdoc />
 	bool IEquatable<IFiniteElement>.Equals(IFiniteElement? other) => other is SPMElement<TGeometry> spmElement && Equals(spmElement);
 
-	#endregion
-
-	#region Operators
-
 	/// <summary>
 	///     Returns true if arguments are equal.
 	/// </summary>
@@ -168,7 +154,4 @@ public abstract class SPMElement<TGeometry> : ISPMElement<TGeometry>, IEquatable
 	///     Returns true if arguments are different.
 	/// </summary>
 	public static bool operator !=(SPMElement<TGeometry>? left, SPMElement<TGeometry>? right) => left.IsNotEqualTo(right);
-
-	#endregion
-
 }

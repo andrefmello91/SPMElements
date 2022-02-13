@@ -15,13 +15,7 @@ namespace andrefmello91.SPMElements.PanelProperties;
 public struct PanelGeometry : IUnitConvertible<LengthUnit>, IApproachable<PanelGeometry, Length>, IEquatable<PanelGeometry>, IComparable<PanelGeometry>, ICloneable<PanelGeometry>
 {
 
-	#region Fields
-
 	private Length _width;
-
-	#endregion
-
-	#region Properties
 
 	/// <summary>
 	///     Get panel dimensions (a, b, c, d).
@@ -96,10 +90,6 @@ public struct PanelGeometry : IUnitConvertible<LengthUnit>, IApproachable<PanelG
 		set => ChangeUnit(value);
 	}
 
-	#endregion
-
-	#region Constructors
-
 	/// <summary>
 	///     Create a panel geometry object.
 	/// </summary>
@@ -127,10 +117,6 @@ public struct PanelGeometry : IUnitConvertible<LengthUnit>, IApproachable<PanelG
 		: this(vertices, (Length) width.As(unit))
 	{
 	}
-
-	#endregion
-
-	#region Methods
 
 	/// <summary>
 	///     Calculate panel dimensions (a, b, c, d).
@@ -238,10 +224,6 @@ public struct PanelGeometry : IUnitConvertible<LengthUnit>, IApproachable<PanelG
 
 	IUnitConvertible<LengthUnit> IUnitConvertible<LengthUnit>.Convert(LengthUnit unit) => Convert(unit);
 
-	#endregion
-
-	#region Operators
-
 	/// <summary>
 	///     Returns true if arguments are equal.
 	/// </summary>
@@ -251,7 +233,4 @@ public struct PanelGeometry : IUnitConvertible<LengthUnit>, IApproachable<PanelG
 	///     Returns true if arguments are different.
 	/// </summary>
 	public static bool operator !=(PanelGeometry left, PanelGeometry right) => !left.Equals(right);
-
-	#endregion
-
 }

@@ -21,8 +21,6 @@ namespace andrefmello91.SPMElements;
 internal class NLStringer : Stringer, INonlinearSPMElement
 {
 
-	#region Fields
-
 	// Auxiliary fields
 	private readonly Matrix<double> _bMatrix;
 	private bool _concreteCracked;
@@ -31,10 +29,6 @@ internal class NLStringer : Stringer, INonlinearSPMElement
 
 	private Force _n1, _n3;
 	private bool _steelYielded;
-
-	#endregion
-
-	#region Properties
 
 	/// <inheritdoc />
 	public override Length[] CrackOpenings => Strains
@@ -125,16 +119,8 @@ internal class NLStringer : Stringer, INonlinearSPMElement
 		}
 	}
 
-	#endregion
-
-	#region Events
-
 	/// <inheritdoc />
 	public event EventHandler<StateEventArgs>? StateChanged;
-
-	#endregion
-
-	#region Constructors
 
 	/// <summary>
 	///     Nonlinear stringer object.
@@ -160,10 +146,6 @@ internal class NLStringer : Stringer, INonlinearSPMElement
 		LocalStiffness       = CalculateStiffness(Concrete.Stiffness, Geometry.Length);
 		Stiffness            = (StiffnessMatrix) LocalStiffness.Transform(TransformationMatrix);
 	}
-
-	#endregion
-
-	#region Methods
 
 	/// <summary>
 	///     Calculate B Matrix based on stringer length.
@@ -239,7 +221,4 @@ internal class NLStringer : Stringer, INonlinearSPMElement
 
 		CheckStates();
 	}
-
-	#endregion
-
 }

@@ -11,8 +11,6 @@ namespace andrefmello91.SPMElements;
 public class SPMAnalysis : NonlinearAnalysis
 {
 
-	#region Fields
-
 	private readonly List<INonlinearSPMElement>
 		_concreteYieldedElements = new();
 
@@ -24,10 +22,6 @@ public class SPMAnalysis : NonlinearAnalysis
 
 	private readonly List<INonlinearSPMElement>
 		_steelYieldedElements = new();
-
-	#endregion
-
-	#region Events
 
 	/// <summary>
 	///     Event to execute when concrete of elements yield.
@@ -49,10 +43,6 @@ public class SPMAnalysis : NonlinearAnalysis
 	/// </summary>
 	public event EventHandler<SPMElementEventArgs>? ElementsSteelYielded;
 
-	#endregion
-
-	#region Constructors
-
 	/// <inheritdoc />
 	public SPMAnalysis(IFEMInput nonlinearInput, int? monitoredIndex = null, bool simulate = false)
 		: base(nonlinearInput, monitoredIndex, simulate)
@@ -65,10 +55,6 @@ public class SPMAnalysis : NonlinearAnalysis
 	{
 		SetEvents();
 	}
-
-	#endregion
-
-	#region Methods
 
 	/// <inheritdoc />
 	protected override void CorrectResults()
@@ -152,7 +138,4 @@ public class SPMAnalysis : NonlinearAnalysis
 
 		list?.Add(element);
 	}
-
-	#endregion
-
 }

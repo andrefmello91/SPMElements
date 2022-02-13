@@ -10,8 +10,6 @@ namespace andrefmello91.SPMElements;
 public class SPMElementEventArgs : EventArgs
 {
 
-	#region Properties
-
 	/// <summary>
 	///     The SPM element.
 	/// </summary>
@@ -25,10 +23,6 @@ public class SPMElementEventArgs : EventArgs
 	/// </remarks>
 	public int? LoadStep { get; }
 
-	#endregion
-
-	#region Constructors
-
 	/// <summary>
 	///     Create a SPM element event arg.
 	/// </summary>
@@ -39,9 +33,6 @@ public class SPMElementEventArgs : EventArgs
 		Elements = elements.ToList();
 		LoadStep = loadStep;
 	}
-
-	#endregion
-
 }
 
 /// <summary>
@@ -50,21 +41,12 @@ public class SPMElementEventArgs : EventArgs
 public class StateEventArgs : EventArgs
 {
 
-	#region Properties
-
 	/// <summary>
 	///     The name of the state changed.
 	/// </summary>
 	public string StateName { get; }
 
-	#endregion
-
-	#region Constructors
-
 	/// <inheritdoc />
 	/// <param name="stateName">The name of the state changed.</param>
 	public StateEventArgs(string stateName) => StateName = stateName;
-
-	#endregion
-
 }

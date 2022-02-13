@@ -13,8 +13,6 @@ namespace andrefmello91.SPMElements;
 public static class Extensions
 {
 
-	#region Methods
-
 	/// <summary>
 	///     Get the <see cref="AnalysisType" /> from this <see cref="ElementModel" />.
 	/// </summary>
@@ -89,7 +87,4 @@ public static class Extensions
 					break;
 			}
 	}
-
-	#endregion
-
 }

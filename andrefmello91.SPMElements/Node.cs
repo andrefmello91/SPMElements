@@ -16,8 +16,6 @@ namespace andrefmello91.SPMElements;
 public class Node : IGrip, IMonitoredElement, IEquatable<Node>, IComparable<Node>
 {
 
-	#region Properties
-
 	/// <summary>
 	///     Get/set the <see cref="LengthUnit" /> of <see cref="Displacement" />.
 	/// </summary>
@@ -106,10 +104,6 @@ public class Node : IGrip, IMonitoredElement, IEquatable<Node>, IComparable<Node
 		}
 	}
 
-	#endregion
-
-	#region Constructors
-
 	/// <summary>
 	///     Node object.
 	/// </summary>
@@ -127,10 +121,6 @@ public class Node : IGrip, IMonitoredElement, IEquatable<Node>, IComparable<Node
 		// Set units
 		DisplacementUnit = displacementUnit;
 	}
-
-	#endregion
-
-	#region Methods
 
 	/// <summary>
 	///     Returns true if <paramref name="other" /> is a <see cref="Node" /> and both positions are equal.
@@ -207,10 +197,6 @@ public class Node : IGrip, IMonitoredElement, IEquatable<Node>, IComparable<Node
 	/// <inheritdoc />
 	public void AddValue(double loadFactor) => Monitor?.AddMonitoredValue(loadFactor, this);
 
-	#endregion
-
-	#region Operators
-
 	/// <summary>
 	///     Returns true if both nodes positions are equal.
 	/// </summary>
@@ -220,7 +206,4 @@ public class Node : IGrip, IMonitoredElement, IEquatable<Node>, IComparable<Node
 	///     Returns true if both nodes positions are different.
 	/// </summary>
 	public static bool operator !=(Node? left, Node? right) => left is not null && !left.Equals(right);
-
-	#endregion
-
 }

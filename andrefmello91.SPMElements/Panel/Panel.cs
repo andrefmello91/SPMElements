@@ -21,8 +21,6 @@ namespace andrefmello91.SPMElements;
 public class Panel : SPMElement<PanelGeometry>
 {
 
-	#region Properties
-
 	/// <summary>
 	///     Get average <see cref="PrincipalStressState" />.
 	/// </summary>
@@ -156,10 +154,6 @@ public class Panel : SPMElement<PanelGeometry>
 	/// </summary>
 	public WebReinforcement? Reinforcement { get; protected set; }
 
-	#endregion
-
-	#region Constructors
-
 	/// <summary>
 	///     Elastic panel object.
 	/// </summary>
@@ -188,10 +182,6 @@ public class Panel : SPMElement<PanelGeometry>
 		LocalStiffness       = CalculateStiffness(Geometry, Concrete.Parameters.TransverseModule);
 		Stiffness            = (StiffnessMatrix) LocalStiffness.Transform(TransformationMatrix);
 	}
-
-	#endregion
-
-	#region Methods
 
 	/// <summary>
 	///     Create a <see cref="Panel" /> from an element model.
@@ -448,7 +438,4 @@ public class Panel : SPMElement<PanelGeometry>
 	{
 		// Not needed in linear element.
 	}
-
-	#endregion
-
 }

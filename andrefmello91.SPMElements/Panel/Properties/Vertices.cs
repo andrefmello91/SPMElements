@@ -15,8 +15,6 @@ namespace andrefmello91.SPMElements.PanelProperties;
 public struct Vertices : IUnitConvertible<LengthUnit>, IApproachable<Vertices, Length>, IEquatable<Vertices>, IComparable<Vertices>, ICloneable<Vertices>
 {
 
-	#region Properties
-
 	/// <summary>
 	///     Get <see cref="Vertices" /> approximated center point.
 	/// </summary>
@@ -66,10 +64,6 @@ public struct Vertices : IUnitConvertible<LengthUnit>, IApproachable<Vertices, L
 		set => ChangeUnit(value);
 	}
 
-	#endregion
-
-	#region Constructors
-
 	/// <summary>
 	///     Create a panel vertices object.
 	/// </summary>
@@ -86,10 +80,6 @@ public struct Vertices : IUnitConvertible<LengthUnit>, IApproachable<Vertices, L
 
 		CenterPoint = CalculateCenterPoint(Vertex1, Vertex2, Vertex3, Vertex4);
 	}
-
-	#endregion
-
-	#region Methods
 
 	/// <summary>
 	///     Calculate <see cref="Vertices" /> approximated center point.
@@ -242,10 +232,6 @@ public struct Vertices : IUnitConvertible<LengthUnit>, IApproachable<Vertices, L
 
 	IUnitConvertible<LengthUnit> IUnitConvertible<LengthUnit>.Convert(LengthUnit unit) => Convert(unit);
 
-	#endregion
-
-	#region Operators
-
 	/// <summary>
 	///     Returns true if arguments are equal.
 	/// </summary>
@@ -255,7 +241,4 @@ public struct Vertices : IUnitConvertible<LengthUnit>, IApproachable<Vertices, L
 	///     Returns true if arguments are different.
 	/// </summary>
 	public static bool operator !=(Vertices left, Vertices right) => !left.Equals(right);
-
-	#endregion
-
 }

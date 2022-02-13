@@ -20,8 +20,6 @@ namespace andrefmello91.SPMElements;
 public class Stringer : SPMElement<StringerGeometry>
 {
 
-	#region Properties
-
 	/// <summary>
 	///     Get the <see cref="UniaxialConcrete" /> of this stringer.
 	/// </summary>
@@ -98,10 +96,6 @@ public class Stringer : SPMElement<StringerGeometry>
 		}
 	}
 
-	#endregion
-
-	#region Constructors
-
 	/// <summary>
 	///     Elastic stringer object.
 	/// </summary>
@@ -128,10 +122,6 @@ public class Stringer : SPMElement<StringerGeometry>
 		LocalStiffness       = CalculateStiffness(Concrete.Stiffness, Geometry.Length);
 		Stiffness            = (StiffnessMatrix) LocalStiffness.Transform(TransformationMatrix);
 	}
-
-	#endregion
-
-	#region Methods
 
 	/// <summary>
 	///     Create a <see cref="Stringer" /> based on element model.
@@ -247,7 +237,4 @@ public class Stringer : SPMElement<StringerGeometry>
 	{
 		// Not needed in linear element.
 	}
-
-	#endregion
-
 }

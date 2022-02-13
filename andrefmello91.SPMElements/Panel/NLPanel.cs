@@ -23,18 +23,12 @@ namespace andrefmello91.SPMElements;
 internal class NLPanel : Panel, INonlinearSPMElement
 {
 
-	#region Fields
-
 	// Auxiliary fields
 	private readonly Matrix<double> _baMatrix;
 	private bool _concreteCracked;
 	private bool _concreteCrushed;
 	private bool _concreteYielded;
 	private bool _steelYielded;
-
-	#endregion
-
-	#region Properties
 
 	/// <summary>
 	///     The average strains in this panel.
@@ -171,16 +165,8 @@ internal class NLPanel : Panel, INonlinearSPMElement
 		}
 	}
 
-	#endregion
-
-	#region Events
-
 	/// <inheritdoc />
 	public event EventHandler<StateEventArgs>? StateChanged;
-
-	#endregion
-
-	#region Constructors
 
 	/// <summary>
 	///     Nonlinear panel object.
@@ -201,10 +187,6 @@ internal class NLPanel : Panel, INonlinearSPMElement
 
 		InitiateStiffness();
 	}
-
-	#endregion
-
-	#region Methods
 
 	/// <summary>
 	///     Calculate BA matrix.
@@ -548,7 +530,4 @@ internal class NLPanel : Panel, INonlinearSPMElement
 	/// <inheritdoc />
 	public override void UpdateDisplacements() =>
 		Displacements = this.GetDisplacementsFromGrips();
-
-	#endregion
-
 }

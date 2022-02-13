@@ -12,13 +12,7 @@ namespace andrefmello91.SPMElements.StringerProperties;
 public struct CrossSection : IUnitConvertible<LengthUnit>, IApproachable<CrossSection, Length>, IEquatable<CrossSection>, IComparable<CrossSection>, ICloneable<CrossSection>
 {
 
-	#region Fields
-
 	private Length _width, _height;
-
-	#endregion
-
-	#region Properties
 
 	/// <summary>
 	///     Get the cross-section area.
@@ -50,10 +44,6 @@ public struct CrossSection : IUnitConvertible<LengthUnit>, IApproachable<CrossSe
 		set => ChangeUnit(value);
 	}
 
-	#endregion
-
-	#region Constructors
-
 	/// <summary>
 	///     Stringer cross-section constructor.
 	/// </summary>
@@ -74,10 +64,6 @@ public struct CrossSection : IUnitConvertible<LengthUnit>, IApproachable<CrossSe
 		: this((Length) width.As(unit), (Length) height.As(unit))
 	{
 	}
-
-	#endregion
-
-	#region Methods
 
 	/// <inheritdoc cref="IUnitConvertible{TUnit}.Convert" />
 	public CrossSection Convert(LengthUnit unit) => new(Width.ToUnit(unit), Height.ToUnit(unit));
@@ -117,10 +103,6 @@ public struct CrossSection : IUnitConvertible<LengthUnit>, IApproachable<CrossSe
 
 	IUnitConvertible<LengthUnit> IUnitConvertible<LengthUnit>.Convert(LengthUnit unit) => Convert(unit);
 
-	#endregion
-
-	#region Operators
-
 	/// <summary>
 	///     Returns true if objects are equal.
 	/// </summary>
@@ -130,7 +112,4 @@ public struct CrossSection : IUnitConvertible<LengthUnit>, IApproachable<CrossSe
 	///     Returns true if objects are different.
 	/// </summary>
 	public static bool operator !=(CrossSection left, CrossSection right) => !left.Equals(right);
-
-	#endregion
-
 }

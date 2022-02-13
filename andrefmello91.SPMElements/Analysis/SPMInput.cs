@@ -13,8 +13,6 @@ namespace andrefmello91.SPMElements;
 public class SPMInput : FEMInput
 {
 
-	#region Properties
-
 	/// <summary>
 	///     Get a node at a <see cref="position" />.
 	/// </summary>
@@ -48,10 +46,6 @@ public class SPMInput : FEMInput
 	/// </summary>
 	public List<Stringer> Stringers { get; }
 
-	#endregion
-
-	#region Constructors
-
 	/// <inheritdoc cref="SPMInput(IEnumerable{Stringer}, IEnumerable{Panel}, IEnumerable{Node})" />
 	/// <remarks>
 	///     Nodes are taken from <paramref name="stringers" /> and <paramref name="panels" />.
@@ -78,10 +72,6 @@ public class SPMInput : FEMInput
 		// Set stringer dimensions
 		Panels.SetStringerDimensions(Stringers);
 	}
-
-	#endregion
-
-	#region Methods
 
 	/// <inheritdoc cref="From(IEnumerable{Stringer},IEnumerable{Panel},AnalysisType)" />
 	/// <param name="nodes">The collection of <see cref="Nodes" />'s.</param>
@@ -120,7 +110,4 @@ public class SPMInput : FEMInput
 		$"Number of panels: {Panels.Count}\n" +
 		$"Force vector: \n{Forces}\n" +
 		$"Constraint Index: {ConstraintIndex.Select(i => i.ToString()).Aggregate((i, f) => $"{i} - {f}")}";
-
-	#endregion
-
 }

@@ -14,13 +14,7 @@ namespace andrefmello91.SPMElements.StringerProperties;
 public struct StringerGeometry : IUnitConvertible<LengthUnit>, IApproachable<StringerGeometry, Length>, IEquatable<StringerGeometry>, IComparable<StringerGeometry>, ICloneable<StringerGeometry>
 {
 
-	#region Fields
-
 	private CrossSection _section;
-
-	#endregion
-
-	#region Properties
 
 	/// <summary>
 	///     The stringer angle, in radians.
@@ -70,10 +64,6 @@ public struct StringerGeometry : IUnitConvertible<LengthUnit>, IApproachable<Str
 		set => ChangeUnit(value);
 	}
 
-	#endregion
-
-	#region Constructors
-
 	/// <inheritdoc cref="StringerGeometry(Point, Point, Length, Length)" />
 	/// <param name="unit">
 	///     The <see cref="LengthUnit" /> of <paramref name="width" />, <paramref name="height" /> and nodes' coordinates.
@@ -115,10 +105,6 @@ public struct StringerGeometry : IUnitConvertible<LengthUnit>, IApproachable<Str
 		// Set values
 		_section = crossSection;
 	}
-
-	#endregion
-
-	#region Methods
 
 	/// <summary>
 	///     Convert this <see cref="StringerGeometry" /> object to another <see cref="LengthUnit" />.
@@ -222,10 +208,6 @@ public struct StringerGeometry : IUnitConvertible<LengthUnit>, IApproachable<Str
 
 	IUnitConvertible<LengthUnit> IUnitConvertible<LengthUnit>.Convert(LengthUnit unit) => Convert(unit);
 
-	#endregion
-
-	#region Operators
-
 	/// <summary>
 	///     Returns true if objects are equal.
 	///     <para>See: <seealso cref="Equals(StringerGeometry)" />.</para>
@@ -237,7 +219,4 @@ public struct StringerGeometry : IUnitConvertible<LengthUnit>, IApproachable<Str
 	///     <para>See: <seealso cref="Equals(StringerGeometry)" />.</para>
 	/// </summary>
 	public static bool operator !=(StringerGeometry left, StringerGeometry right) => !left.Equals(right);
-
-	#endregion
-
 }

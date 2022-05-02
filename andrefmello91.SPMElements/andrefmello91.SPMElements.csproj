@@ -1,10 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFrameworks>net5.0;netcoreapp3.1;netstandard2.0</TargetFrameworks>
+        <TargetFrameworks>net6.0;net5.0;netcoreapp3.1;netstandard2.0</TargetFrameworks>
         <LangVersion>preview</LangVersion>
         <Nullable>enable</Nullable>
-        <Version>1.0.2</Version>
+        <Version>1.0.3</Version>
         <Authors>andrefmello91</Authors>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\$(AssemblyName).xml</DocumentationFile>
@@ -19,7 +19,7 @@
         <PackageId>andrefmello91.SPMElements</PackageId>
         <PackageDescription>Finite element implementation for Stringer-Panel Method.</PackageDescription>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <PackageReleaseNotes>Corrected code for linear panel's concrete stresses angle.</PackageReleaseNotes>
+        <PackageReleaseNotes>Added support to .NET 6.0.</PackageReleaseNotes>
     </PropertyGroup>
 
     <ItemGroup>
